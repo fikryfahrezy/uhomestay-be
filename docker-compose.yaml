@@ -1,0 +1,23 @@
+version: "3.9"  # optional since v1.27.0
+services:
+  web:
+    build: .
+    environment:
+      - "DATABASE_URL=${DATABASE_URL}"
+      - "PORT=${PORT}"
+      - "HOMESTAY_ARG_SALT=${HOMESTAY_ARG_SALT}"
+      - "HOMESTAY_CLOUDINARY_URL=${HOMESTAY_CLOUDINARY_URL}"
+      - "HOMESTAY_JWT_AUDIENCES=${HOMESTAY_JWT_AUDIENCES}"
+      - "HOMESTAY_JWT_ISSUER=${HOMESTAY_JWT_ISSUER}"
+      - "HOMESTAY_JWT_SECRET=${HOMESTAY_JWT_SECRET}"
+      - "HOMESTAY_LOGDNA_KEY=${HOMESTAY_LOGDNA_KEY}"
+      - "HOMESTAY_SENTRY_DSN=${HOMESTAY_SENTRY_DSN}"
+    ports:
+      - "5000:${PORT}"
+    networks:
+      - postgre_net
+
+networks:
+  postgre_net:
+    external:
+      name: postgre_net

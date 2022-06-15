@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <form id="form">
+      <input type="text" name="name" placeholder="name" required />
+      <input
+        type="text"
+        name="homestay_name"
+        placeholder="homestay_name"
+        required
+      />
+      <input
+        type="text"
+        name="homestay_address"
+        placeholder="homestay_address"
+        required
+      />
+      <input
+        type="text"
+        name="homestay_latitude"
+        placeholder="homestay_latitude"
+        required
+      />
+      <input
+        type="text"
+        name="homestay_longitude"
+        placeholder="homestay_longitude"
+        required
+      />
+      <input type="text" name="wa_phone" placeholder="wa_phone" required />
+      <input
+        type="text"
+        name="other_phone"
+        placeholder="other_phone"
+        required
+      />
+      <input type="text" name="username" placeholder="username" required />
+      <input type="password" name="password" placeholder="password" required />
+      <select name="position_id" required>
+        {{range .Positions}}
+        <option value="{{.Id}}">{{.Name}}</option>
+        {{end}}
+      </select>
+      <select name="period_id" required>
+        {{range .Periods}}
+        <option value="{{.Id}}">{{.StartDate}}/{{.EndDate}}</option>
+        {{end}}
+      </select>
+      <label for="admin_checkbox">is_admin</label>
+      <input type="checkbox" name="is_admin" id="admin_checkbox" required />
+      <button type="submit">Register</button>
+    </form>
+    <div id="response"></div>
+    <script>
+      const form = document.getElementById("form");
+      const response = document.getElementById("response");
+
+      function onSubmit(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+
+        const newFormData = new FormData();
+        Object.entries(data).forEach(([k, v]) => {
+          if (k === "is_admin") {
+            newFormData.append(k, v === "on");
+            return;
+          }
+          newFormData.append(k, v);
+        });
+
+        fetch("/members", {
+          method: "POST",
+          body: newFormData,
+        })
+          .then((res) => res.text())
+          .then((res) => {
+            response.textContent = res;
+          })
+          .catch((err) => {
+            reponse.textContent = err.message;
+          });
+      }
+
+      form.addEventListener("submit", onSubmit);
+    </script>
+  </body>
+</html>

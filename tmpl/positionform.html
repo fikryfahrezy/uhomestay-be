@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+  </head>
+  <body>
+    <form id="form">
+      <input type="text" name="name" placeholder="name" required />
+      <select name="level" requeired>
+        {{range .Res}}
+        <option value="{{.Level}}">{{.Level}}</option>
+        {{end}}
+      </select>
+      <button type="submit">Submit</button>
+    </form>
+    <div id="response"></div>
+    <script>
+      const form = document.getElementById("form");
+      const response = document.getElementById("response");
+
+      function onSubmit(e) {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const data = Object.fromEntries(formData.entries());
+        data.level = Number(data.level);
+
+        fetch("/positions", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(data),
+        })
+          .then((res) => res.text())
+          .then((res) => {
+            response.textContent = res;
+          })
+          .catch((err) => {
+            reponse.textContent = err.message;
+          });
+      }
+
+      form.addEventListener("submit", onSubmit);
+    </script>
+  </body>
+</html>

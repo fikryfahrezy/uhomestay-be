@@ -1,0 +1,1611 @@
+{
+  "info": {
+    "_postman_id": "cc74d7be-2314-4785-b297-dd2ed65713fc",
+    "name": "U-Homestay",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "_exporter_id": "10486608"
+  },
+  "item": [
+    {
+      "name": "Member",
+      "item": [
+        {
+          "name": "Register",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const token = pm.response.json()?.data?.token;",
+                  "if (token) {",
+                  "    pm.environment.set(\"TOKEN\", token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"string\",\n    \"username\": \"string\",\n    \"password\": \"string\",\n    \"wa_phone\": \"string\",\n    \"other_phone\": \"string\",\n    \"homestay_name\": \"string\",\n    \"homestay_address\": \"string\",\n    \"homestay_latitude\": \"string\",\n    \"homestay_longitude\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/register",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "register"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Member Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const token = pm.response.json()?.data?.token;",
+                  "if (token) {",
+                  "    pm.environment.set(\"TOKEN\", token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"identifier\": \"username\",\n\t\"password\": \"password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/login/members",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "login", "members"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Admin Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const token = pm.response.json()?.data?.token;",
+                  "if (token) {",
+                  "    pm.environment.set(\"TOKEN\", token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n\t\"identifier\": \"username\",\n\t\"password\": \"password\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/login/admins",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "login", "admins"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const token = pm.response.json()?.token;",
+                  "if (token) {",
+                  "    pm.environment.set(\"TOKEN\", token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "wa_phone",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "other_phone",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "homestay_name",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "homestay_address",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "homestay_latitude",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "homestay_longitude",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "is_admin",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "position_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "period_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "profile",
+                  "type": "file",
+                  "src": "/home/frz/Downloads/images.jpeg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/members",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "members"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Query All",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/members",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "members"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "string",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Find",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/members/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "members", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "wa_phone",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "other_phone",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "homestay_name",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "homestay_address",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "homestay_latitude",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "homestay_longitude",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "is_admin",
+                  "value": "true",
+                  "type": "text"
+                },
+                {
+                  "key": "position_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "period_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "profile",
+                  "type": "file",
+                  "src": "/home/frz/Downloads/images.jpeg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/members/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "members", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Profile",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "name",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "username",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "password",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "wa_phone",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "other_phone",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "homestay_name",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "homestay_address",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "homestay_latitude",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "homestay_longitude",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/home/frz/Downloads/images.jpeg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/members",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "members"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/members/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "members", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Approval",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [""],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": []
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/members/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "members", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Position",
+      "item": [
+        {
+          "name": "Add",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"string\",\n    \"level\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/positions",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "positions"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Query All",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/positions",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "positions"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Query Position Levels",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/positions/levels",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "positions", "levels"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"string\",\n    \"level\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/positions/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "positions", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/positions/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "positions", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Period",
+      "item": [
+        {
+          "name": "Add",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"start_date\": \"string\",\n    \"end_date\": \"string\",\n    \"positions\": [\n        {\n            \"id\": 1,\n            \"members\": [\n                {\n                    \"id\": \"string\"\n                }\n            ]\n        }\n    ],\n    \"vision\": \"string\",\n    \"mission\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/periods",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "periods"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Query All",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/periods",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "periods"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Find Active",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/periods/active",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "periods", "active"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"start_date\": \"string\",\n    \"end_date\": \"string\",\n    \"positions\": [\n        {\n            \"id\": 1,\n            \"members\": [\n                {\n                    \"id\": \"string\"\n                }\n            ]\n        }\n    ],\n    \"vision\": \"string\",\n    \"mission\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/periods/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "periods", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/periods/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "periods", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Query Structures",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/periods/:id/structures",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "periods", ":id", "structures"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Change Status",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"is_active\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/periods/:id/status",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "periods", ":id", "status"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Find Goal",
+          "protocolProfileBehavior": {
+            "disableBodyPruning": true
+          },
+          "request": {
+            "method": "GET",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"vision\": \"string\",\n    \"mission\": \"string\",\n    \"org_period_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/periods/:id/goal",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "periods", ":id", "goal"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"vision\": \"\",\n    \"mission\": \"\",\n    \"org_period_id\": 1\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/periods/goals",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "periods", "goals"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Document",
+      "item": [
+        {
+          "name": "Query All",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/documents",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "documents"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add Dir",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"string\",\n    \"dir_id\": 1,\n    \"is_private\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/documents/dir",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "documents", "dir"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add File",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "dir_id",
+                  "value": "1",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/home/frz/Downloads/images.jpeg"
+                },
+                {
+                  "key": "is_private",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/documents/file",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "documents", "file"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Child",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/documents/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "documents", ":id"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "1",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit Dir",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"name\": \"string\",\n    \"is_private\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/documents/dir/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "documents", "dir", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit File",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/home/frz/Downloads/order-list.xlsx"
+                },
+                {
+                  "key": "is_private",
+                  "value": "true",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/documents/file/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "documents", "file", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/documents/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "documents", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "History",
+      "item": [
+        {
+          "name": "Add",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"content\": \"{}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/histories",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "histories"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Find Latest",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/histories",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "histories"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Blog",
+      "item": [
+        {
+          "name": "Add",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"string\",\n    \"short_desc\": \"string\",\n    \"thumbnail_url\": \"string\",\n    \"slug\": \"string\",\n    \"content\": \"{}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/blogs",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "blogs"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Query All",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/blogs",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "blogs"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "string",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Find",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/blogs/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "blogs", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"title\": \"string\",\n    \"short_desc\": \"string\",\n    \"thumbnail_url\": \"string\",\n    \"slug\": \"string\",\n    \"content\": \"{}\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/blogs/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "blogs", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/blogs/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "blogs", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Upload Image",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/home/frz/Downloads/images.jpeg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/blogs/image",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "blogs", "image"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Cashflow",
+      "item": [
+        {
+          "name": "Query All",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/cashflows",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "cashflows"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "date",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "idr_amount",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "note",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/home/frz/Downloads/images.jpeg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/cashflows",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "cashflows"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "date",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "idr_amount",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "type",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "note",
+                  "value": "string",
+                  "type": "text"
+                },
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/home/frz/Downloads/images.jpeg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/cashflows/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "cashflows", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/cashflows/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "cashflows", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dues",
+      "item": [
+        {
+          "name": "Query All",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/dues",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "dues"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"date\": \"2022-05-31\",\n    \"idr_amount\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/dues",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "dues"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"date\": \"string\",\n    \"idr_nominal\": \"string\"\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/dues/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "dues", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/dues/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "dues", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Check Paid Dues",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/dues/:id/check",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "dues", ":id", "check"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Member Dues",
+      "item": [
+        {
+          "name": "Pay",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/home/frz/Downloads/images.jpeg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/dues/members/monthly/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "dues", "members", "monthly", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Edit",
+          "request": {
+            "method": "PUT",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/home/frz/Downloads/images.jpeg"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/dues/members/monthly/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "dues", "members", "monthly", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Quey Monthly",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/dues/:id/members",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "dues", ":id", "members"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "1",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Quey Members Monthly",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/dues/members/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "dues", "members", ":id"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "1",
+                  "disabled": true
+                }
+              ],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "string"
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Paid",
+          "request": {
+            "method": "PATCH",
+            "header": [],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n    \"is_paid\": true\n}",
+              "options": {
+                "raw": {
+                  "language": "json"
+                }
+              }
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/dues/members/monthly/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "dues", "members", "monthly", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Dashboard",
+      "item": [
+        {
+          "name": "Private",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/dashboard/private",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "dashboard", "private"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Public",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/dashboard",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "dashboard"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "auth": {
+    "type": "bearer",
+    "bearer": [
+      {
+        "key": "token",
+        "value": "{{TOKEN}}",
+        "type": "string"
+      }
+    ]
+  },
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    },
+    {
+      "listen": "test",
+      "script": {
+        "type": "text/javascript",
+        "exec": [""]
+      }
+    }
+  ]
+}

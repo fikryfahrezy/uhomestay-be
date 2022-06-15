@@ -1,0 +1,2449 @@
+openapi: 3.0.0
+info:
+  title: U-Homestay API
+  version: "1.0"
+servers:
+  - url: http://localhost:5000/api/v1
+  - url: https://polar-badlands-14608.herokuapp.com/api/v1
+tags:
+  - name: auth
+  - name: members
+  - name: positions
+  - name: periods
+  - name: documents
+  - name: histories
+  - name: blogs
+  - name: cashflows
+  - name: dues
+  - name: member dues
+  - name: dashboard
+paths:
+  /register:
+    post:
+      tags:
+        - auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /login/members:
+    post:
+      tags:
+        - auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /login/admins:
+    post:
+      tags:
+        - auth
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /members:
+    post:
+      tags:
+        - members
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AddMemberBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    get:
+      tags:
+        - members
+      security: []
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryMemberRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    put:
+      tags:
+        - members
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UpdateProfileBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /members/{id}:
+    get:
+      tags:
+        - members
+      security: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberDetailRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    put:
+      tags:
+        - members
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UpdateMemberBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    delete:
+      tags:
+        - members
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    patch:
+      tags:
+        - members
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+            format: uuid
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /positions:
+    post:
+      tags:
+        - positions
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddPositionBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PositionIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    get:
+      tags:
+        - positions
+      security: []
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryPositionRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /positions/levels:
+    get:
+      tags:
+        - positions
+      security: []
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PositionLevelsRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /positions/{id}:
+    put:
+      tags:
+        - positions
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditPositionBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PositionIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    delete:
+      tags:
+        - positions
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PositionIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /periods:
+    post:
+      tags:
+        - periods
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddPeriodBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeriodIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    get:
+      tags:
+        - periods
+      security: []
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryPeriodRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /periods/active:
+    get:
+      tags:
+        - periods
+      security: []
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeriodActiveRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /periods/{id}:
+    put:
+      tags:
+        - periods
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditPeriodBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeriodIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    delete:
+      tags:
+        - periods
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeriodIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /periods/{id}/structures:
+    get:
+      tags:
+        - periods
+      security: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeriodStructureRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /periods/{id}/status:
+    patch:
+      tags:
+        - periods
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SwitchPeriodStatusBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeriodIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /periods/goals:
+    post:
+      tags:
+        - periods
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddGoalBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GoalIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /periods/{id}/goal:
+    get:
+      tags:
+        - periods
+      security: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PeriodGoalRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /documents/dir:
+    post:
+      tags:
+        - documents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddDirDocumentBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /documents/file:
+    post:
+      tags:
+        - documents
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AddFileDocumentBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /documents/dir/{id}:
+    put:
+      tags:
+        - documents
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditDirDocumentBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /documents/file/{id}:
+    put:
+      tags:
+        - documents
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditFileDocumentBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /documents:
+    get:
+      tags:
+        - documents
+      security: []
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryDocumentRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /documents/{id}:
+    get:
+      tags:
+        - documents
+      security: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentChildrenRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    delete:
+      tags:
+        - documents
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DocumentIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /histories:
+    post:
+      tags:
+        - histories
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddHistoryBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    get:
+      tags:
+        - histories
+      security: []
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HistoryRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /blogs:
+    post:
+      tags:
+        - blogs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddBlogBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    get:
+      tags:
+        - blogs
+      security: []
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryBlogRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /blogs/{id}:
+    get:
+      tags:
+        - blogs
+      security: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FindBlogRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    put:
+      tags:
+        - blogs
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditBlogBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    delete:
+      tags:
+        - blogs
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BlogIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /blogs/image:
+    post:
+      tags:
+        - blogs
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/UploadBlogImgBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UploadBlogImgRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /cashflows:
+    post:
+      tags:
+        - cashflows
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AddCashflowBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CashflowIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    get:
+      tags:
+        - cashflows
+      security: []
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryCashflowRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /cashlows/{id}:
+    put:
+      tags:
+        - cashflows
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/EditCashflowBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CashflowIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    delete:
+      tags:
+        - cashflows
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CashflowIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /dues:
+    post:
+      tags:
+        - dues
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddDuesBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DuesIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    get:
+      tags:
+        - dues
+      security: []
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryDuesRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /dues/{id}:
+    put:
+      tags:
+        - dues
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditDuesBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DuesIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    delete:
+      tags:
+        - dues
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DuesIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /dues/{id}/check:
+    get:
+      tags:
+        - dues
+      security: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DuesPaidRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /dues/members/{id}:
+    get:
+      tags:
+        - member dues
+      security: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryMemberDuesRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /dues/{id}/members:
+    get:
+      tags:
+        - member dues
+      security: []
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryMembersDuesRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /dues/members/{uid}/monthly/{id}:
+    post:
+      tags:
+        - member dues
+      parameters:
+        - in: path
+          name: uid
+          schema:
+            type: string
+          required: true
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/PayMemberDuesBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberDuesIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /dues/members/monthly/{id}:
+    put:
+      tags:
+        - member dues
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/EditMemberDuesBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberDuesIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    patch:
+      tags:
+        - member dues
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PaidMemberDuesBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberDuesIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /dashboard:
+    get:
+      tags:
+        - dashboard
+      security: []
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicDashboardRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /dashboard/private:
+    get:
+      tags:
+        - dashboard
+      security: []
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PrivateDashboardRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+  schemas:
+    ErrorRes:
+      type: object
+      properties:
+        message:
+          type: string
+    AuthRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            token:
+              type: string
+    RegisterBodyIn:
+      type: object
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        wa_phone:
+          type: string
+        other_phone:
+          type: string
+        homestay_name:
+          type: string
+        homestay_address:
+          type: string
+        homestay_latitude:
+          type: string
+        homestay_longitude:
+          type: string
+      required:
+        - name
+        - username
+        - password
+        - homestay_name
+        - homestay_address
+        - homestay_latitude
+        - homestay_longitude
+        - wa_phone
+        - other_phone
+    LoginBodyIn:
+      type: object
+      properties:
+        identifier:
+          type: string
+        password:
+          type: string
+          format: password
+      required:
+        - identifier
+        - password
+    MemberIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+              format: uuid
+    AddMemberBodyIn:
+      type: object
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        wa_phone:
+          type: string
+        other_phone:
+          type: string
+        homestay_name:
+          type: string
+        homestay_address:
+          type: string
+        homestay_latitude:
+          type: string
+        homestay_longitude:
+          type: string
+        is_admin:
+          type: boolean
+        position_id:
+          type: integer
+        period_id:
+          type: integer
+        profile:
+          type: string
+          format: binary
+      required:
+        - name
+        - username
+        - password
+        - wa_phone
+        - other_phone
+        - homestay_name
+        - homestay_address
+        - homestay_latitude
+        - homestay_longitude
+        - is_admin
+        - position_id
+        - period_id
+    QueryMemberRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            cursor:
+              type: string
+            members:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                  username:
+                    type: string
+                  wa_phone:
+                    type: string
+                  other_phone:
+                    type: string
+                  homestay_name:
+                    type: string
+                  homestay_address:
+                    type: string
+                  homestay_latitude:
+                    type: string
+                  homestay_longitude:
+                    type: string
+                  profile_pic_url:
+                    type: string
+                    format: uri
+                  is_admin:
+                    type: boolean
+                  is_approved:
+                    type: boolean
+    UpdateProfileBodyIn:
+      type: object
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        wa_phone:
+          type: string
+        other_phone:
+          type: string
+        homestay_name:
+          type: string
+        homestay_address:
+          type: string
+        homestay_latitude:
+          type: string
+        homestay_longitude:
+          type: string
+        profile:
+          type: string
+          format: binary
+      required:
+        - name
+        - username
+        - wa_phone
+        - other_phone
+        - homestay_name
+        - homestay_address
+        - homestay_latitude
+        - homestay_longitude
+    MemberDetailRes:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                format: uuid
+              name:
+                type: string
+              username:
+                type: string
+              wa_phone:
+                type: string
+              other_phone:
+                type: string
+              homestay_name:
+                type: string
+              homestay_address:
+                type: string
+              homestay_latitude:
+                type: string
+              homestay_longitude:
+                type: string
+              profile_pic_url:
+                type: string
+                format: uri
+              is_admin:
+                type: boolean
+              is_approved:
+                type: boolean
+              period_id:
+                type: integer
+              period:
+                type: string
+              position_id:
+                type: integer
+              position:
+                type: string
+    UpdateMemberBodyIn:
+      type: object
+      properties:
+        name:
+          type: string
+        username:
+          type: string
+        password:
+          type: string
+          format: password
+        wa_phone:
+          type: string
+        other_phone:
+          type: string
+        homestay_name:
+          type: string
+        homestay_address:
+          type: string
+        homestay_latitude:
+          type: string
+        homestay_longitude:
+          type: string
+        is_admin:
+          type: boolean
+        position_id:
+          type: integer
+        period_id:
+          type: integer
+        profile:
+          type: string
+          format: binary
+      required:
+        - name
+        - username
+        - wa_phone
+        - other_phone
+        - homestay_name
+        - homestay_address
+        - homestay_latitude
+        - homestay_longitude
+        - is_admin
+        - position_id
+        - period_id
+    AddPositionBodyIn:
+      type: object
+      properties:
+        name:
+          type: string
+        level:
+          type: integer
+      required:
+        - name
+        - level
+    PositionIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+    QueryPositionRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            cursor:
+              type: number
+            positions:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  level:
+                    type: integer
+    EditPositionBodyIn:
+      type: object
+      properties:
+        name:
+          type: string
+        level:
+          type: integer
+      required:
+        - name
+        - level
+    PositionLevelsRes:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            type: object
+            properties:
+              level:
+                type: integer
+    PeriodIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+    PeriodBodyIn:
+      type: object
+      properties:
+        start_date:
+          type: string
+          format: date
+        end_date:
+          type: string
+          format: date
+        positions:
+          type: array
+          items:
+            type: object
+            properties:
+              id:
+                type: integer
+              members:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: string
+                      format: uuid
+        vision:
+          type: string
+        mission:
+          type: string
+          format: date
+      required:
+        - start_date
+        - end_date
+    AddPeriodBodyIn:
+      $ref: "#/components/schemas/PeriodBodyIn"
+    PeriodRes:
+      type: object
+      properties:
+        id:
+          type: integer
+        start_date:
+          type: string
+          format: date-time
+        end_date:
+          type: string
+          format: date-time
+        is_active:
+          type: boolean
+    QueryPeriodRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            cursor:
+              type: number
+            periods:
+              type: array
+              items:
+                $ref: "#/components/schemas/PeriodRes"
+    PeriodActiveRes:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/PeriodRes"
+    EditPeriodBodyIn:
+      $ref: "#/components/schemas/PeriodBodyIn"
+    PeriodStructureRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+            start_date:
+              type: string
+              format: date-time
+            end_date:
+              type: string
+              format: date-time
+            positions:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  level:
+                    type: integer
+                  members:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: string
+                          format: uuit
+                        name:
+                          type: string
+                        profile_pic_url:
+                          type: string
+                          format: uri
+            vision:
+              type: string
+            mission:
+              type: string
+    SwitchPeriodStatusBodyIn:
+      type: object
+      properties:
+        is_active:
+          type: boolean
+      required:
+        - is_active
+    PeriodGoalRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+            vision:
+              type: string
+            mission:
+              type: string
+    GoalIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+    AddGoalBodyIn:
+      type: object
+      properties:
+        vision:
+          type: string
+        mission:
+          type: string
+        org_period_id:
+          type: integer
+      required:
+        - vision
+        - mission
+        - org_period_id
+    DocumentIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+    AddDirDocumentBodyIn:
+      type: object
+      properties:
+        name:
+          type: string
+        dir_id:
+          type: integer
+        is_private:
+          type: boolean
+      required:
+        - name
+        - dir_id
+        - is_private
+    AddFileDocumentBodyIn:
+      type: object
+      properties:
+        dir_id:
+          type: integer
+        file:
+          type: string
+          format: binary
+        is_private:
+          type: boolean
+      required:
+        - dir_id
+        - file
+        - is_private
+    DocumentRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            cursor:
+              type: number
+            documents:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  type:
+                    type: string
+                    enum: [dir, file]
+                  url:
+                    type: string
+                    format: uri
+                  dir_id:
+                    type: integer
+    QueryDocumentRes:
+      $ref: "#/components/schemas/DocumentRes"
+    DocumentChildrenRes:
+      $ref: "#/components/schemas/DocumentRes"
+    EditDirDocumentBodyIn:
+      type: object
+      properties:
+        name:
+          type: string
+        is_private:
+          type: boolean
+      required:
+        - name
+        - is_private
+    EditFileDocumentBodyIn:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+        is_private:
+          type: boolean
+      required:
+        - file
+        - is_private
+    HistoryIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+    AddHistoryBodyIn:
+      type: object
+      properties:
+        content:
+          type: string
+      required:
+        - content
+    HistoryRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+            content:
+              type: string
+    BlogIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: string
+    BlogBodyIn:
+      type: object
+      properties:
+        title:
+          type: string
+        short_desc:
+          type: string
+        thumbnail_url:
+          type: string
+        content:
+          type: string
+        slug:
+          type: string
+      required:
+        - title
+        - short_desc
+        - thumbnail_url
+        - content
+        - slug
+    AddBlogBodyIn:
+      $ref: "#/components/schemas/BlogBodyIn"
+    BlogRes:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        short_desc:
+          type: string
+        thumbnail_url:
+          type: string
+        content:
+          type: string
+        slug:
+          type: string
+        created_at:
+          type: string
+          format: date
+    QueryBlogRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            cursor:
+              type: string
+            blogs:
+              type: array
+              items:
+                $ref: "#/components/schemas/BlogRes"
+    FindBlogRes:
+      type: object
+      properties:
+        data:
+          $ref: "#/components/schemas/BlogRes"
+    EditBlogBodyIn:
+      $ref: "#/components/schemas/BlogBodyIn"
+    UploadBlogImgRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            url:
+              type: string
+    UploadBlogImgBodyIn:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required:
+        - file
+    CashflowIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: number
+    CashflowBodyIn:
+      type: object
+      properties:
+        date:
+          type: string
+        idr_amount:
+          type: string
+        type:
+          type: string
+          enum: [income, outcome]
+        note:
+          type: string
+        file:
+          type: string
+          format: binary
+      required:
+        - date
+        - idr_amount
+        - type
+    AddCashflowBodyIn:
+      $ref: "#/components/schemas/CashflowBodyIn"
+    QueryCashflowRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            total_cash:
+              type: string
+            income_cash:
+              type: string
+            outcome_cash:
+              type: string
+            cursor:
+              type: number
+            cashflows:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  date:
+                    type: string
+                    format: date
+                  note:
+                    type: string
+                  type:
+                    type: string
+                    enum: [income, outcome]
+                  idr_amount:
+                    type: string
+    EditCashflowBodyIn:
+      $ref: "#/components/schemas/CashflowBodyIn"
+    DuesIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: number
+    DuesBodyIn:
+      type: object
+      properties:
+        date:
+          type: string
+        idr_amount:
+          type: string
+      required:
+        - date
+        - idr_amount
+    AddDuesBodyIn:
+      $ref: "#/components/schemas/DuesBodyIn"
+    QueryDuesRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            cursor:
+              type: number
+            dues:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  date:
+                    type: string
+                    format: date
+                  idr_amount:
+                    type: string
+    EditDuesBodyIn:
+      $ref: "#/components/schemas/CashflowBodyIn"
+    DuesPaidRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            is_paid:
+              type: boolean
+    QueryMemberDuesRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            total_dues:
+              type: string
+            paid_dues:
+              type: string
+            unpaid_dues:
+              type: string
+            cursor:
+              type: number
+            dues:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  dues_id:
+                    type: number
+                  date:
+                    type: string
+                    format: date
+                  status:
+                    type: string
+                    enum: [unpaid, waiting, paid]
+                  idr_amount:
+                    type: string
+                  prove_file_url:
+                    type: string
+    QueryMembersDuesRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            cursor:
+              type: number
+            member_dues:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  member_id:
+                    type: string
+                  status:
+                    type: string
+                    enum: [unpaid, waiting, paid]
+                  name:
+                    type: string
+                  profile_pic_url:
+                    type: string
+    MemberDuesIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: number
+    MemberDuesBodyIn:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required:
+        - file
+    PayMemberDuesBodyIn:
+      $ref: "#/components/schemas/MemberDuesBodyIn"
+    EditMemberDuesBodyIn:
+      $ref: "#/components/schemas/MemberDuesBodyIn"
+    PaidMemberDuesBodyIn:
+      type: object
+      properties:
+        is_paid:
+          type: boolean
+      required:
+        - is_paid
+    DashboardDocsRes:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        type:
+          type: string
+          enum: [dir, file]
+        url:
+          type: string
+          format: uri
+        dir_id:
+          type: integer
+    DashboardBlogsRes:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        short_desc:
+          type: string
+        thumbnail_url:
+          type: string
+        content:
+          type: string
+        slug:
+          type: string
+        created_at:
+          type: string
+          format: date
+    DashboardHistoryRes:
+      type: object
+      properties:
+        id:
+          type: string
+        content:
+          type: string
+    PublicDashboardRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            documents:
+              type: array
+              items:
+                $ref: "#/components/schemas/DashboardDocsRes"
+            blogs:
+              type: array
+              items:
+                $ref: "#/components/schemas/DashboardBlogsRes"
+            latest_history:
+                $ref: "#/components/schemas/DashboardHistoryRes"
+            org_period_structures:
+              type: object
+              properties:
+                id:
+                  type: integer
+                start_date:
+                  type: string
+                  format: date-time
+                end_date:
+                  type: string
+                  format: date-time
+                positions:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: integer
+                      name:
+                        type: string
+                      level:
+                        type: integer
+                      members:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: string
+                              format: uuit
+                            name:
+                              type: string
+                            profile_pic_url:
+                              type: string
+                              format: uri
+    PrivateDashboardRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            documents:
+              type: array
+              items:
+                $ref: "#/components/schemas/DashboardDocsRes"
+            members:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                  name:
+                    type: string
+                  username:
+                    type: string
+                  wa_phone:
+                    type: string
+                  other_phone:
+                    type: string
+                  homestay_name:
+                    type: string
+                  homestay_address:
+                    type: string
+                  homestay_latitude:
+                    type: string
+                  homestay_longitude:
+                    type: string
+                  profile_pic_url:
+                    type: string
+                    format: uri
+                  is_admin:
+                    type: boolean
+                  is_approved:
+                    type: boolean
+            cashflow:
+              type: object
+              properties:
+                total_cash:
+                  type: string
+                income_cash:
+                  type: string
+                outcome_cash:
+                  type: string
+                cursor:
+                  type: number
+                cashflows:
+                  type: array
+                  items:
+                    type: object
+                    properties:
+                      id:
+                        type: number
+                      date:
+                        type: string
+                        format: date
+                      note:
+                        type: string
+                      type:
+                        type: string
+                        enum: [income, outcome]
+                      idr_amount:
+                        type: string
+            dues:
+              type: array
+              items:
+                type: object
+                properties:
+                  cursor:
+                    type: number
+                  dues:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: number
+                        date:
+                          type: string
+                          format: date
+                        idr_amount:
+                          type: string
+            blogs:
+              type: array
+              items:
+                $ref: "#/components/schemas/DashboardBlogsRes"
+            positions:
+              type: array
+              items:
+                type: object
+                properties:
+                  cursor:
+                    type: number
+                  positions:
+                    type: array
+                    items:
+                      type: object
+                      properties:
+                        id:
+                          type: integer
+                        name:
+                          type: string
+                        level:
+                          type: integer
+            latest_history:
+                $ref: "#/components/schemas/DashboardHistoryRes"
+            member_dues:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  member_id:
+                    type: string
+                  status:
+                    type: string
+                    enum: [unpaid, waiting, paid]
+                  name:
+                    type: string
+                  profile_pic_url:
+                    type: string
+            org_period_goal:
+              type: object
+              properties:
+                id:
+                  type: integer
+                vision:
+                  type: string
+                mission:
+                  type: string
+security:
+  - BearerAuth: []
