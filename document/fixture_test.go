@@ -62,7 +62,7 @@ func LoadTables(conn *pgxpool.Pool) error {
 
 	defer tx.Rollback(context.Background())
 
-	f, err := os.ReadFile("../../docs/db.sql")
+	f, err := os.ReadFile("../docs/db.sql")
 	if err != nil {
 		return err
 	}

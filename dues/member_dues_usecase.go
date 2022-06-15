@@ -208,7 +208,7 @@ func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid, cursor string) (ou
 	if dues.Id == 0 {
 		out.Res = QueryMembersDuesRes{
 			Cursor:     0,
-			MemberDues: make([]MembersDuesOut, 0),
+			MemberDues: make([]MembersDuesOut, 0, 0),
 		}
 		return
 	}

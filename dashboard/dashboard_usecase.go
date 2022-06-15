@@ -79,7 +79,7 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	go func(ctx context.Context, do chan []DocumentOut, res chan resp.Response) {
 		out := d.QueryDocument(ctx, "", "999")
 
-		var dc []DocumentOut
+		dc := make([]DocumentOut, 0, 0)
 		for _, v := range out.Res.Documents {
 			if v.Type == Filetype.String {
 				dc = append(dc, DocumentOut(v))
@@ -179,7 +179,12 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	go func(ctx context.Context, op chan FindOrgPeriodGoalRes, res chan resp.Response) {
 		out := d.FindOrgPeriodGoal(ctx, "0")
 
-		op <- FindOrgPeriodGoalRes(out.Res)
+		var o FindOrgPeriodGoalRes
+		if out.Error == nil {
+			o = FindOrgPeriodGoalRes(out.Res)
+		}
+
+		op <- o
 		res <- out.Response
 	}(ctx, op, opr)
 
@@ -188,80 +193,95 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	go func(ctx context.Context, pe chan PeriodRes, res chan resp.Response) {
 		out := d.FindActivePeriod(ctx)
 
-		pe <- PeriodRes(out.Res)
+		var p PeriodRes
+		if out.Error == nil {
+			p = PeriodRes(out.Res)
+		}
+
+		pe <- p
 		res <- out.Response
 	}(ctx, pe, per)
 
 	cV := <-c
-	crV := <-cr
+	// crV := <-cr
+	_ = <-cr
 	mV := <-m
-	mrV := <-mr
+	// mrV := <-mr
+	_ = <-mr
 	doV := <-do
-	drV := <-dr
+	// drV := <-dr
+	_ = <-dr
 	dsV := <-ds
-	dsrV := <-dsr
+	// dsrV := <-dsr
+	_ = <-dsr
 	bV := <-b
-	brV := <-br
+	// brV := <-br
+	_ = <-br
 	pV := <-p
-	prV := <-pr
+	// prV := <-pr
+	_ = <-pr
 	hV := <-h
-	hrV := <-hr
+	// hrV := <-hr
+	_ = <-hr
 	mdV := <-md
-	mdrV := <-mdr
+	// mdrV := <-mdr
+	_ = <-mdr
 	opV := <-op
-	oprV := <-opr
+	// oprV := <-opr
+	_ = <-opr
 	peV := <-pe
-	perV := <-per
+	// perV := <-per
+	_ = <-per
 
-	if crV.Error != nil {
-		out.Response = crV
-		return
-	}
+	// if crV.Error != nil {
+	// 	out.Response = crV
+	// 	return
+	// }
 
-	if mrV.Error != nil {
-		out.Response = mrV
-		return
-	}
+	// if mrV.Error != nil {
+	// 	out.Response = mrV
+	// 	return
+	// }
 
-	if drV.Error != nil {
-		out.Response = drV
-		return
-	}
+	// if drV.Error != nil {
+	// 	out.Response = drV
+	// 	return
+	// }
 
-	if dsrV.Error != nil {
-		out.Response = dsrV
-		return
-	}
+	// if dsrV.Error != nil {
+	// 	out.Response = dsrV
+	// 	return
+	// }
 
-	if brV.Error != nil {
-		out.Response = brV
-		return
-	}
+	// if brV.Error != nil {
+	// 	out.Response = brV
+	// 	return
+	// }
 
-	if prV.Error != nil {
-		out.Response = prV
-		return
-	}
+	// if prV.Error != nil {
+	// 	out.Response = prV
+	// 	return
+	// }
 
-	if hrV.Error != nil {
-		out.Response = hrV
-		return
-	}
+	// if hrV.Error != nil {
+	// 	out.Response = hrV
+	// 	return
+	// }
 
-	if mdrV.Error != nil {
-		out.Response = mdrV
-		return
-	}
+	// if mdrV.Error != nil {
+	// 	out.Response = mdrV
+	// 	return
+	// }
 
-	if oprV.Error != nil {
-		out.Response = oprV
-		return
-	}
+	// if oprV.Error != nil {
+	// 	out.Response = oprV
+	// 	return
+	// }
 
-	if perV.Error != nil {
-		out.Response = perV
-		return
-	}
+	// if perV.Error != nil {
+	// 	out.Response = perV
+	// 	return
+	// }
 
 	out.Res = PrivateRes{
 		Documents:     doV,
@@ -300,7 +320,7 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 	go func(ctx context.Context, do chan []DocumentOut, res chan resp.Response) {
 		out := d.QueryDocument(ctx, "", "999")
 
-		var dc []DocumentOut
+		dc := make([]DocumentOut, 0, 0)
 		for _, v := range out.Res.Documents {
 			if v.IsPrivate == false && v.Type == Filetype.String {
 				dc = append(dc, DocumentOut(v))
@@ -348,60 +368,72 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 	go func(ctx context.Context, op chan StructureRes, res chan resp.Response) {
 		out := d.QueryPeriodStructure(ctx, "0")
 
-		ps := make([]StructurePositionOut, len(out.Res.Positions))
-		for i, v := range out.Res.Positions {
-			m := make([]StructureMemberOut, len(v.Members))
-			for j, q := range v.Members {
-				m[j] = StructureMemberOut(q)
+		o := StructureRes{
+			Positions: make([]StructurePositionOut, 0, 0),
+		}
+
+		if out.Error == nil {
+			ps := make([]StructurePositionOut, len(out.Res.Positions))
+			for i, v := range out.Res.Positions {
+				m := make([]StructureMemberOut, len(v.Members))
+				for j, q := range v.Members {
+					m[j] = StructureMemberOut(q)
+				}
+
+				ps[i] = StructurePositionOut{
+					Id:      v.Id,
+					Name:    v.Name,
+					Level:   v.Level,
+					Members: m,
+				}
 			}
 
-			ps[i] = StructurePositionOut{
-				Id:      v.Id,
-				Name:    v.Name,
-				Level:   v.Level,
-				Members: m,
+			o = StructureRes{
+				Id:        out.Res.Id,
+				StartDate: out.Res.StartDate,
+				EndDate:   out.Res.EndDate,
+				Positions: ps,
+				Vision:    out.Res.Vision,
+				Mission:   out.Res.Mission,
 			}
 		}
 
-		op <- StructureRes{
-			Id:        out.Res.Id,
-			StartDate: out.Res.StartDate,
-			EndDate:   out.Res.EndDate,
-			Positions: ps,
-			Vision:    out.Res.Vision,
-			Mission:   out.Res.Mission,
-		}
+		op <- o
 		res <- out.Response
 	}(ctx, op, ops)
 
 	doV := <-do
-	drV := <-dr
+	// drV := <-dr
+	_ = <-dr
 	bV := <-b
-	brV := <-br
+	// brV := <-br
+	_ = <-br
 	hV := <-h
-	hrV := <-hr
+	// hrV := <-hr
+	_ = <-hr
 	opV := <-op
-	opsV := <-ops
+	// opsV := <-ops
+	_ = <-ops
 
-	if drV.Error != nil {
-		out.Response = drV
-		return
-	}
+	// if drV.Error != nil {
+	// 	out.Response = drV
+	// 	return
+	// }
 
-	if brV.Error != nil {
-		out.Response = brV
-		return
-	}
+	// if brV.Error != nil {
+	// 	out.Response = brV
+	// 	return
+	// }
 
-	if hrV.Error != nil {
-		out.Response = hrV
-		return
-	}
+	// if hrV.Error != nil {
+	// 	out.Response = hrV
+	// 	return
+	// }
 
-	if opsV.Error != nil {
-		out.Response = opsV
-		return
-	}
+	// if opsV.Error != nil {
+	// 	out.Response = opsV
+	// 	return
+	// }
 
 	out.Res = PublicRes{
 		Documents:     doV,

@@ -7,6 +7,7 @@ import (
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/resp"
 	"github.com/pkg/errors"
+	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type (
@@ -70,7 +71,11 @@ func (d *HistoryDeps) FindLatestHistory(ctx context.Context) (out FindLatestHist
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
-	history, _ := d.HistoryRepository.FindLatest(ctx)
+	history, err := d.HistoryRepository.FindLatest(ctx)
+	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find latest history"))
+		return
+	}
 
 	c := []byte("")
 	if history.Content != nil && len(history.Content) != 0 {

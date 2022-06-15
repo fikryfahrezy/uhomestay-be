@@ -527,15 +527,21 @@ func (d *UserDeps) FindActivePeriod(ctx context.Context) (out FindActivePeriodOu
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	period, err := d.OrgPeriodRepository.QueryActive(ctx)
-	if err != nil {
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query active period"))
 		return
 	}
 
+	var startDate, endDate string
+	if period.Id != 0 {
+		startDate = period.StartDate.Format("2006-01-02")
+		endDate = period.StartDate.Format("2006-01-02")
+	}
+
 	outPeriod := PeriodRes{
 		Id:        period.Id,
-		StartDate: period.StartDate.Format("2006-01-02"),
-		EndDate:   period.EndDate.Format("2006-01-02"),
+		StartDate: startDate,
+		EndDate:   endDate,
 		IsActive:  period.IsActive,
 	}
 
@@ -588,7 +594,7 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 	var period OrgPeriodModel
 	if id == 0 {
 		period, err = d.OrgPeriodRepository.QueryActive(ctx)
-		if err != nil {
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query active period"))
 			return
 		}
@@ -607,10 +613,11 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 			Id:        0,
 			StartDate: "",
 			EndDate:   "",
-			Positions: make([]StructurePositionOut, 0),
+			Positions: make([]StructurePositionOut, 0, 0),
 			Vision:    "",
 			Mission:   "",
 		}
+		return
 	}
 
 	structures, err := d.OrgStructureRepository.FindByPeriodId(ctx, period.Id)
@@ -619,7 +626,11 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 		return
 	}
 
-	goal, _ := d.GoalRepository.FindByOrgPeriodId(ctx, period.Id)
+	goal, err := d.GoalRepository.FindByOrgPeriodId(ctx, period.Id)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find goal by org period id"))
+		return
+	}
 
 	tn := time.Now()
 
