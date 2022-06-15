@@ -69,7 +69,7 @@ func (d *DocumentDeps) DeleteDocument(w http.ResponseWriter, r *http.Request) {
 
 func (d *DocumentDeps) GetDocuments(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
-	out := d.QueryDocument(r.Context(), cursor)
+	out := d.QueryDocument(r.Context(), cursor, "0")
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 

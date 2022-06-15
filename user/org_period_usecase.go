@@ -716,7 +716,7 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 		var r resp.Response
 		var m []byte
 		if content != nil && len(content) != 0 {
-			m, err = json.Marshal(goal.Mission)
+			m, err = json.Marshal(content)
 			if err != nil {
 				r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, title+" json marshal"))
 			}
@@ -732,7 +732,7 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 
 	m := make(chan []byte)
 	mR := make(chan resp.Response)
-	go marshal("mission", goal.Vision, m, mR)
+	go marshal("mission", goal.Mission, m, mR)
 
 	vV := <-v
 	vRV := <-vR

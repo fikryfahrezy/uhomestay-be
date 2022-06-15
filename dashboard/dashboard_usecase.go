@@ -12,12 +12,13 @@ type (
 		Documents     []DocumentOut        `json:"documents"`
 		Members       []MemberOut          `json:"members"`
 		Cashflows     CashflowRes          `json:"cashflow"`
-		Dues          []DuesOut            `json:"dues"`
+		Dues          DuesOut              `json:"dues"`
 		Blogs         []BlogOut            `json:"blogs"`
 		Positions     []PositionOut        `json:"positions"`
 		LatestHistory LatestHistoryRes     `json:"latest_history"`
 		MemberDues    []MembersDuesOut     `json:"member_dues"`
 		OrgPeriodGoal FindOrgPeriodGoalRes `json:"org_period_goal"`
+		ActivePeriod  PeriodRes            `json:"active_period"`
 	}
 	PrivateOut struct {
 		resp.Response
@@ -76,35 +77,31 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	do := make(chan []DocumentOut)
 	dr := make(chan resp.Response)
 	go func(ctx context.Context, do chan []DocumentOut, res chan resp.Response) {
-		out := d.QueryDocument(ctx, "")
+		out := d.QueryDocument(ctx, "", "999")
 
-		l := len(out.Res.Documents)
-		if l > 5 {
-			l = 5
-		}
+		var dc []DocumentOut
+		for _, v := range out.Res.Documents {
+			if v.Type == Filetype.String {
+				dc = append(dc, DocumentOut(v))
+			}
 
-		dc := make([]DocumentOut, l)
-		for i := range dc {
-			dc[i] = DocumentOut(out.Res.Documents[i])
+			if len(dc) == 5 {
+				break
+			}
 		}
 
 		do <- dc
 		res <- out.Response
 	}(ctx, do, dr)
 
-	ds := make(chan []DuesOut)
+	ds := make(chan DuesOut)
 	dsr := make(chan resp.Response)
-	go func(ctx context.Context, ds chan []DuesOut, res chan resp.Response) {
+	go func(ctx context.Context, ds chan DuesOut, res chan resp.Response) {
 		out := d.QueryDues(ctx, "")
 
-		l := len(out.Res.Dues)
-		if l > 5 {
-			l = 5
-		}
-
-		d := make([]DuesOut, l)
-		for i := range d {
-			d[i] = DuesOut(out.Res.Dues[i])
+		var d DuesOut
+		if len(out.Res.Dues) > 1 {
+			d = DuesOut(out.Res.Dues[0])
 		}
 
 		ds <- d
@@ -186,6 +183,15 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 		res <- out.Response
 	}(ctx, op, opr)
 
+	pe := make(chan PeriodRes)
+	per := make(chan resp.Response)
+	go func(ctx context.Context, pe chan PeriodRes, res chan resp.Response) {
+		out := d.FindActivePeriod(ctx)
+
+		pe <- PeriodRes(out.Res)
+		res <- out.Response
+	}(ctx, pe, per)
+
 	cV := <-c
 	crV := <-cr
 	mV := <-m
@@ -204,6 +210,8 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	mdrV := <-mdr
 	opV := <-op
 	oprV := <-opr
+	peV := <-pe
+	perV := <-per
 
 	if crV.Error != nil {
 		out.Response = crV
@@ -250,6 +258,11 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 		return
 	}
 
+	if perV.Error != nil {
+		out.Response = perV
+		return
+	}
+
 	out.Res = PrivateRes{
 		Documents:     doV,
 		Members:       mV,
@@ -260,6 +273,7 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 		LatestHistory: hV,
 		MemberDues:    mdV,
 		OrgPeriodGoal: opV,
+		ActivePeriod:  peV,
 	}
 
 	return
@@ -284,16 +298,17 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 	do := make(chan []DocumentOut)
 	dr := make(chan resp.Response)
 	go func(ctx context.Context, do chan []DocumentOut, res chan resp.Response) {
-		out := d.QueryDocument(ctx, "")
+		out := d.QueryDocument(ctx, "", "999")
 
-		l := len(out.Res.Documents)
-		if l > 5 {
-			l = 5
-		}
+		var dc []DocumentOut
+		for _, v := range out.Res.Documents {
+			if v.IsPrivate == false && v.Type == Filetype.String {
+				dc = append(dc, DocumentOut(v))
+			}
 
-		dc := make([]DocumentOut, l)
-		for i := range dc {
-			dc[i] = DocumentOut(out.Res.Documents[i])
+			if len(dc) == 5 {
+				break
+			}
 		}
 
 		do <- dc

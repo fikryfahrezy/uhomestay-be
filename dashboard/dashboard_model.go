@@ -1,5 +1,17 @@
 package dashboard
 
+// Ref: Saving enumerated values to a database
+// https://stackoverflow.com/a/25374979/12976234
+type DocType struct {
+	String string
+}
+
+var (
+	Unknown  = DocType{""}
+	Dir      = DocType{"dir"}
+	Filetype = DocType{"file"}
+)
+
 type (
 	CashflowOut struct {
 		Id           int64  `json:"id"`
@@ -90,5 +102,11 @@ type (
 		Positions []StructurePositionOut `json:"positions"`
 		Vision    string                 `json:"vision"`
 		Mission   string                 `json:"mission"`
+	}
+	PeriodRes struct {
+		IsActive  bool   `json:"is_active"`
+		Id        uint64 `json:"id"`
+		StartDate string `json:"start_date"`
+		EndDate   string `json:"end_date"`
 	}
 )

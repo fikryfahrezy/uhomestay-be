@@ -222,7 +222,7 @@ func TestQueryDocument(t *testing.T) {
 			}
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
-			res := documentDeps.QueryDocument(ctx, "")
+			res := documentDeps.QueryDocument(ctx, "", "0")
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 

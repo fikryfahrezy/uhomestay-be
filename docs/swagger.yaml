@@ -2272,7 +2272,7 @@ components:
               items:
                 $ref: "#/components/schemas/DashboardBlogsRes"
             latest_history:
-                $ref: "#/components/schemas/DashboardHistoryRes"
+              $ref: "#/components/schemas/DashboardHistoryRes"
             org_period_structures:
               type: object
               properties:
@@ -2358,8 +2358,6 @@ components:
                   type: string
                 outcome_cash:
                   type: string
-                cursor:
-                  type: number
                 cashflows:
                   type: array
                   items:
@@ -2378,24 +2376,15 @@ components:
                       idr_amount:
                         type: string
             dues:
-              type: array
-              items:
-                type: object
-                properties:
-                  cursor:
-                    type: number
-                  dues:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: number
-                        date:
-                          type: string
-                          format: date
-                        idr_amount:
-                          type: string
+              type: object
+              properties:
+                id:
+                  type: number
+                date:
+                  type: string
+                  format: date
+                idr_amount:
+                  type: string
             blogs:
               type: array
               items:
@@ -2405,21 +2394,14 @@ components:
               items:
                 type: object
                 properties:
-                  cursor:
-                    type: number
-                  positions:
-                    type: array
-                    items:
-                      type: object
-                      properties:
-                        id:
-                          type: integer
-                        name:
-                          type: string
-                        level:
-                          type: integer
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  level:
+                    type: integer
             latest_history:
-                $ref: "#/components/schemas/DashboardHistoryRes"
+              $ref: "#/components/schemas/DashboardHistoryRes"
             member_dues:
               type: array
               items:
@@ -2445,5 +2427,18 @@ components:
                   type: string
                 mission:
                   type: string
+            active_period:
+              type: object
+              properties:
+                id:
+                  type: integer
+                start_date:
+                  type: string
+                  format: date-time
+                end_date:
+                  type: string
+                  format: date-time
+                is_active:
+                  type: boolean
 security:
   - BearerAuth: []

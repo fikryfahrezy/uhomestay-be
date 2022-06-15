@@ -178,12 +178,17 @@ type (
 	}
 )
 
-func (d *DocumentDeps) QueryDocument(ctx context.Context, cursor string) (out QueryDocumentOut) {
+func (d *DocumentDeps) QueryDocument(ctx context.Context, cursor, limit string) (out QueryDocumentOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
-	documents, err := d.DocumentRepository.Query(ctx, fromCursor, 25)
+	nlimit, _ := strconv.ParseInt(limit, 10, 64)
+	if nlimit == 0 {
+		nlimit = 25
+	}
+
+	documents, err := d.DocumentRepository.Query(ctx, fromCursor, nlimit)
 	if err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query documents"))
 		return
