@@ -160,8 +160,8 @@ func (d *UserDeps) RegisterForm(w http.ResponseWriter, r *http.Request) {
 	out := struct {
 		Positions, Periods interface{}
 	}{
-		Positions: positions.Res,
-		Periods:   periods.Res,
+		Positions: positions.Res.Positions,
+		Periods:   periods.Res.Periods,
 	}
 
 	t.Execute(w, out)
