@@ -123,9 +123,11 @@ var (
 		Vision: map[string]interface{}{
 			"test": "test",
 		},
+		VisionText: "test",
 		Mission: map[string]interface{}{
 			"test": "test",
 		},
+		MissionText: "test",
 	}
 )
 

@@ -31,11 +31,13 @@ func (r *GoalRepository) Save(ctx context.Context, g GoalModel) (gm GoalModel, e
 	sqlQuery := `
 		INSERT INTO goals (
 			vision,
+			vision_text,
 			mission,
+			mission_text,
 			org_period_id,
 			created_at
 		)
-		VALUES ($1, $2, $3, $4)
+		VALUES ($1, $2, $3, $4, $5, $6)
 		RETURNING id
 	`
 
@@ -54,7 +56,9 @@ func (r *GoalRepository) Save(ctx context.Context, g GoalModel) (gm GoalModel, e
 		context.Background(),
 		sqlQuery,
 		g.Vision,
+		g.VisionText,
 		g.Mission,
+		g.MissionText,
 		g.OrgPeriodId,
 		t,
 	).Scan(&lastInsertId)
@@ -74,7 +78,9 @@ func (r *GoalRepository) FindByOrgPeriodId(ctx context.Context, orgPeriodId uint
 		SELECT 
 			id,
 			vision,
+			vision_text,
 			mission,
+			mission_text,
 			org_period_id,
 			created_at
 		FROM goals

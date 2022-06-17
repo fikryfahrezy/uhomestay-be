@@ -10,10 +10,9 @@ import (
 	"time"
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/httpdecode"
-	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/pagination"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/resp"
+	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type BlogIn struct {
@@ -21,6 +20,7 @@ type BlogIn struct {
 	ShortDesc    string
 	ThumbnailUrl string
 	Content      string
+	ContentText  string
 	Slug         string
 }
 
@@ -96,6 +96,7 @@ func (d *BlogDeps) BlogModelBuilder(ctx context.Context, in BlogIn) (bm BlogMode
 		ShortDesc:    in.ShortDesc,
 		ThumbnailUrl: thumbnailUrl,
 		Content:      nc,
+		ContentText:  in.ContentText,
 		Slug:         in.Slug,
 	}
 
@@ -108,10 +109,11 @@ type (
 		ShortDesc    string `json:"short_desc"`
 		ThumbnailUrl string `json:"thumbnail_url"`
 		Content      string `json:"content"`
+		ContentText  string `json:"content_text"`
 		Slug         string `json:"slug"`
 	}
 	AddBlogRes struct {
-		Id string `json:"id"`
+		Id int64 `json:"id"`
 	}
 	AddBlogOut struct {
 		resp.Response
@@ -133,6 +135,7 @@ func (d *BlogDeps) AddBlog(ctx context.Context, in AddBlogIn) (out AddBlogOut) {
 		ShortDesc:    in.ShortDesc,
 		ThumbnailUrl: in.ThumbnailUrl,
 		Content:      in.Content,
+		ContentText:  in.ContentText,
 		Slug:         in.Slug,
 	})
 	if err != nil {
@@ -140,29 +143,27 @@ func (d *BlogDeps) AddBlog(ctx context.Context, in AddBlogIn) (out AddBlogOut) {
 		return
 	}
 
-	blogId, err := d.BlogRepository.Save(ctx, blog)
-	if err != nil {
+	if blog, err = d.BlogRepository.Save(ctx, blog); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "save blog"))
 		return
 	}
 
-	out.Res.Id = blogId
+	out.Res.Id = int64(blog.Id)
 
 	return
 }
 
 type (
 	BlogOut struct {
-		Id           string `json:"id"`
+		Id           int64  `json:"id"`
 		Title        string `json:"title"`
 		ShortDesc    string `json:"short_desc"`
 		ThumbnailUrl string `json:"thumbnail_url"`
-		Content      string `json:"content"`
 		Slug         string `json:"slug"`
 		CreatedAt    string `json:"created_at"`
 	}
 	QueryBlogRes struct {
-		Cursor string    `json:"cursor"`
+		Cursor int64     `json:"cursor"`
 		Blogs  []BlogOut `json:"blogs"`
 	}
 	QueryBlogOut struct {
@@ -175,38 +176,25 @@ func (d *BlogDeps) QueryBlog(ctx context.Context, cursor string) (out QueryBlogO
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
-	s, _, err := pagination.DecodeSIDCursor(cursor)
-	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "decode sid cursor"))
-		return
-	}
-
-	blogs, err := d.BlogRepository.Query(ctx, s, 25)
+	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
+	blogs, err := d.BlogRepository.Query(ctx, fromCursor, 25)
 	if err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query blogs"))
 		return
 	}
 
 	bLen := len(blogs)
-	var nextCursor string
+	var nextCursor int64
 	if bLen != 0 {
-		md := blogs[bLen-1]
-		nextCursor = pagination.EncodeSIDCursor(md.Id, md.CreatedAt)
+		nextCursor = int64(blogs[bLen-1].Id)
 	}
 
 	outBlogs := make([]BlogOut, bLen)
 	for i, b := range blogs {
-		c, err := json.Marshal(b.Content)
-		if err != nil {
-			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "json marshal"))
-			return
-		}
-
 		outBlogs[i] = BlogOut{
-			Id:           b.Id,
+			Id:           int64(b.Id),
 			Title:        b.Title,
 			ShortDesc:    b.ShortDesc,
-			Content:      string(c),
 			Slug:         b.Slug,
 			ThumbnailUrl: b.ThumbnailUrl,
 			CreatedAt:    b.CreatedAt.Format("2006-01-02"),
@@ -223,11 +211,12 @@ func (d *BlogDeps) QueryBlog(ctx context.Context, cursor string) (out QueryBlogO
 
 type (
 	BlogRes struct {
-		Id           string `json:"id"`
+		Id           int64  `json:"id"`
 		Title        string `json:"title"`
 		ShortDesc    string `json:"short_desc"`
 		ThumbnailUrl string `json:"thumbnail_url"`
 		Content      string `json:"content"`
+		ContentText  string `json:"content_text"`
 		Slug         string `json:"slug"`
 		CreatedAt    string `json:"created_at"`
 	}
@@ -237,12 +226,18 @@ type (
 	}
 )
 
-func (d *BlogDeps) FindBlogById(ctx context.Context, id string) (out FindBlogOut) {
+func (d *BlogDeps) FindBlogById(ctx context.Context, pid string) (out FindBlogOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
+	id, err := strconv.ParseUint(pid, 10, 64)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		return
+	}
+
 	blog, err := d.BlogRepository.FindUndeletedById(ctx, id)
-	if errors.Is(err, mongo.ErrNoDocuments) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find blog by id"))
 		return
 	}
@@ -261,10 +256,11 @@ func (d *BlogDeps) FindBlogById(ctx context.Context, id string) (out FindBlogOut
 	}
 
 	out.Res = BlogRes{
-		Id:           blog.Id,
+		Id:           int64(blog.Id),
 		Title:        blog.Title,
 		ShortDesc:    blog.ShortDesc,
 		Content:      string(b),
+		ContentText:  blog.ContentText,
 		Slug:         blog.Slug,
 		ThumbnailUrl: blog.ThumbnailUrl,
 		CreatedAt:    blog.CreatedAt.Format("2006-01-02"),
@@ -280,10 +276,11 @@ type (
 		ShortDesc    string `json:"short_desc"`
 		ThumbnailUrl string `json:"thumbnail_url"`
 		Content      string `json:"content"`
+		ContentText  string `json:"content_text"`
 		Slug         string `json:"slug"`
 	}
 	EditBlogRes struct {
-		Id string `json:"id"`
+		Id int64 `json:"id"`
 	}
 	EditBlogOut struct {
 		resp.Response
@@ -291,7 +288,7 @@ type (
 	}
 )
 
-func (d *BlogDeps) EditBlog(ctx context.Context, id string, in EditBlogIn) (out EditBlogOut) {
+func (d *BlogDeps) EditBlog(ctx context.Context, pid string, in EditBlogIn) (out EditBlogOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
@@ -300,8 +297,14 @@ func (d *BlogDeps) EditBlog(ctx context.Context, id string, in EditBlogIn) (out 
 		return
 	}
 
+	id, err := strconv.ParseUint(pid, 10, 64)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		return
+	}
+
 	blog, err := d.BlogRepository.FindUndeletedById(ctx, id)
-	if errors.Is(err, mongo.ErrNoDocuments) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find blog by id"))
 		return
 	}
@@ -315,6 +318,7 @@ func (d *BlogDeps) EditBlog(ctx context.Context, id string, in EditBlogIn) (out 
 		ShortDesc:    in.ShortDesc,
 		ThumbnailUrl: in.ThumbnailUrl,
 		Content:      in.Content,
+		ContentText:  in.ContentText,
 		Slug:         in.Slug,
 	})
 	if err != nil {
@@ -332,14 +336,14 @@ func (d *BlogDeps) EditBlog(ctx context.Context, id string, in EditBlogIn) (out 
 		return
 	}
 
-	out.Res.Id = id
+	out.Res.Id = int64(id)
 
 	return
 }
 
 type (
 	RemoveBlogRes struct {
-		Id string `json:"id"`
+		Id int64 `json:"id"`
 	}
 	RemoveBlogOut struct {
 		resp.Response
@@ -347,12 +351,18 @@ type (
 	}
 )
 
-func (d *BlogDeps) RemoveBlog(ctx context.Context, id string) (out RemoveBlogOut) {
+func (d *BlogDeps) RemoveBlog(ctx context.Context, pid string) (out RemoveBlogOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
+	id, err := strconv.ParseUint(pid, 10, 64)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		return
+	}
+
 	_, err = d.BlogRepository.FindUndeletedById(ctx, id)
-	if errors.Is(err, mongo.ErrNoDocuments) {
+	if errors.Is(err, pgx.ErrNoRows) {
 		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find position by id"))
 		return
 	}
@@ -366,7 +376,7 @@ func (d *BlogDeps) RemoveBlog(ctx context.Context, id string) (out RemoveBlogOut
 		return
 	}
 
-	out.Res.Id = id
+	out.Res.Id = int64(id)
 
 	return
 }

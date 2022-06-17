@@ -55,11 +55,10 @@ type (
 		IdrAmount string `json:"idr_amount"`
 	}
 	BlogOut struct {
-		Id           string `json:"id"`
+		Id           int64  `json:"id"`
 		Title        string `json:"title"`
 		ShortDesc    string `json:"short_desc"`
 		ThumbnailUrl string `json:"thumbnail_url"`
-		Content      string `json:"content"`
 		Slug         string `json:"slug"`
 		CreatedAt    string `json:"created_at"`
 	}
@@ -69,8 +68,9 @@ type (
 		Name  string `json:"name"`
 	}
 	LatestHistoryRes struct {
-		Id      string `json:"id"`
-		Content string `json:"content"`
+		Id          int64  `json:"id"`
+		Content     string `json:"content"`
+		ContentText string `json:"content_text"`
 	}
 	MembersDuesOut struct {
 		Id            int64  `json:"id"`
@@ -80,9 +80,11 @@ type (
 		ProfilePicUrl string `json:"profile_pic_url"`
 	}
 	FindOrgPeriodGoalRes struct {
-		Id      int64  `json:"id"`
-		Vision  string `json:"vision"`
-		Mission string `json:"mission"`
+		Id          int64  `json:"id"`
+		Vision      string `json:"vision"`
+		VisionText  string `json:"vision_text"`
+		Mission     string `json:"mission"`
+		MissionText string `json:"mission_text"`
 	}
 	StructureMemberOut struct {
 		Id            string `json:"id"`

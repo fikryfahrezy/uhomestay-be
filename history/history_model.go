@@ -5,7 +5,8 @@ import (
 )
 
 type HistoryModel struct {
-	Id        string                 `bson:"_id,omitempty"`
-	CreatedAt time.Time              `bson:"created_at,omitempty"`
-	Content   map[string]interface{} `bson:"content,omitempty"`
+	Id          uint64
+	ContentText string
+	CreatedAt   time.Time
+	Content     map[string]interface{}
 }

@@ -6,16 +6,17 @@ import (
 	"net/http"
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/resp"
+	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
-	"go.mongodb.org/mongo-driver/mongo"
 )
 
 type (
 	AddHistoryIn struct {
-		Content string `json:"content"`
+		Content     string `json:"content"`
+		ContentText string `json:"content_text"`
 	}
 	AddHistoryRes struct {
-		Id string `json:"id"`
+		Id int64 `json:"id"`
 	}
 	AddHistoryOut struct {
 		resp.Response
@@ -41,25 +42,26 @@ func (d *HistoryDeps) AddHistory(ctx context.Context, in AddHistoryIn) (out AddH
 	}
 
 	history := HistoryModel{
-		Content: nc,
+		Content:     nc,
+		ContentText: in.ContentText,
 	}
 
-	historyId, err := d.HistoryRepository.Save(ctx, history)
-	if err != nil {
+	if history, err = d.HistoryRepository.Save(ctx, history); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "save history"))
 		return
 	}
 
 	out.StatusCode = http.StatusCreated
-	out.Res.Id = historyId
+	out.Res.Id = int64(history.Id)
 
 	return
 }
 
 type (
 	LatestHistoryRes struct {
-		Id      string `json:"id"`
-		Content string `json:"content"`
+		Id          int64  `json:"id"`
+		Content     string `json:"content"`
+		ContentText string `json:"content_text"`
 	}
 	FindLatestHistoryOut struct {
 		resp.Response
@@ -72,7 +74,7 @@ func (d *HistoryDeps) FindLatestHistory(ctx context.Context) (out FindLatestHist
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	history, err := d.HistoryRepository.FindLatest(ctx)
-	if err != nil && !errors.Is(err, mongo.ErrNoDocuments) {
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find latest history"))
 		return
 	}
@@ -88,8 +90,9 @@ func (d *HistoryDeps) FindLatestHistory(ctx context.Context) (out FindLatestHist
 
 	out.StatusCode = http.StatusOK
 	out.Res = LatestHistoryRes{
-		Id:      history.Id,
-		Content: string(c),
+		Id:          int64(history.Id),
+		Content:     string(c),
+		ContentText: history.ContentText,
 	}
 
 	return

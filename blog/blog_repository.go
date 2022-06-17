@@ -4,108 +4,215 @@ import (
 	"context"
 	"time"
 
+	arbitary "github.com/PA-D3RPLA/d3if43-htt-uhomestay/arbitrary"
+	"github.com/georgysavva/scany/pgxscan"
 	"github.com/go-redis/redis/v8"
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type BlogRepository struct {
-	MongoDbName     string
-	MongoCollection string
-	ImgCacheName    string
-	RedisCl         *redis.Client
-	MongoDb         *mongo.Client
+	ImgCacheName string
+	RedisCl      *redis.Client
+	PostgreDb    *pgxpool.Pool
 }
 
 func NewRepository(
-	mongoDbName string,
-	mongoCollection string,
 	imgCacheName string,
 	redisCl *redis.Client,
-	mongoDb *mongo.Client,
+	postgreDb *pgxpool.Pool,
 ) *BlogRepository {
 	return &BlogRepository{
-		MongoDbName:     mongoDbName,
-		MongoCollection: mongoCollection,
-		ImgCacheName:    imgCacheName,
-		RedisCl:         redisCl,
-		MongoDb:         mongoDb,
+		ImgCacheName: imgCacheName,
+		RedisCl:      redisCl,
+		PostgreDb:    postgreDb,
 	}
 }
 
-func (r *BlogRepository) Save(ctx context.Context, b BlogModel) (id string, err error) {
+type (
+	BlogExecutor   func(ctx context.Context, sql string, arguments ...interface{}) (commandTag pgconn.CommandTag, err error)
+	BlogQuerierRow func(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	BlogQuerier    func(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+)
+
+func (r *BlogRepository) Save(ctx context.Context, m BlogModel) (nm BlogModel, err error) {
+	sqlQuery := `
+		INSERT INTO blogs (
+			title,
+			short_desc,
+			thumbnail_url,
+			content,
+			content_text,
+			slug,
+			created_at,
+			updated_at,
+			deleted_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		RETURNING id
+	`
+
+	var queryRow BlogQuerierRow
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		queryRow = tx.QueryRow
+	} else {
+		queryRow = r.PostgreDb.QueryRow
+	}
+
+	var lastInsertId uint64
 	t := time.Now()
-	b.CreatedAt = t
-	b.UpdatedAt = t
 
-	coll := r.MongoDb.Database(r.MongoDbName).Collection(r.MongoCollection)
-	result, err := coll.InsertOne(ctx, b)
-	if err != nil {
-		return "", err
-	}
+	err = queryRow(
+		context.Background(),
+		sqlQuery,
+		m.Title,
+		m.ShortDesc,
+		m.ThumbnailUrl,
+		m.Content,
+		m.ContentText,
+		m.Slug,
+		t,
+		t,
+		nil,
+	).Scan(&lastInsertId)
 
-	oid, ok := result.InsertedID.(primitive.ObjectID)
-	if !ok {
-		return "", primitive.ErrInvalidHex
-	}
-
-	return oid.Hex(), nil
-}
-
-func (r *BlogRepository) Query(ctx context.Context, idHex string, limit int64) (bs []BlogModel, err error) {
-	coll := r.MongoDb.Database(r.MongoDbName).Collection(r.MongoCollection)
-
-	filter := bson.M{"deleted_at": nil}
-	if idHex != "" {
-		id, _ := primitive.ObjectIDFromHex(idHex)
-		filter["_id"] = bson.M{
-			"$lt": id,
-		}
-	}
-
-	opts := options.Find().SetSort(bson.M{"_id": -1}).SetLimit(limit)
-
-	cursor, err := coll.Find(ctx, filter, opts)
-	if err != nil {
-		return []BlogModel{}, err
-	}
-
-	if err = cursor.All(ctx, &bs); err != nil {
-		return []BlogModel{}, err
-	}
-
-	return bs, nil
-}
-
-func (r *BlogRepository) FindUndeletedById(ctx context.Context, idHex string) (b BlogModel, err error) {
-	coll := r.MongoDb.Database(r.MongoDbName).Collection(r.MongoCollection)
-	id, _ := primitive.ObjectIDFromHex(idHex)
-
-	filter := bson.M{"_id": id, "deleted_at": nil}
-	err = coll.FindOne(ctx, filter).Decode(&b)
 	if err != nil {
 		return BlogModel{}, err
 	}
 
-	return b, nil
+	m.Id = lastInsertId
+	m.CreatedAt = t
+	m.UpdatedAt = t
+
+	return m, nil
 }
 
-func (r *BlogRepository) UpdateById(ctx context.Context, idHex string, b BlogModel) (err error) {
-	coll := r.MongoDb.Database(r.MongoDbName).Collection(r.MongoCollection)
-	id, _ := primitive.ObjectIDFromHex(idHex)
-
-	update := bson.M{
-		"$set": bson.M{
-			"title":         b.Title,
-			"short_desc":    b.ShortDesc,
-			"content":       b.Content,
-			"thumbnail_url": b.ThumbnailUrl,
-		},
+func (r *BlogRepository) Query(ctx context.Context, id, limit int64) ([]BlogModel, error) {
+	fromId := "id > $1"
+	if id != 0 {
+		fromId = "id < $1"
 	}
-	filter := bson.M{"_id": id, "deleted_at": nil}
-	_, err = coll.UpdateOne(ctx, filter, update)
+
+	sqlQuery := `
+		SELECT 
+			id,
+			title,
+			short_desc,
+			thumbnail_url,
+			content,
+			content_text,
+			slug,
+			created_at,
+			updated_at,
+			deleted_at
+		FROM blogs 
+		WHERE deleted_at IS NULL
+			AND ` + fromId + `
+		ORDER BY id DESC
+		LIMIT $2
+	`
+
+	rows, _ := r.PostgreDb.Query(
+		context.Background(),
+		sqlQuery,
+		id,
+		limit,
+	)
+	defer rows.Close()
+
+	var mps []*BlogModel
+	if err := pgxscan.ScanAll(&mps, rows); err != nil {
+		return []BlogModel{}, err
+	}
+
+	ms := make([]BlogModel, len(mps))
+	for i, m := range mps {
+		ms[i] = *m
+	}
+
+	return ms, nil
+}
+
+func (r *BlogRepository) FindUndeletedById(ctx context.Context, id uint64) (m BlogModel, err error) {
+	querystr := `
+		SELECT
+			id,
+			title,
+			thumbnail_url,
+			content,
+			content_text,
+			slug,
+			created_at,
+			updated_at,
+			deleted_at
+		FROM blogs
+		WHERE deleted_at IS NULL
+		AND id = $1
+	`
+
+	var query BlogQuerier
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		query = tx.Query
+	} else {
+		query = r.PostgreDb.Query
+	}
+
+	var rows pgx.Rows
+	rows, err = query(
+		context.Background(),
+		querystr,
+		id,
+	)
+
+	if err != nil {
+		return BlogModel{}, err
+	}
+
+	if err = pgxscan.ScanOne(&m, rows); err != nil {
+		return BlogModel{}, err
+	}
+
+	return m, nil
+}
+
+func (r *BlogRepository) UpdateById(ctx context.Context, id uint64, m BlogModel) error {
+	sqlQuery := `
+		UPDATE blogs SET (
+			title,
+			short_desc,
+			content,
+			content_text,
+			thumbnail_url,
+			updated_at
+		) = ($1, $2, $3, $4, $5, $6)
+		WHERE id = $7
+	`
+
+	var exec BlogExecutor
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		exec = tx.Exec
+	} else {
+		exec = r.PostgreDb.Exec
+	}
+
+	var err error
+	t := time.Now()
+
+	_, err = exec(
+		context.Background(),
+		sqlQuery,
+		m.Title,
+		m.ShortDesc,
+		m.Content,
+		m.ContentText,
+		m.ThumbnailUrl,
+		t,
+		id,
+	)
 	if err != nil {
 		return err
 	}
@@ -113,17 +220,31 @@ func (r *BlogRepository) UpdateById(ctx context.Context, idHex string, b BlogMod
 	return nil
 }
 
-func (r *BlogRepository) DeleteById(ctx context.Context, idHex string) (err error) {
-	coll := r.MongoDb.Database(r.MongoDbName).Collection(r.MongoCollection)
-	id, _ := primitive.ObjectIDFromHex(idHex)
+func (r *BlogRepository) DeleteById(ctx context.Context, id uint64) error {
+	sqlQuery := `
+		UPDATE blogs
+		SET deleted_at = $1
+		WHERE id = $2
+	`
 
-	update := bson.M{
-		"$set": bson.M{
-			"deleted_at": time.Now(),
-		},
+	var exec BlogExecutor
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		exec = tx.Exec
+	} else {
+		exec = r.PostgreDb.Exec
 	}
-	filter := bson.M{"_id": id, "deleted_at": nil}
-	_, err = coll.UpdateOne(ctx, filter, update)
+
+	var err error
+	t := time.Now()
+
+	_, err = exec(
+		context.Background(),
+		sqlQuery,
+		t,
+		id,
+	)
+
 	if err != nil {
 		return err
 	}

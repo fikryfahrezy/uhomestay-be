@@ -14,7 +14,9 @@ import (
 type (
 	AddGoalIn struct {
 		Vision      string `json:"vision"`
+		VisionText  string `json:"vision_text"`
 		Mission     string `json:"mission"`
+		MissionText string `json:"mission_text"`
 		OrgPeriodId int64  `json:"org_period_id"`
 	}
 	AddGoalRes struct {
@@ -85,7 +87,9 @@ func (d *UserDeps) AddGoal(ctx context.Context, in AddGoalIn) (out AddGoalOut) {
 
 	goal := GoalModel{
 		Vision:      nvV,
+		VisionText:  in.VisionText,
 		Mission:     nmV,
+		MissionText: in.MissionText,
 		OrgPeriodId: uint64(in.OrgPeriodId),
 	}
 
@@ -101,9 +105,11 @@ func (d *UserDeps) AddGoal(ctx context.Context, in AddGoalIn) (out AddGoalOut) {
 
 type (
 	FindOrgPeriodGoalRes struct {
-		Id      int64  `json:"id"`
-		Vision  string `json:"vision"`
-		Mission string `json:"mission"`
+		Id          int64  `json:"id"`
+		Vision      string `json:"vision"`
+		VisionText  string `json:"vision_text"`
+		Mission     string `json:"mission"`
+		MissionText string `json:"mission_text"`
 	}
 	FindOrgPeriodGoalOut struct {
 		resp.Response
@@ -183,9 +189,11 @@ func (d *UserDeps) FindOrgPeriodGoal(ctx context.Context, pid string) (out FindO
 
 	out.StatusCode = http.StatusOK
 	out.Res = FindOrgPeriodGoalRes{
-		Id:      int64(goal.Id),
-		Vision:  string(vV),
-		Mission: string(mV),
+		Id:          int64(goal.Id),
+		Vision:      string(vV),
+		Mission:     string(mV),
+		VisionText:  goal.VisionText,
+		MissionText: goal.MissionText,
 	}
 
 	return

@@ -4,57 +4,106 @@ import (
 	"context"
 	"time"
 
-	"go.mongodb.org/mongo-driver/bson"
-	"go.mongodb.org/mongo-driver/bson/primitive"
-	"go.mongodb.org/mongo-driver/mongo"
-	"go.mongodb.org/mongo-driver/mongo/options"
+	arbitary "github.com/PA-D3RPLA/d3if43-htt-uhomestay/arbitrary"
+
+	"github.com/georgysavva/scany/pgxscan"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgx/v4"
+	"github.com/jackc/pgx/v4/pgxpool"
 )
 
 type HistoryRepository struct {
-	MongoDbName     string
-	MongoCollection string
-	MongoDb         *mongo.Client
+	PostgreDb *pgxpool.Pool
 }
 
 func NewRepository(
-	mongoDbName string,
-	mongoCollection string,
-	mongoDb *mongo.Client,
+	postgreDb *pgxpool.Pool,
 ) *HistoryRepository {
 	return &HistoryRepository{
-		MongoDbName:     mongoDbName,
-		MongoCollection: mongoCollection,
-		MongoDb:         mongoDb,
+		PostgreDb: postgreDb,
 	}
 }
 
-func (r *HistoryRepository) Save(ctx context.Context, h HistoryModel) (id string, err error) {
-	h.CreatedAt = time.Now()
+type (
+	HistoryExecutor   func(ctx context.Context, sql string, arguments ...interface{}) (commandTag pgconn.CommandTag, err error)
+	HistoryQuerierRow func(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	HistoryQuerier    func(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+)
 
-	coll := r.MongoDb.Database(r.MongoDbName).Collection(r.MongoCollection)
-	result, err := coll.InsertOne(ctx, h)
-	if err != nil {
-		return "", err
+func (r *HistoryRepository) Save(ctx context.Context, m HistoryModel) (nm HistoryModel, err error) {
+	sqlQuery := `
+		INSERT INTO blogs (
+			content_text,
+			content,
+			created_at
+		)
+		VALUES ($1, $2, $3)
+		RETURNING id
+	`
+
+	var queryRow HistoryQuerierRow
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		queryRow = tx.QueryRow
+	} else {
+		queryRow = r.PostgreDb.QueryRow
 	}
 
-	oid, ok := result.InsertedID.(primitive.ObjectID)
-	if !ok {
-		return "", primitive.ErrInvalidHex
-	}
+	var lastInsertId uint64
+	t := time.Now()
 
-	return oid.Hex(), nil
-}
+	err = queryRow(
+		context.Background(),
+		sqlQuery,
+		m.ContentText,
+		m.Content,
+		t,
+	).Scan(&lastInsertId)
 
-func (r *HistoryRepository) FindLatest(ctx context.Context) (h HistoryModel, err error) {
-	coll := r.MongoDb.Database(r.MongoDbName).Collection(r.MongoCollection)
-
-	filter := bson.M{}
-	opts := options.FindOne().SetSort(bson.M{"created_at": -1})
-
-	err = coll.FindOne(ctx, filter, opts).Decode(&h)
 	if err != nil {
 		return HistoryModel{}, err
 	}
 
-	return h, nil
+	m.Id = lastInsertId
+	m.CreatedAt = t
+
+	return m, nil
+}
+
+func (r *HistoryRepository) FindLatest(ctx context.Context) (m HistoryModel, err error) {
+	querystr := `
+		SELECT
+			id,
+			content_text,
+			created_at,
+			content
+		FROM blogs
+		WHERE deleted_at IS NULL
+		ORDER BY id DESC
+		LIMIT 1
+	`
+
+	var query HistoryQuerier
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		query = tx.Query
+	} else {
+		query = r.PostgreDb.Query
+	}
+
+	var rows pgx.Rows
+	rows, err = query(
+		context.Background(),
+		querystr,
+	)
+
+	if err != nil {
+		return HistoryModel{}, err
+	}
+
+	if err = pgxscan.ScanOne(&m, rows); err != nil {
+		return HistoryModel{}, err
+	}
+
+	return m, nil
 }

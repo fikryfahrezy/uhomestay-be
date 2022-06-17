@@ -39,8 +39,6 @@ var (
 	commitHash string = "N/A"
 )
 
-var ctx = context.Background()
-
 func main() {
 	conf := config.LoadConfig()
 
@@ -124,19 +122,13 @@ func main() {
 	duesRepository := dues.NewDeusRepository(posgrePool)
 	memberDuesRepository := dues.NewMemberDeusRepository(posgrePool)
 
-	mongoDbName := "uhomestay"
-
 	historyRepository := history.NewRepository(
-		mongoDbName,
-		"histories",
-		mongoClient,
+		posgrePool,
 	)
 	blogRepository := blog.NewRepository(
-		mongoDbName,
-		"blogs",
 		"imgchc",
 		redisClient,
-		mongoClient,
+		posgrePool,
 	)
 
 	userDeps := user.NewDeps(

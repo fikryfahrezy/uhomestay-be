@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os"
+	"strconv"
 	"testing"
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/blog"
@@ -12,7 +13,7 @@ import (
 )
 
 func TestAddBlog(t *testing.T) {
-	err := ClearMongo(mongoClient)
+	err := ClearTables(postgrePool)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -52,6 +53,7 @@ func TestAddBlog(t *testing.T) {
 					`{"img": "%s"}`,
 					"http://localhost/balbla/images.jpg.jpg",
 				),
+				ContentText: "",
 			},
 		},
 		{
@@ -76,6 +78,7 @@ func TestAddBlog(t *testing.T) {
 					"http://localhost/balbla/images.jpg.jpg",
 					"http://localhost/blabla/images2.jpg.jpg",
 				),
+				ContentText: "",
 			},
 		},
 		{
@@ -99,6 +102,7 @@ func TestAddBlog(t *testing.T) {
 					`{"img": "%s"}`,
 					"http://localhost/balbla/images.jpg.jpg",
 				),
+				ContentText: "",
 			},
 		},
 		{
@@ -127,6 +131,7 @@ func TestAddBlog(t *testing.T) {
 					"http://localhost/balbla/images.jpg.jpg",
 					"http://localhost/blabla/images2.jpg.jpg",
 				),
+				ContentText: "",
 			},
 		},
 	}
@@ -146,7 +151,7 @@ func TestAddBlog(t *testing.T) {
 }
 
 func TestQueryHistory(t *testing.T) {
-	err := ClearMongo(mongoClient)
+	err := ClearTables(postgrePool)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,15 +185,17 @@ func TestQueryHistory(t *testing.T) {
 }
 
 func TestFindBlogById(t *testing.T) {
-	err := ClearMongo(mongoClient)
+	err := ClearTables(postgrePool)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	blogId, err := blogRepository.Save(context.Background(), blogSeed)
+	blog, err := blogRepository.Save(context.Background(), blogSeed)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	pid := strconv.FormatUint(blog.Id, 10)
 
 	testCases := []struct {
 		Name               string
@@ -198,12 +205,12 @@ func TestFindBlogById(t *testing.T) {
 		{
 			Name:               "Find Blog By Id Success",
 			ExpectedStatusCode: http.StatusOK,
-			Id:                 blogId,
+			Id:                 pid,
 		},
 		{
 			Name:               "Find Blog By Id Fail, Blog Not Found",
 			ExpectedStatusCode: http.StatusNotFound,
-			Id:                 "5eb3d668b31de5d588f42a7a",
+			Id:                 "999",
 		},
 	}
 
@@ -221,15 +228,17 @@ func TestFindBlogById(t *testing.T) {
 }
 
 func TestEditBlog(t *testing.T) {
-	err := ClearMongo(mongoClient)
+	err := ClearTables(postgrePool)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	blogId, err := blogRepository.Save(context.Background(), blogSeed)
+	b, err := blogRepository.Save(context.Background(), blogSeed)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	pid := strconv.FormatUint(b.Id, 10)
 
 	testCases := []struct {
 		Name               string
@@ -241,7 +250,7 @@ func TestEditBlog(t *testing.T) {
 		{
 			Name:               "Edit Blog Success",
 			ExpectedStatusCode: http.StatusOK,
-			Id:                 blogId,
+			Id:                 pid,
 			init:               func() {},
 			In: blog.EditBlogIn{
 				Title:        "Title",
@@ -249,12 +258,13 @@ func TestEditBlog(t *testing.T) {
 				Slug:         "slug",
 				ThumbnailUrl: "",
 				Content:      `{"test": "hi"}`,
+				ContentText:  "hi",
 			},
 		},
 		{
 			Name:               "Edit Blog with Img Success",
 			ExpectedStatusCode: http.StatusOK,
-			Id:                 blogId,
+			Id:                 pid,
 			init: func() {
 				imgId := "balbla/images.jpg"
 				imgUrl := "http://localhost/balbla/images.jpg.jpg"
@@ -269,12 +279,13 @@ func TestEditBlog(t *testing.T) {
 					`{"img": "%s"}`,
 					"http://localhost/balbla/images.jpg.jpg",
 				),
+				ContentText: "",
 			},
 		},
 		{
 			Name:               "Edit Blog with Imgs Success",
 			ExpectedStatusCode: http.StatusOK,
-			Id:                 blogId,
+			Id:                 pid,
 			init: func() {
 				imgId := "balbla/images.jpg"
 				imgUrl := "http://localhost/balbla/images.jpg.jpg"
@@ -294,12 +305,13 @@ func TestEditBlog(t *testing.T) {
 					"http://localhost/balbla/images.jpg.jpg",
 					"http://localhost/blabla/images2.jpg.jpg",
 				),
+				ContentText: "",
 			},
 		},
 		{
 			Name:               "Edit Blog with Img and Thumbnail Success",
 			ExpectedStatusCode: http.StatusOK,
-			Id:                 blogId,
+			Id:                 pid,
 			init: func() {
 				thmId := "balbla/thm.jpg"
 				thmUrl := "http://localhost/balbla/thm.jpg.jpg"
@@ -318,12 +330,13 @@ func TestEditBlog(t *testing.T) {
 					`{"img": "%s"}`,
 					"http://localhost/balbla/images.jpg.jpg",
 				),
+				ContentText: "",
 			},
 		},
 		{
 			Name:               "Edit Blog with Imgs and Thumbnail Success",
 			ExpectedStatusCode: http.StatusOK,
-			Id:                 blogId,
+			Id:                 pid,
 			init: func() {
 				thmId := "balbla/thm.jpg"
 				thmUrl := "http://localhost/balbla/thm.jpg.jpg"
@@ -347,12 +360,13 @@ func TestEditBlog(t *testing.T) {
 					"http://localhost/balbla/images.jpg.jpg",
 					"http://localhost/blabla/images2.jpg.jpg",
 				),
+				ContentText: "",
 			},
 		},
 		{
 			Name:               "Edit Blog Fail, Blog Not Found",
 			ExpectedStatusCode: http.StatusNotFound,
-			Id:                 "5eb3d668b31de5d588f42a7a",
+			Id:                 "999",
 			init:               func() {},
 			In: blog.EditBlogIn{
 				Title:        "Title",
@@ -360,6 +374,7 @@ func TestEditBlog(t *testing.T) {
 				Slug:         "slug",
 				ThumbnailUrl: "",
 				Content:      `{"test": "hi"}`,
+				ContentText:  "hi",
 			},
 		},
 	}
@@ -378,15 +393,17 @@ func TestEditBlog(t *testing.T) {
 }
 
 func TestRemoveBlog(t *testing.T) {
-	err := ClearMongo(mongoClient)
+	err := ClearTables(postgrePool)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	blogId, err := blogRepository.Save(context.Background(), blogSeed)
+	b, err := blogRepository.Save(context.Background(), blogSeed)
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	pid := strconv.FormatUint(b.Id, 10)
 
 	testCases := []struct {
 		Name               string
@@ -396,12 +413,12 @@ func TestRemoveBlog(t *testing.T) {
 		{
 			Name:               "Remove Blog By Id Success",
 			ExpectedStatusCode: http.StatusOK,
-			Id:                 blogId,
+			Id:                 pid,
 		},
 		{
 			Name:               "Remove Blog By Id Fail, Blog Not Found",
 			ExpectedStatusCode: http.StatusNotFound,
-			Id:                 "5eb3d668b31de5d588f42a7a",
+			Id:                 "999",
 		},
 	}
 

@@ -31,7 +31,9 @@ func TestAddGoal(t *testing.T) {
 			ExpectedStatusCode: http.StatusCreated,
 			In: user.AddGoalIn{
 				Vision:      `{"test": "test"}`,
+				VisionText:  "test",
 				Mission:     `{"test": "test"}`,
+				MissionText: "test",
 				OrgPeriodId: int64(pr.Id),
 			},
 		},
@@ -39,8 +41,10 @@ func TestAddGoal(t *testing.T) {
 			Name:               "Add Goal Fail, Org Period Id Validation Fail",
 			ExpectedStatusCode: http.StatusUnprocessableEntity,
 			In: user.AddGoalIn{
-				Vision:  `{"test": "test"}`,
-				Mission: `{"test": "test"}`,
+				Vision:      `{"test": "test"}`,
+				VisionText:  "test",
+				Mission:     `{"test": "test"}`,
+				MissionText: "test",
 			},
 		},
 		{
@@ -48,7 +52,9 @@ func TestAddGoal(t *testing.T) {
 			ExpectedStatusCode: http.StatusNotFound,
 			In: user.AddGoalIn{
 				Vision:      `{"test": "test"}`,
+				VisionText:  "test",
 				Mission:     `{"test": "test"}`,
+				MissionText: "test",
 				OrgPeriodId: 999,
 			},
 		},

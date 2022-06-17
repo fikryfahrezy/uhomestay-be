@@ -1806,7 +1806,11 @@ components:
               type: integer
             vision:
               type: string
+            vision_text:
+              type: string
             mission:
+              type: string
+            mission_text:
               type: string
     GoalIdRes:
       type: object
@@ -1821,13 +1825,19 @@ components:
       properties:
         vision:
           type: string
+        vision_text:
+          type: string
         mission:
+          type: string
+        mission_text:
           type: string
         org_period_id:
           type: integer
       required:
         - vision
+        - vision_text
         - mission
+        - mission_text
         - org_period_id
     DocumentIdRes:
       type: object
@@ -1927,8 +1937,11 @@ components:
       properties:
         content:
           type: string
+        content_text:
+          type: string
       required:
         - content
+        - content_text
     HistoryRes:
       type: object
       properties:
@@ -1938,6 +1951,8 @@ components:
             id:
               type: string
             content:
+              type: string
+            content_text:
               type: string
     BlogIdRes:
       type: object
@@ -1958,6 +1973,8 @@ components:
           type: string
         content:
           type: string
+        content_text:
+          type: string
         slug:
           type: string
       required:
@@ -1968,24 +1985,6 @@ components:
         - slug
     AddBlogBodyIn:
       $ref: "#/components/schemas/BlogBodyIn"
-    BlogRes:
-      type: object
-      properties:
-        id:
-          type: string
-        title:
-          type: string
-        short_desc:
-          type: string
-        thumbnail_url:
-          type: string
-        content:
-          type: string
-        slug:
-          type: string
-        created_at:
-          type: string
-          format: date
     QueryBlogRes:
       type: object
       properties:
@@ -1997,12 +1996,42 @@ components:
             blogs:
               type: array
               items:
-                $ref: "#/components/schemas/BlogRes"
+                type: object
+                properties:
+                  id:
+                    type: string
+                  title:
+                    type: string
+                  short_desc:
+                    type: string
+                  thumbnail_url:
+                    type: string
+                  slug:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date
     FindBlogRes:
       type: object
       properties:
         data:
-          $ref: "#/components/schemas/BlogRes"
+          type: object
+          properties:
+            id:
+              type: string
+            title:
+              type: string
+            short_desc:
+              type: string
+            thumbnail_url:
+              type: string
+            content:
+              type: string
+            slug:
+              type: string
+            created_at:
+              type: string
+              format: date
     EditBlogBodyIn:
       $ref: "#/components/schemas/BlogBodyIn"
     UploadBlogImgRes:
@@ -2242,8 +2271,6 @@ components:
         short_desc:
           type: string
         thumbnail_url:
-          type: string
-        content:
           type: string
         slug:
           type: string

@@ -9,7 +9,7 @@ import (
 )
 
 func TestAddHistory(t *testing.T) {
-	err := ClearTables(dbClient)
+	err := ClearTables(db)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -23,7 +23,8 @@ func TestAddHistory(t *testing.T) {
 			Name:               "Add History Success",
 			ExpectedStatusCode: http.StatusCreated,
 			In: history.AddHistoryIn{
-				Content: `{"test": "hi"}`,
+				Content:     `{"test": "hi"}`,
+				ContentText: "hi",
 			},
 		},
 	}
@@ -42,7 +43,7 @@ func TestAddHistory(t *testing.T) {
 }
 
 func TestFindLatestHistory(t *testing.T) {
-	err := ClearTables(dbClient)
+	err := ClearTables(db)
 	if err != nil {
 		t.Fatal(err)
 	}
