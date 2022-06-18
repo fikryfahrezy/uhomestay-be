@@ -236,10 +236,22 @@ func (r *DocumentRepository) DeleteInId(ctx context.Context, ids []uint64) error
 	return nil
 }
 
-func (r *DocumentRepository) Query(ctx context.Context, id, limit int64) ([]DocumentModel, error) {
+func (r *DocumentRepository) Query(ctx context.Context, q string, id, limit int64) ([]DocumentModel, error) {
 	fromId := "id > $1"
 	if id != 0 {
 		fromId = "id < $1"
+	}
+
+	like := "id > $2"
+	order := "id"
+	if q != "" {
+		q = q + ":*"
+		like = "textsearchable_index_col @@ to_tsquery($2)"
+		order = "textrank_index_col"
+	}
+
+	if q == "" {
+		q = "0"
 	}
 
 	sqlQuery := `
@@ -256,14 +268,16 @@ func (r *DocumentRepository) Query(ctx context.Context, id, limit int64) ([]Docu
 		FROM documents 
 		WHERE deleted_at IS NULL
 			AND ` + fromId + `
-		ORDER BY id DESC
-		LIMIT $2
+			AND ` + like + `
+		ORDER BY ` + order + ` DESC
+		LIMIT $3
 	`
 
 	rows, _ := r.PostgreDb.Query(
 		context.Background(),
 		sqlQuery,
 		id,
+		q,
 		limit,
 	)
 	defer rows.Close()

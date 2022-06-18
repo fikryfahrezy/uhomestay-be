@@ -89,10 +89,22 @@ func (r *BlogRepository) Save(ctx context.Context, m BlogModel) (nm BlogModel, e
 	return m, nil
 }
 
-func (r *BlogRepository) Query(ctx context.Context, id, limit int64) ([]BlogModel, error) {
+func (r *BlogRepository) Query(ctx context.Context, q string, id, limit int64) ([]BlogModel, error) {
 	fromId := "id > $1"
 	if id != 0 {
 		fromId = "id < $1"
+	}
+
+	like := "id > $2"
+	order := "id"
+	if q != "" {
+		q = q + ":*"
+		like = "textsearchable_index_col @@ to_tsquery($2)"
+		order = "textrank_index_col"
+	}
+
+	if q == "" {
+		q = "0"
 	}
 
 	sqlQuery := `
@@ -110,14 +122,16 @@ func (r *BlogRepository) Query(ctx context.Context, id, limit int64) ([]BlogMode
 		FROM blogs 
 		WHERE deleted_at IS NULL
 			AND ` + fromId + `
-		ORDER BY id DESC
-		LIMIT $2
+			AND ` + like + `
+		ORDER BY ` + order + ` DESC
+		LIMIT $3
 	`
 
 	rows, _ := r.PostgreDb.Query(
 		context.Background(),
 		sqlQuery,
 		id,
+		q,
 		limit,
 	)
 	defer rows.Close()

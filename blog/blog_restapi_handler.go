@@ -24,8 +24,9 @@ func (d *BlogDeps) PostBlog(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *BlogDeps) GetBlogs(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("q")
 	cursor := r.URL.Query().Get("cursor")
-	out := d.QueryBlog(r.Context(), cursor)
+	out := d.QueryBlog(r.Context(), q, cursor)
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 

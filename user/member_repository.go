@@ -478,7 +478,7 @@ func (r *MemberRepository) QueryInId(ctx context.Context, uids []string) (ms []M
 	return ms, nil
 }
 
-func (r *MemberRepository) Query(ctx context.Context, uid pgtypeuuid.UUID, t time.Time, limit int64) (ms []MemberModel, err error) {
+func (r *MemberRepository) Query(ctx context.Context, uid pgtypeuuid.UUID, q string, t time.Time, limit int64) (ms []MemberModel, err error) {
 	fromUid := "id > $1"
 	if !uid.UUID.IsNil() {
 		fromUid = "id < $1"
@@ -487,6 +487,18 @@ func (r *MemberRepository) Query(ctx context.Context, uid pgtypeuuid.UUID, t tim
 	created := "created_at >= $2::timestamp"
 	if !t.IsZero() {
 		created = "created_at <= $2::timestamp"
+	}
+
+	like := "username LIKE $3"
+	order := "id"
+	if q != "" {
+		q = q + ":*"
+		like = "textsearchable_index_col @@ to_tsquery($3)"
+		order = "textrank_index_col"
+	}
+
+	if q == "" {
+		q = "%" + q + "%"
 	}
 
 	sqlQuery := `
@@ -511,8 +523,9 @@ func (r *MemberRepository) Query(ctx context.Context, uid pgtypeuuid.UUID, t tim
 		WHERE deleted_at IS NULL
 			AND ` + fromUid + `
 			AND ` + created + `
-		ORDER BY id DESC
-		LIMIT $3
+			AND ` + like + `
+		ORDER BY ` + order + ` DESC
+		LIMIT $4
 	`
 
 	rows, _ := r.PostgreDb.Query(
@@ -520,6 +533,7 @@ func (r *MemberRepository) Query(ctx context.Context, uid pgtypeuuid.UUID, t tim
 		sqlQuery,
 		uid.UUID.String(),
 		t.Format(time.RFC3339),
+		q,
 		limit,
 	)
 	defer rows.Close()

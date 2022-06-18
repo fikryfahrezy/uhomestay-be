@@ -623,7 +623,7 @@ type (
 	}
 )
 
-func (d *UserDeps) QueryMember(ctx context.Context, cursor string) (out QueryMemberOut) {
+func (d *UserDeps) QueryMember(ctx context.Context, q, cursor string) (out QueryMemberOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
@@ -636,7 +636,7 @@ func (d *UserDeps) QueryMember(ctx context.Context, cursor string) (out QueryMem
 	var uid pgtypeuuid.UUID
 	uid.Scan(s)
 
-	members, err := d.MemberRepository.Query(ctx, uid, t, 25)
+	members, err := d.MemberRepository.Query(ctx, uid, q, t, 25)
 	if err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query member"))
 		return

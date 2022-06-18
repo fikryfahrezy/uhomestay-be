@@ -58,7 +58,7 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	m := make(chan []MemberOut)
 	mr := make(chan resp.Response)
 	go func(ctx context.Context, m chan []MemberOut, res chan resp.Response) {
-		out := d.QueryMember(ctx, "")
+		out := d.QueryMember(ctx, "", "")
 
 		l := len(out.Res.Members)
 		if l > 5 {
@@ -77,7 +77,7 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	do := make(chan []DocumentOut)
 	dr := make(chan resp.Response)
 	go func(ctx context.Context, do chan []DocumentOut, res chan resp.Response) {
-		out := d.QueryDocument(ctx, "", "999")
+		out := d.QueryDocument(ctx, "", "", "999")
 
 		dc := make([]DocumentOut, 0, 0)
 		for _, v := range out.Res.Documents {
@@ -111,7 +111,7 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	b := make(chan []BlogOut)
 	br := make(chan resp.Response)
 	go func(ctx context.Context, b chan []BlogOut, res chan resp.Response) {
-		out := d.QueryBlog(ctx, "")
+		out := d.QueryBlog(ctx, "", "")
 
 		l := len(out.Res.Blogs)
 		if l > 5 {
@@ -318,7 +318,7 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 	do := make(chan []DocumentOut)
 	dr := make(chan resp.Response)
 	go func(ctx context.Context, do chan []DocumentOut, res chan resp.Response) {
-		out := d.QueryDocument(ctx, "", "999")
+		out := d.QueryDocument(ctx, "", "", "999")
 
 		dc := make([]DocumentOut, 0, 0)
 		for _, v := range out.Res.Documents {
@@ -338,7 +338,7 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 	b := make(chan []BlogOut)
 	br := make(chan resp.Response)
 	go func(ctx context.Context, b chan []BlogOut, res chan resp.Response) {
-		out := d.QueryBlog(ctx, "")
+		out := d.QueryBlog(ctx, "", "")
 
 		l := len(out.Res.Blogs)
 		if l > 8 {

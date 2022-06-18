@@ -97,11 +97,13 @@ type (
 		Members []MemberIn `json:"members"`
 	}
 	AddPeriodIn struct {
-		StartDate string       `json:"start_date"`
-		EndDate   string       `json:"end_date"`
-		Positions []PositionIn `json:"positions"`
-		Vision    string       `json:"vision"`
-		Mission   string       `json:"mission"`
+		StartDate   string       `json:"start_date"`
+		EndDate     string       `json:"end_date"`
+		Positions   []PositionIn `json:"positions"`
+		Vision      string       `json:"vision"`
+		VisionText  string       `json:"vision_text"`
+		Mission     string       `json:"mission"`
+		MissionText string       `json:"mission_text"`
 	}
 	AddPeriodRes struct {
 		Id uint64 `json:"id"`
@@ -192,7 +194,9 @@ func (d *UserDeps) AddPeriod(ctx context.Context, in AddPeriodIn) (out AddPeriod
 
 	goal := GoalModel{
 		Vision:      nvV,
+		VisionText:  in.VisionText,
 		Mission:     nmV,
+		MissionText: in.MissionText,
 		OrgPeriodId: uint64(period.Id),
 	}
 
@@ -266,11 +270,13 @@ func (d *UserDeps) QueryPeriod(ctx context.Context, cursor string) (out QueryPer
 
 type (
 	EditPeriodIn struct {
-		StartDate string       `json:"start_date"`
-		EndDate   string       `json:"end_date"`
-		Positions []PositionIn `json:"positions"`
-		Vision    string       `json:"vision"`
-		Mission   string       `json:"mission"`
+		StartDate   string       `json:"start_date"`
+		EndDate     string       `json:"end_date"`
+		Positions   []PositionIn `json:"positions"`
+		Vision      string       `json:"vision"`
+		VisionText  string       `json:"vision_text"`
+		Mission     string       `json:"mission"`
+		MissionText string       `json:"mission_text"`
 	}
 	EditPeriodRes struct {
 		Id uint64 `json:"id"`
@@ -384,7 +390,9 @@ func (d *UserDeps) EditPeriod(ctx context.Context, pid string, in EditPeriodIn) 
 	if nv != nil || nm != nil {
 		goal := GoalModel{
 			Vision:      nvV,
+			VisionText:  in.VisionText,
 			Mission:     nmV,
+			MissionText: in.MissionText,
 			OrgPeriodId: uint64(period.Id),
 		}
 

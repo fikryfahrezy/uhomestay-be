@@ -173,7 +173,7 @@ func TestQueryHistory(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.Name, func(t *testing.T) {
-			res := blogDeps.QueryBlog(context.Background(), "")
+			res := blogDeps.QueryBlog(context.Background(), "", "")
 
 			if res.StatusCode != c.ExpectedStatusCode {
 				t.Logf("%#v", res)

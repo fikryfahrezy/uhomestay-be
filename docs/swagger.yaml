@@ -119,6 +119,10 @@ paths:
       security: []
       parameters:
         - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
           name: cursor
           schema:
             type: string
@@ -696,6 +700,10 @@ paths:
       security: []
       parameters:
         - in: query
+          name: q
+          schema:
+            type: string
+        - in: query
           name: cursor
           schema:
             type: string
@@ -830,6 +838,10 @@ paths:
         - blogs
       security: []
       parameters:
+        - in: query
+          name: q
+          schema:
+            type: string
         - in: query
           name: cursor
           schema:
@@ -1707,9 +1719,12 @@ components:
                       format: uuid
         vision:
           type: string
+        vision_text:
+          type: string
         mission:
           type: string
-          format: date
+        mission_text:
+          type: string
       required:
         - start_date
         - end_date

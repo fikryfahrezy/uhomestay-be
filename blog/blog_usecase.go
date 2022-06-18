@@ -172,12 +172,12 @@ type (
 	}
 )
 
-func (d *BlogDeps) QueryBlog(ctx context.Context, cursor string) (out QueryBlogOut) {
+func (d *BlogDeps) QueryBlog(ctx context.Context, q, cursor string) (out QueryBlogOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
-	blogs, err := d.BlogRepository.Query(ctx, fromCursor, 25)
+	blogs, err := d.BlogRepository.Query(ctx, q, fromCursor, 25)
 	if err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query blogs"))
 		return

@@ -225,6 +225,11 @@
               "path": ["api", "v1", "members"],
               "query": [
                 {
+                  "key": "q",
+                  "value": "string",
+                  "disabled": true
+                },
+                {
                   "key": "cursor",
                   "value": "string",
                   "disabled": true
@@ -598,7 +603,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"start_date\": \"string\",\n    \"end_date\": \"string\",\n    \"positions\": [\n        {\n            \"id\": 1,\n            \"members\": [\n                {\n                    \"id\": \"string\"\n                }\n            ]\n        }\n    ],\n    \"vision\": \"string\",\n    \"mission\": \"string\"\n}",
+              "raw": "{\n    \"start_date\": \"string\",\n    \"end_date\": \"string\",\n    \"positions\": [\n        {\n            \"id\": 1,\n            \"members\": [\n                {\n                    \"id\": \"string\"\n                }\n            ]\n        }\n    ],\n    \"vision\": \"{}\",\n    \"vision_text\": \"string\",\n    \"mission\": \"{}\",\n    \"mission_text\": \"string\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -653,7 +658,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"start_date\": \"string\",\n    \"end_date\": \"string\",\n    \"positions\": [\n        {\n            \"id\": 1,\n            \"members\": [\n                {\n                    \"id\": \"string\"\n                }\n            ]\n        }\n    ],\n    \"vision\": \"string\",\n    \"mission\": \"string\"\n}",
+              "raw": "{\n    \"start_date\": \"string\",\n    \"end_date\": \"string\",\n    \"positions\": [\n        {\n            \"id\": 1,\n            \"members\": [\n                {\n                    \"id\": \"string\"\n                }\n            ]\n        }\n    ],\n    \"vision\": \"{}\",\n    \"vision_text\": \"string\",\n    \"mission\": \"{}\",\n    \"mission_text\": \"string\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -778,7 +783,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"vision\": \"\",\n    \"mission\": \"\",\n    \"org_period_id\": 1\n}",
+              "raw": "{\n    \"vision\": \"{}\",\n    \"vision_text\": \"string\",\n    \"mission\": \"{}\",\n    \"mission_text\": \"string\",\n    \"org_period_id\": 1\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -808,6 +813,11 @@
               "host": ["{{HOST}}"],
               "path": ["api", "v1", "documents"],
               "query": [
+                {
+                  "key": "q",
+                  "value": "string",
+                  "disabled": true
+                },
                 {
                   "key": "cursor",
                   "value": "1",
@@ -992,7 +1002,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"content\": \"{}\"\n}",
+              "raw": "{\n    \"content\": \"{}\",\n    \"content_text\": \"string\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1032,7 +1042,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"title\": \"string\",\n    \"short_desc\": \"string\",\n    \"thumbnail_url\": \"string\",\n    \"slug\": \"string\",\n    \"content\": \"{}\"\n}",
+              "raw": "{\n    \"title\": \"string\",\n    \"short_desc\": \"string\",\n    \"thumbnail_url\": \"string\",\n    \"slug\": \"string\",\n    \"content\": \"{}\",\n    \"content_text\": \"string\"\n}",
               "options": {
                 "raw": {
                   "language": "json"
@@ -1058,8 +1068,13 @@
               "path": ["api", "v1", "blogs"],
               "query": [
                 {
-                  "key": "cursor",
+                  "key": "q",
                   "value": "string",
+                  "disabled": true
+                },
+                {
+                  "key": "cursor",
+                  "value": "1",
                   "disabled": true
                 }
               ]
@@ -1079,7 +1094,7 @@
               "variable": [
                 {
                   "key": "id",
-                  "value": "string"
+                  "value": "1"
                 }
               ]
             }

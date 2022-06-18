@@ -84,8 +84,9 @@ func (d *UserDeps) DeleteMember(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *UserDeps) GetMembers(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("q")
 	cursor := r.URL.Query().Get("cursor")
-	out := d.QueryMember(r.Context(), cursor)
+	out := d.QueryMember(r.Context(), q, cursor)
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 

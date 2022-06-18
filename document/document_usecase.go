@@ -178,7 +178,7 @@ type (
 	}
 )
 
-func (d *DocumentDeps) QueryDocument(ctx context.Context, cursor, limit string) (out QueryDocumentOut) {
+func (d *DocumentDeps) QueryDocument(ctx context.Context, q, cursor, limit string) (out QueryDocumentOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
@@ -188,7 +188,7 @@ func (d *DocumentDeps) QueryDocument(ctx context.Context, cursor, limit string) 
 		nlimit = 25
 	}
 
-	documents, err := d.DocumentRepository.Query(ctx, fromCursor, nlimit)
+	documents, err := d.DocumentRepository.Query(ctx, q, fromCursor, nlimit)
 	if err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query documents"))
 		return
