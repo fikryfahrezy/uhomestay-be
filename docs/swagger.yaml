@@ -1992,7 +1992,7 @@ components:
           type: object
           properties:
             cursor:
-              type: string
+              type: number
             blogs:
               type: array
               items:
