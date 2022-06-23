@@ -31,8 +31,7 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
-      - working-directory: fetch
-        env:
+      - env:
           HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY }}
           HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL }}
         run: |
