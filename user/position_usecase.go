@@ -63,12 +63,17 @@ type (
 	}
 )
 
-func (d *UserDeps) QueryPosition(ctx context.Context, cursor string) (out QueryPositionOut) {
+func (d *UserDeps) QueryPosition(ctx context.Context, cursor, limit string) (out QueryPositionOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
-	positions, err := d.PositionRepository.Query(ctx, fromCursor, 25)
+	nlimit, _ := strconv.ParseInt(limit, 10, 64)
+	if nlimit == 0 {
+		nlimit = 25
+	}
+
+	positions, err := d.PositionRepository.Query(ctx, fromCursor, nlimit)
 	if err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query positions"))
 		return

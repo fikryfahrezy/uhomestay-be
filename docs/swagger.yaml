@@ -126,6 +126,10 @@ paths:
           name: cursor
           schema:
             type: string
+        - in: query
+          name: limit
+          schema:
+            type: string
       responses:
         "200":
           description: Description
@@ -291,6 +295,10 @@ paths:
       parameters:
         - in: query
           name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
           schema:
             type: string
       responses:
@@ -707,6 +715,10 @@ paths:
           name: cursor
           schema:
             type: string
+        - in: query
+          name: limit
+          schema:
+            type: string
       responses:
         "200":
           description: Description
@@ -868,7 +880,7 @@ paths:
         - in: path
           name: id
           schema:
-            type: string
+            type: number
           required: true
       responses:
         "200":
@@ -890,7 +902,7 @@ paths:
         - in: path
           name: id
           schema:
-            type: string
+            type: number
           required: true
       requestBody:
         required: true
@@ -918,7 +930,7 @@ paths:
         - in: path
           name: id
           schema:
-            type: string
+            type: number
           required: true
       responses:
         "200":
@@ -1964,7 +1976,7 @@ components:
           type: object
           properties:
             id:
-              type: string
+              type: number
             content:
               type: string
             content_text:
@@ -1977,7 +1989,7 @@ components:
           properties:
             id:
               type: string
-    BlogBodyIn:
+    AddBlogBodyIn:
       type: object
       properties:
         title:
@@ -1998,8 +2010,6 @@ components:
         - thumbnail_url
         - content
         - slug
-    AddBlogBodyIn:
-      $ref: "#/components/schemas/BlogBodyIn"
     QueryBlogRes:
       type: object
       properties:
@@ -2014,7 +2024,7 @@ components:
                 type: object
                 properties:
                   id:
-                    type: string
+                    type: number
                   title:
                     type: string
                   short_desc:
@@ -2033,7 +2043,7 @@ components:
           type: object
           properties:
             id:
-              type: string
+              type: number
             title:
               type: string
             short_desc:
@@ -2048,7 +2058,23 @@ components:
               type: string
               format: date
     EditBlogBodyIn:
-      $ref: "#/components/schemas/BlogBodyIn"
+      type: object
+      properties:
+        title:
+          type: string
+        short_desc:
+          type: string
+        thumbnail_url:
+          type: string
+        content:
+          type: string
+        content_text:
+          type: string
+      required:
+        - title
+        - short_desc
+        - thumbnail_url
+        - content
     UploadBlogImgRes:
       type: object
       properties:

@@ -118,7 +118,7 @@ func TestQueryDues(t *testing.T) {
 			}
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
-			res := duesDeps.QueryDues(ctx, "")
+			res := duesDeps.QueryDues(ctx, "", "")
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 

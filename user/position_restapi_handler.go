@@ -26,7 +26,8 @@ func (d *UserDeps) PostPosition(w http.ResponseWriter, r *http.Request) {
 
 func (d *UserDeps) GetPositions(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
-	out := d.QueryPosition(r.Context(), cursor)
+	limit := r.URL.Query().Get("limit")
+	out := d.QueryPosition(r.Context(), cursor, limit)
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 

@@ -738,7 +738,7 @@ func TestQueryMember(t *testing.T) {
 			}
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
-			res := userDeps.QueryMember(ctx, "", "")
+			res := userDeps.QueryMember(ctx, "", "", "0")
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 

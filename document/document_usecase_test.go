@@ -540,7 +540,7 @@ func TestFindDocumentChildren(t *testing.T) {
 			}
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
-			res := documentDeps.FindDocumentChildren(ctx, c.Id, "")
+			res := documentDeps.FindDocumentChildren(ctx, c.Id, "", "")
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 

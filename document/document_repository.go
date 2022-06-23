@@ -295,10 +295,22 @@ func (r *DocumentRepository) Query(ctx context.Context, q string, id, limit int6
 	return ms, nil
 }
 
-func (r *DocumentRepository) FindChildren(ctx context.Context, dirId uint64, id, limit int64) ([]DocumentModel, error) {
+func (r *DocumentRepository) FindChildren(ctx context.Context, dirId uint64, q string, id, limit int64) ([]DocumentModel, error) {
 	fromId := "id > $2"
 	if id != 0 {
 		fromId = "id < $2"
+	}
+
+	like := "id > $3"
+	order := "id"
+	if q != "" {
+		q = q + ":*"
+		like = "textsearchable_index_col @@ to_tsquery($3)"
+		order = "textrank_index_col"
+	}
+
+	if q == "" {
+		q = "0"
 	}
 
 	sqlQuery := `
@@ -316,8 +328,9 @@ func (r *DocumentRepository) FindChildren(ctx context.Context, dirId uint64, id,
 		WHERE deleted_at IS NULL
 			AND dir_id = $1
 			AND ` + fromId + `
-		ORDER BY id DESC
-		LIMIT $3
+			AND ` + like + `
+		ORDER BY ` + order + ` DESC
+		LIMIT $4
 	`
 
 	rows, _ := r.PostgreDb.Query(
@@ -325,6 +338,7 @@ func (r *DocumentRepository) FindChildren(ctx context.Context, dirId uint64, id,
 		sqlQuery,
 		dirId,
 		id,
+		q,
 		limit,
 	)
 	defer rows.Close()

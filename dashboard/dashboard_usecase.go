@@ -58,7 +58,7 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	m := make(chan []MemberOut)
 	mr := make(chan resp.Response)
 	go func(ctx context.Context, m chan []MemberOut, res chan resp.Response) {
-		out := d.QueryMember(ctx, "", "")
+		out := d.QueryMember(ctx, "", "", "5")
 
 		l := len(out.Res.Members)
 		if l > 5 {
@@ -97,14 +97,14 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	ds := make(chan DuesOut)
 	dsr := make(chan resp.Response)
 	go func(ctx context.Context, ds chan DuesOut, res chan resp.Response) {
-		out := d.QueryDues(ctx, "")
+		out := d.QueryDues(ctx, "", "1")
 
-		var d DuesOut
-		if len(out.Res.Dues) > 1 {
-			d = DuesOut(out.Res.Dues[0])
+		var do DuesOut
+		if len(out.Res.Dues) != 0 {
+			do = DuesOut(out.Res.Dues[0])
 		}
 
-		ds <- d
+		ds <- do
 		res <- out.Response
 	}(ctx, ds, dsr)
 
@@ -130,7 +130,7 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	p := make(chan []PositionOut)
 	pr := make(chan resp.Response)
 	go func(ctx context.Context, p chan []PositionOut, res chan resp.Response) {
-		out := d.QueryPosition(ctx, "")
+		out := d.QueryPosition(ctx, "", "5")
 
 		l := len(out.Res.Positions)
 		if l > 5 {

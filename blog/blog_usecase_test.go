@@ -255,7 +255,6 @@ func TestEditBlog(t *testing.T) {
 			In: blog.EditBlogIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
-				Slug:         "slug",
 				ThumbnailUrl: "",
 				Content:      `{"test": "hi"}`,
 				ContentText:  "hi",
@@ -273,7 +272,6 @@ func TestEditBlog(t *testing.T) {
 			In: blog.EditBlogIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
-				Slug:         "slug",
 				ThumbnailUrl: "",
 				Content: fmt.Sprintf(
 					`{"img": "%s"}`,
@@ -298,7 +296,6 @@ func TestEditBlog(t *testing.T) {
 			In: blog.EditBlogIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
-				Slug:         "slug",
 				ThumbnailUrl: "",
 				Content: fmt.Sprintf(
 					`{"img1": "%s", "img2": "%s"}`,
@@ -324,7 +321,6 @@ func TestEditBlog(t *testing.T) {
 			In: blog.EditBlogIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
-				Slug:         "slug",
 				ThumbnailUrl: "http://localhost/balbla/thm.jpg.jpg",
 				Content: fmt.Sprintf(
 					`{"img": "%s"}`,
@@ -353,7 +349,6 @@ func TestEditBlog(t *testing.T) {
 			In: blog.EditBlogIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
-				Slug:         "slug",
 				ThumbnailUrl: "http://localhost/balbla/thm.jpg.jpg",
 				Content: fmt.Sprintf(
 					`{"img1": "%s", "img2": "%s"}`,
@@ -371,7 +366,6 @@ func TestEditBlog(t *testing.T) {
 			In: blog.EditBlogIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
-				Slug:         "slug",
 				ThumbnailUrl: "",
 				Content:      `{"test": "hi"}`,
 				ContentText:  "hi",

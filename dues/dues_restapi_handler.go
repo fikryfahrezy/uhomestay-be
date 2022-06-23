@@ -45,7 +45,8 @@ func (d *DuesDeps) DeleteDues(w http.ResponseWriter, r *http.Request) {
 
 func (d *DuesDeps) GetDues(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
-	out := d.QueryDues(r.Context(), cursor)
+	limit := r.URL.Query().Get("limit")
+	out := d.QueryDues(r.Context(), cursor, limit)
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 

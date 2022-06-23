@@ -271,13 +271,11 @@ func (d *BlogDeps) FindBlogById(ctx context.Context, pid string) (out FindBlogOu
 
 type (
 	EditBlogIn struct {
-		Id           string `json:"id"`
 		Title        string `json:"title"`
 		ShortDesc    string `json:"short_desc"`
 		ThumbnailUrl string `json:"thumbnail_url"`
 		Content      string `json:"content"`
 		ContentText  string `json:"content_text"`
-		Slug         string `json:"slug"`
 	}
 	EditBlogRes struct {
 		Id int64 `json:"id"`
@@ -319,7 +317,6 @@ func (d *BlogDeps) EditBlog(ctx context.Context, pid string, in EditBlogIn) (out
 		ThumbnailUrl: in.ThumbnailUrl,
 		Content:      in.Content,
 		ContentText:  in.ContentText,
-		Slug:         in.Slug,
 	})
 	if err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "blog model builder"))

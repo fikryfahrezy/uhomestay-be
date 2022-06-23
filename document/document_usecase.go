@@ -464,7 +464,7 @@ type (
 	}
 )
 
-func (d *DocumentDeps) FindDocumentChildren(ctx context.Context, pid, cursor string) (out DocumentChildrenOut) {
+func (d *DocumentDeps) FindDocumentChildren(ctx context.Context, pid, q, cursor string) (out DocumentChildrenOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
@@ -475,7 +475,7 @@ func (d *DocumentDeps) FindDocumentChildren(ctx context.Context, pid, cursor str
 	}
 
 	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
-	documents, err := d.DocumentRepository.FindChildren(ctx, id, fromCursor, 25)
+	documents, err := d.DocumentRepository.FindChildren(ctx, id, q, fromCursor, 25)
 	if err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find document children"))
 		return

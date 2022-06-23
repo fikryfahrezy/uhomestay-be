@@ -70,13 +70,15 @@ func (d *DocumentDeps) DeleteDocument(w http.ResponseWriter, r *http.Request) {
 func (d *DocumentDeps) GetDocuments(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
 	cursor := r.URL.Query().Get("cursor")
-	out := d.QueryDocument(r.Context(), q, cursor, "0")
+	limit := r.URL.Query().Get("limit")
+	out := d.QueryDocument(r.Context(), q, cursor, limit)
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *DocumentDeps) GetDocumentChildren(w http.ResponseWriter, r *http.Request) {
+	q := r.URL.Query().Get("q")
 	id := chi.URLParam(r, "id")
 	cursor := r.URL.Query().Get("cursor")
-	out := d.FindDocumentChildren(r.Context(), id, cursor)
+	out := d.FindDocumentChildren(r.Context(), id, q, cursor)
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }

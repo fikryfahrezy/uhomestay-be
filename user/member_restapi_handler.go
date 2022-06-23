@@ -86,7 +86,8 @@ func (d *UserDeps) DeleteMember(w http.ResponseWriter, r *http.Request) {
 func (d *UserDeps) GetMembers(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
 	cursor := r.URL.Query().Get("cursor")
-	out := d.QueryMember(r.Context(), q, cursor)
+	limit := r.URL.Query().Get("limit")
+	out := d.QueryMember(r.Context(), q, cursor, limit)
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
@@ -137,7 +138,7 @@ func (d *UserDeps) RegisterForm(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Add("Content-Type", "text/html")
 
-	positions := d.QueryPosition(r.Context(), "")
+	positions := d.QueryPosition(r.Context(), "", "999")
 	if positions.Error != nil {
 		w.WriteHeader(positions.StatusCode)
 		io.WriteString(w, positions.Error.Error())

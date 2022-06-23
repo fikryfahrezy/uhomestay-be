@@ -233,6 +233,11 @@
                   "key": "cursor",
                   "value": "string",
                   "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "1",
+                  "disabled": true
                 }
               ]
             }
@@ -523,6 +528,11 @@
               "query": [
                 {
                   "key": "cursor",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
                   "value": "1",
                   "disabled": true
                 }
@@ -822,6 +832,11 @@
                   "key": "cursor",
                   "value": "1",
                   "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "1",
+                  "disabled": true
                 }
               ]
             }
@@ -1108,7 +1123,7 @@
             "header": [],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"title\": \"string\",\n    \"short_desc\": \"string\",\n    \"thumbnail_url\": \"string\",\n    \"slug\": \"string\",\n    \"content\": \"{}\"\n}",
+              "raw": "{\n    \"title\": \"string\",\n    \"short_desc\": \"string\",\n    \"thumbnail_url\": \"string\",\n    \"content\": \"{}\",\n    \"content_text\": \"string\"\n}",
               "options": {
                 "raw": {
                   "language": "json"

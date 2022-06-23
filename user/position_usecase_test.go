@@ -95,7 +95,7 @@ func TestQueryPosition(t *testing.T) {
 			}
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
-			res := userDeps.QueryPosition(ctx, "")
+			res := userDeps.QueryPosition(ctx, "", "0")
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 
@@ -137,7 +137,7 @@ func TestQueryPositionLevel(t *testing.T) {
 			}
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
-			res := userDeps.QueryPosition(ctx, "")
+			res := userDeps.QueryPosition(ctx, "", "0")
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 
