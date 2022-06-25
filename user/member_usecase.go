@@ -437,11 +437,7 @@ func (d *UserDeps) EditMember(ctx context.Context, uid string, in EditMemberIn) 
 	}
 
 	orgStructure, err := d.OrgStructureRepository.FindLatestByMemberId(ctx, uid)
-	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find user org structure by member id"))
-		return
-	}
-	if err != nil {
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find user org structure by member id"))
 		return
 	}
