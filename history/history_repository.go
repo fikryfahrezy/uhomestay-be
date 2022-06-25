@@ -32,7 +32,7 @@ type (
 
 func (r *HistoryRepository) Save(ctx context.Context, m HistoryModel) (nm HistoryModel, err error) {
 	sqlQuery := `
-		INSERT INTO blogs (
+		INSERT INTO histories (
 			content_text,
 			content,
 			created_at
@@ -77,8 +77,7 @@ func (r *HistoryRepository) FindLatest(ctx context.Context) (m HistoryModel, err
 			content_text,
 			created_at,
 			content
-		FROM blogs
-		WHERE deleted_at IS NULL
+		FROM histories
 		ORDER BY id DESC
 		LIMIT 1
 	`
