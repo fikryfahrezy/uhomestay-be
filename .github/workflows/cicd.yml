@@ -43,5 +43,5 @@ jobs:
           echo "  login $HEROKU_EMAIL" >> ~/.netrc
           echo "  password $HEROKU_API_KEY" >> ~/.netrc
           heroku container:login
-          heroku container:push web -a ade-fetch
-          heroku container:release web -a ade-fetch
+          heroku container:push web -a uhomestay-dev
+          heroku container:release web -a uhomestay-dev
