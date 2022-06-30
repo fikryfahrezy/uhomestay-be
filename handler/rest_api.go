@@ -17,7 +17,6 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/jwt"
 	mw "github.com/PA-D3RPLA/d3if43-htt-uhomestay/middleware"
 )
 
@@ -46,8 +45,6 @@ func NewRestApi(
 }
 
 func (p *RestApiConf) RestApiHandler() {
-	jwtMidd := jwt.NewMiddleware(p.Conf.JwtKey, p.Conf.JwtIssuerUrl, p.Conf.JwtAudiences, &jwt.JwtPrivateClaim{})
-	adminJwtMidd := jwt.NewMiddleware(p.Conf.JwtKey, p.Conf.JwtIssuerUrl, p.Conf.JwtAudiences, &jwt.JwtPrivateAdminClaim{})
 	trxMidd := mw.NewTrxMiddleware(p.PosgrePool)
 
 	// Basic CORS
@@ -111,66 +108,66 @@ func (p *RestApiConf) RestApiHandler() {
 
 	r.Get("/api/v1/members", p.DashboardDeps.GetMembers)
 	r.Get("/api/v1/members/{id}", p.DashboardDeps.GetMember)
-	r.With(jwtMidd).Get("/api/v1/profile", p.DashboardDeps.GetProfileMember)
-	r.With(adminJwtMidd).With(trxMidd).Post("/api/v1/members", p.DashboardDeps.PostMember)
-	r.With(jwtMidd).With(trxMidd).Put("/api/v1/members", p.DashboardDeps.PutMemberProfile)
-	r.With(adminJwtMidd).With(trxMidd).Put("/api/v1/members/{id}", p.DashboardDeps.PutMember)
-	r.With(adminJwtMidd).With(trxMidd).Delete("/api/v1/members/{id}", p.DashboardDeps.DeleteMember)
-	r.With(adminJwtMidd).With(trxMidd).Patch("/api/v1/members/{id}", p.DashboardDeps.PatchMemberApproval)
+	r.Get("/api/v1/profile", p.DashboardDeps.GetProfileMember)
+	r.With(trxMidd).Post("/api/v1/members", p.DashboardDeps.PostMember)
+	r.With(trxMidd).Put("/api/v1/members", p.DashboardDeps.PutMemberProfile)
+	r.With(trxMidd).Put("/api/v1/members/{id}", p.DashboardDeps.PutMember)
+	r.With(trxMidd).Delete("/api/v1/members/{id}", p.DashboardDeps.DeleteMember)
+	r.With(trxMidd).Patch("/api/v1/members/{id}", p.DashboardDeps.PatchMemberApproval)
 
 	r.Get("/api/v1/periods", p.DashboardDeps.GetPeriods)
 	r.Get("/api/v1/periods/active", p.DashboardDeps.GetActivePeriod)
 	r.Get("/api/v1/periods/{id}/structures", p.DashboardDeps.GetPeriodStructure)
-	r.With(adminJwtMidd).With(trxMidd).Post("/api/v1/periods", p.DashboardDeps.PostPeriod)
-	r.With(adminJwtMidd).Post("/api/v1/periods/goals", p.DashboardDeps.PostGoal)
-	r.With(adminJwtMidd).With(trxMidd).Put("/api/v1/periods/{id}", p.DashboardDeps.PutPeriod)
-	r.With(adminJwtMidd).With(trxMidd).Delete("/api/v1/periods/{id}", p.DashboardDeps.DeletePeriod)
-	r.With(adminJwtMidd).With(trxMidd).Patch("/api/v1/periods/{id}/status", p.DashboardDeps.PatchPeriodStatus)
+	r.With(trxMidd).Post("/api/v1/periods", p.DashboardDeps.PostPeriod)
+	r.Post("/api/v1/periods/goals", p.DashboardDeps.PostGoal)
+	r.With(trxMidd).Put("/api/v1/periods/{id}", p.DashboardDeps.PutPeriod)
+	r.With(trxMidd).Delete("/api/v1/periods/{id}", p.DashboardDeps.DeletePeriod)
+	r.With(trxMidd).Patch("/api/v1/periods/{id}/status", p.DashboardDeps.PatchPeriodStatus)
 	r.Get("/api/v1/periods/{id}/goal", p.DashboardDeps.GetOrgPeriodGoal)
 
 	r.Get("/api/v1/positions", p.DashboardDeps.GetPositions)
 	r.Get("/api/v1/positions/levels", p.DashboardDeps.GetPositionLevels)
-	r.With(adminJwtMidd).Post("/api/v1/positions", p.DashboardDeps.PostPosition)
-	r.With(adminJwtMidd).With(trxMidd).Put("/api/v1/positions/{id}", p.DashboardDeps.PutPositions)
-	r.With(adminJwtMidd).With(trxMidd).Delete("/api/v1/positions/{id}", p.DashboardDeps.DeletePosition)
+	r.Post("/api/v1/positions", p.DashboardDeps.PostPosition)
+	r.With(trxMidd).Put("/api/v1/positions/{id}", p.DashboardDeps.PutPositions)
+	r.With(trxMidd).Delete("/api/v1/positions/{id}", p.DashboardDeps.DeletePosition)
 
 	r.Get("/api/v1/documents", p.DashboardDeps.GetDocuments)
-	r.With(adminJwtMidd).Post("/api/v1/documents/dir", p.DashboardDeps.PostDirDocument)
-	r.With(adminJwtMidd).Post("/api/v1/documents/file", p.DashboardDeps.PostFileDocument)
-	r.With(adminJwtMidd).With(trxMidd).Put("/api/v1/documents/dir/{id}", p.DashboardDeps.PutDirDocument)
-	r.With(adminJwtMidd).With(trxMidd).Put("/api/v1/documents/file/{id}", p.DashboardDeps.PutFileDocument)
+	r.Post("/api/v1/documents/dir", p.DashboardDeps.PostDirDocument)
+	r.Post("/api/v1/documents/file", p.DashboardDeps.PostFileDocument)
+	r.With(trxMidd).Put("/api/v1/documents/dir/{id}", p.DashboardDeps.PutDirDocument)
+	r.With(trxMidd).Put("/api/v1/documents/file/{id}", p.DashboardDeps.PutFileDocument)
 	r.Get("/api/v1/documents/{id}", p.DashboardDeps.GetDocumentChildren)
-	r.With(adminJwtMidd).With(trxMidd).Delete("/api/v1/documents/{id}", p.DashboardDeps.DeleteDocument)
+	r.With(trxMidd).Delete("/api/v1/documents/{id}", p.DashboardDeps.DeleteDocument)
 
-	r.With(adminJwtMidd).Post("/api/v1/histories", p.DashboardDeps.PostHistory)
+	r.Post("/api/v1/histories", p.DashboardDeps.PostHistory)
 	r.Get("/api/v1/histories", p.DashboardDeps.GetHistory)
 
 	r.Get("/api/v1/blogs", p.DashboardDeps.GetBlogs)
 	r.Get("/api/v1/blogs/{id}", p.DashboardDeps.GetBlog)
-	r.With(adminJwtMidd).Post("/api/v1/blogs", p.DashboardDeps.PostBlog)
-	r.With(adminJwtMidd).Put("/api/v1/blogs/{id}", p.DashboardDeps.PutBlogs)
-	r.With(adminJwtMidd).Delete("/api/v1/blogs/{id}", p.DashboardDeps.DeleteBlog)
-	r.With(adminJwtMidd).Post("/api/v1/blogs/image", p.DashboardDeps.PostImage)
+	r.Post("/api/v1/blogs", p.DashboardDeps.PostBlog)
+	r.Put("/api/v1/blogs/{id}", p.DashboardDeps.PutBlogs)
+	r.Delete("/api/v1/blogs/{id}", p.DashboardDeps.DeleteBlog)
+	r.Post("/api/v1/blogs/image", p.DashboardDeps.PostImage)
 
 	r.Get("/api/v1/cashflows", p.DashboardDeps.GetCashflows)
-	r.With(adminJwtMidd).Post("/api/v1/cashflows", p.DashboardDeps.PostCashflow)
-	r.With(adminJwtMidd).Put("/api/v1/cashflows/{id}", p.DashboardDeps.PutCashflow)
-	r.With(adminJwtMidd).Delete("/api/v1/cashflows/{id}", p.DashboardDeps.DeleteCashflow)
+	r.Post("/api/v1/cashflows", p.DashboardDeps.PostCashflow)
+	r.Put("/api/v1/cashflows/{id}", p.DashboardDeps.PutCashflow)
+	r.Delete("/api/v1/cashflows/{id}", p.DashboardDeps.DeleteCashflow)
 
-	r.With(adminJwtMidd).Put("/api/v1/dues/members/monthly/{id}", p.DashboardDeps.PutMemberDues)
-	r.With(adminJwtMidd).Patch("/api/v1/dues/members/monthly/{id}", p.DashboardDeps.PatchMemberDues)
-	r.With(jwtMidd).Post("/api/v1/dues/members/monthly/{id}", p.DashboardDeps.PostMemberDues)
+	r.Put("/api/v1/dues/members/monthly/{id}", p.DashboardDeps.PutMemberDues)
+	r.Patch("/api/v1/dues/members/monthly/{id}", p.DashboardDeps.PatchMemberDues)
+	r.Post("/api/v1/dues/members/monthly/{id}", p.DashboardDeps.PostMemberDues)
 	r.Get("/api/v1/dues/members/{id}", p.DashboardDeps.GetMemberDues)
 	r.Get("/api/v1/dues/{id}/members", p.DashboardDeps.GetMembersDues)
 
 	r.Get("/api/v1/dues", p.DashboardDeps.GetDues)
-	r.With(adminJwtMidd).Post("/api/v1/dues", p.DashboardDeps.PostDues)
+	r.Post("/api/v1/dues", p.DashboardDeps.PostDues)
 	r.Get("/api/v1/dues/{id}/check", p.DashboardDeps.GetPaidDues)
-	r.With(adminJwtMidd).Put("/api/v1/dues/{id}", p.DashboardDeps.PutDues)
-	r.With(adminJwtMidd).Delete("/api/v1/dues/{id}", p.DashboardDeps.DeleteDues)
+	r.Put("/api/v1/dues/{id}", p.DashboardDeps.PutDues)
+	r.Delete("/api/v1/dues/{id}", p.DashboardDeps.DeleteDues)
 
 	r.Get("/api/v1/dashboard", p.DashboardDeps.GetPublicDashboard)
-	r.With(adminJwtMidd).Get("/api/v1/dashboard/private", p.DashboardDeps.GetPrivateDashboard)
+	r.Get("/api/v1/dashboard/private", p.DashboardDeps.GetPrivateDashboard)
 
 	workDir, _ := os.Getwd()
 	filesDir := http.Dir(filepath.Join(workDir, "docs"))
