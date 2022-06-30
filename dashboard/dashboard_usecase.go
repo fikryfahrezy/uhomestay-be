@@ -2,6 +2,7 @@ package dashboard
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/resp"
@@ -369,7 +370,12 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 		out := d.QueryPeriodStructure(ctx, "0")
 
 		o := StructureRes{
+			Id:        out.Res.Id,
+			StartDate: out.Res.StartDate,
+			EndDate:   out.Res.EndDate,
 			Positions: make([]StructurePositionOut, 0, 0),
+			Vision:    out.Res.Vision,
+			Mission:   out.Res.Mission,
 		}
 
 		if out.Error == nil {
@@ -388,16 +394,10 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 				}
 			}
 
-			o = StructureRes{
-				Id:        out.Res.Id,
-				StartDate: out.Res.StartDate,
-				EndDate:   out.Res.EndDate,
-				Positions: ps,
-				Vision:    out.Res.Vision,
-				Mission:   out.Res.Mission,
-			}
+			o.Positions = ps
 		}
 
+		fmt.Println(out.Res.StartDate, out.Res.EndDate)
 		op <- o
 		res <- out.Response
 	}(ctx, op, ops)
@@ -414,6 +414,8 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 	opV := <-op
 	// opsV := <-ops
 	_ = <-ops
+
+	fmt.Println(opV.StartDate, opV.EndDate)
 
 	// if drV.Error != nil {
 	// 	out.Response = drV

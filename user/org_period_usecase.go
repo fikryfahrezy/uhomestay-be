@@ -543,7 +543,7 @@ func (d *UserDeps) FindActivePeriod(ctx context.Context) (out FindActivePeriodOu
 	var startDate, endDate string
 	if period.Id != 0 {
 		startDate = period.StartDate.Format("2006-01-02")
-		endDate = period.StartDate.Format("2006-01-02")
+		endDate = period.EndDate.Format("2006-01-02")
 	}
 
 	outPeriod := PeriodRes{
