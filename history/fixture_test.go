@@ -27,6 +27,11 @@ var (
 	}
 )
 
+var (
+	captureException history.ExceptionCapturer = func(exception error) {}
+	captureMessage   history.MessageCapturer   = func(message string) {}
+)
+
 func LoadTables(conn *pgxpool.Pool) error {
 	tx, err := conn.Begin(context.Background())
 	if err != nil {
@@ -137,7 +142,11 @@ func TestMain(m *testing.M) {
 	}
 
 	historyRepository = history.NewRepository(db)
-	historyDeps = history.NewDeps(historyRepository)
+	historyDeps = history.NewDeps(
+		captureMessage,
+		captureException,
+		historyRepository,
+	)
 
 	LoadTables(db)
 

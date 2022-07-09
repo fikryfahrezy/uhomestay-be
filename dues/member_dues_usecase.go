@@ -16,6 +16,11 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
+var (
+	ErrMemberNotFound     = errors.New("anggota tidak ditemukan")
+	ErrMemberDuesNotFound = errors.New("tagihan iuran bulanan anggota tidak ditemukan")
+)
+
 type (
 	MemberDuesOut struct {
 		Id           int64  `json:"id"`
@@ -38,19 +43,19 @@ type (
 	}
 )
 
-func (d *DuesDeps) QueryMemberDues(ctx context.Context, uid string, cursor string) (out QueryMemberDuesOut) {
+func (d *DuesDeps) QueryMemberDues(ctx context.Context, uid string, cursor, limit string) (out QueryMemberDuesOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	_, err = uuid.FromString(uid)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "member id not valid"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
 	_, err = d.MemberRepository.FindById(ctx, uid)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find member by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
@@ -88,10 +93,15 @@ func (d *DuesDeps) QueryMemberDues(ctx context.Context, uid string, cursor strin
 	nextCursor := make(chan int64)
 	qRes := make(chan resp.Response)
 
-	go func(ctx context.Context, uid, cursor string, md chan []MemberDuesOut, nc chan int64, res chan resp.Response) {
+	go func(ctx context.Context, uid, cursor, limit string, md chan []MemberDuesOut, nc chan int64, res chan resp.Response) {
 		var r resp.Response
 		fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
-		memberdues, err := d.MemberDuesRepository.QueryMDVByUid(ctx, uid, fromCursor, 25)
+		nlimit, _ := strconv.ParseInt(limit, 10, 64)
+		if nlimit == 0 {
+			nlimit = 25
+		}
+
+		memberdues, err := d.MemberDuesRepository.QueryMDVByUid(ctx, uid, fromCursor, nlimit)
 		if err != nil {
 			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query member dues view by uid"))
 		}
@@ -123,7 +133,7 @@ func (d *DuesDeps) QueryMemberDues(ctx context.Context, uid string, cursor strin
 		md <- outMemberDues
 		nc <- nextCursor
 		res <- r
-	}(ctx, uid, cursor, outMemberDues, nextCursor, qRes)
+	}(ctx, uid, cursor, limit, outMemberDues, nextCursor, qRes)
 
 	paidDuesV := <-paidDues
 	pRV := <-pRes
@@ -169,6 +179,8 @@ type (
 	}
 	QueryMembersDuesRes struct {
 		Cursor     int64            `json:"cursor"`
+		PaidDues   string           `json:"paid_dues"`
+		UnpaidDues string           `json:"unpaid_dues"`
 		MemberDues []MembersDuesOut `json:"member_dues"`
 	}
 	QueryMembersDuesOut struct {
@@ -177,14 +189,13 @@ type (
 	}
 )
 
-func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid, cursor string) (out QueryMembersDuesOut) {
+func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid, cursor, limit string) (out QueryMembersDuesOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.StatusCode = http.StatusBadRequest
-		err = errors.Wrap(err, "parse uint")
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrDuesNotFound)
 		return
 	}
 
@@ -213,39 +224,104 @@ func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid, cursor string) (ou
 		return
 	}
 
-	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
-	memberDues, err := d.MemberDuesRepository.QueryDMVByDuesId(ctx, dues.Id, fromCursor, 25)
-	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query member dues by uid"))
+	duefFlow := func(ctx context.Context, duesId uint64, paidDues chan float64, unpaidDues chan float64, res chan resp.Response) {
+		var r resp.Response
+		amts, err := d.MemberDuesRepository.QueryAmtByDuesId(ctx, duesId)
+		if err != nil {
+			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query dues amt by dues id"))
+		}
+
+		var pdues float64
+		var updues float64
+		for _, u := range amts {
+			cash, _ := strconv.ParseFloat(u.IdrAmount, 64)
+
+			if u.Status == Paid {
+				pdues += cash
+				continue
+			}
+
+			updues += cash
+		}
+
+		paidDues <- pdues
+		unpaidDues <- updues
+		res <- r
+	}
+
+	paidDues := make(chan float64)
+	unpaidDues := make(chan float64)
+	pRes := make(chan resp.Response)
+	go duefFlow(ctx, dues.Id, paidDues, unpaidDues, pRes)
+
+	outMemberDues := make(chan []MembersDuesOut)
+	nextCursor := make(chan int64)
+	qRes := make(chan resp.Response)
+
+	go func(ctx context.Context, dueId uint64, cursor, limit string, md chan []MembersDuesOut, nc chan int64, res chan resp.Response) {
+		var r resp.Response
+		fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
+		nlimit, _ := strconv.ParseInt(limit, 10, 64)
+		if nlimit == 0 {
+			nlimit = 25
+		}
+
+		memberDues, err := d.MemberDuesRepository.QueryDMVByDuesId(ctx, dues.Id, fromCursor, nlimit)
+		if err != nil {
+			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query member dues by uid"))
+			return
+		}
+
+		mdsLen := len(memberDues)
+
+		var nextCursor int64
+		if mdsLen != 0 {
+			nextCursor = int64(memberDues[mdsLen-1].Id)
+		}
+
+		outMembersDues := make([]MembersDuesOut, mdsLen)
+		for i, m := range memberDues {
+			status := m.Status
+			if status == Unknown {
+				continue
+			}
+
+			outMembersDues[i] = MembersDuesOut{
+				Id:            int64(m.Id),
+				MemberId:      m.MemberId,
+				Status:        status.String,
+				Name:          m.Name,
+				ProfilePicUrl: m.ProfilePicUrl,
+			}
+		}
+
+		md <- outMembersDues
+		nc <- nextCursor
+		res <- r
+	}(ctx, dues.Id, cursor, limit, outMemberDues, nextCursor, qRes)
+
+	paidDuesV := <-paidDues
+	unpaidDuesV := <-unpaidDues
+	pRV := <-pRes
+	outMemberDuesV := <-outMemberDues
+	nextCursorV := <-nextCursor
+	qRV := <-qRes
+
+	if pRV.Error != nil {
+		out.Response = pRV
 		return
 	}
 
-	mdsLen := len(memberDues)
-
-	var nextCursor int64
-	if mdsLen != 0 {
-		nextCursor = int64(memberDues[mdsLen-1].Id)
-	}
-
-	outMembersDues := make([]MembersDuesOut, mdsLen)
-	for i, m := range memberDues {
-		status := m.Status
-		if status == Unknown {
-			continue
-		}
-
-		outMembersDues[i] = MembersDuesOut{
-			Id:            int64(m.Id),
-			MemberId:      m.MemberId,
-			Status:        status.String,
-			Name:          m.Name,
-			ProfilePicUrl: m.ProfilePicUrl,
-		}
+	if qRV.Error != nil {
+		out.Response = qRV
+		return
 	}
 
 	out.Res = QueryMembersDuesRes{
-		Cursor:     nextCursor,
-		MemberDues: outMembersDues,
+		Cursor:     nextCursorV,
+		MemberDues: outMemberDuesV,
+		PaidDues:   strconv.FormatFloat(paidDuesV, 'f', -1, 64),
+		UnpaidDues: strconv.FormatFloat(unpaidDuesV, 'f', -1, 64),
 	}
 
 	return
@@ -270,13 +346,13 @@ func (d *DuesDeps) PayMemberDues(ctx context.Context, uid, pid string, in PayMem
 
 	_, err = uuid.FromString(uid)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "member id not valid"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberDuesNotFound)
 		return
 	}
 
@@ -287,7 +363,7 @@ func (d *DuesDeps) PayMemberDues(ctx context.Context, uid, pid string, in PayMem
 
 	memberDues, err := d.MemberDuesRepository.FindUnpaidByIdAndMemberId(ctx, id, uid)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find dues by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberDuesNotFound)
 		return
 	}
 	if err != nil {
@@ -347,18 +423,18 @@ func (d *DuesDeps) EditMemberDues(ctx context.Context, pid string, in EditMember
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberDuesNotFound)
 		return
 	}
 
 	if err = ValidateEditMemberDuesIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "edit member dues validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	memberDues, err := d.MemberDuesRepository.FindUnpaidById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find member dues by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberDuesNotFound)
 		return
 	}
 	if err != nil {
@@ -417,18 +493,18 @@ func (d *DuesDeps) PaidMemberDues(ctx context.Context, pid string, in PaidMember
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberDuesNotFound)
 		return
 	}
 
 	if err = ValidatePaidMemberDuesIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "edit member dues validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	memberDues, err := d.MemberDuesRepository.FindUnpaidById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find member dues by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberDuesNotFound)
 		return
 	}
 	if err != nil {
@@ -438,7 +514,7 @@ func (d *DuesDeps) PaidMemberDues(ctx context.Context, pid string, in PaidMember
 
 	dues, err := d.DuesRepository.FindById(ctx, memberDues.DuesId)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find dues by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrDuesNotFound)
 		return
 	}
 	if err != nil {
@@ -448,7 +524,7 @@ func (d *DuesDeps) PaidMemberDues(ctx context.Context, pid string, in PaidMember
 
 	member, err := d.MemberRepository.FindById(ctx, memberDues.MemberId)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find member by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 	if err != nil {

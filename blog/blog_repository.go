@@ -99,7 +99,7 @@ func (r *BlogRepository) Query(ctx context.Context, q string, id, limit int64) (
 	order := "id"
 	if q != "" {
 		q = q + ":*"
-		like = "textsearchable_index_col @@ to_tsquery($2)"
+		like = "textsearchable_index_col @@ websearch_to_tsquery($2)"
 		order = "textrank_index_col"
 	}
 

@@ -11,6 +11,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var ErrNotValidContent = errors.New("format kontent tidak valid")
+
 type (
 	AddGoalIn struct {
 		Vision      string `json:"vision"`
@@ -33,13 +35,13 @@ func (d *UserDeps) AddGoal(ctx context.Context, in AddGoalIn) (out AddGoalOut) {
 	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 
 	if err = ValidateAddGoalIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "add goal validaion"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	_, err = d.OrgPeriodRepository.FindUndeletedById(ctx, uint64(in.OrgPeriodId))
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no rows find period by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 		return
 	}
 
@@ -54,7 +56,7 @@ func (d *UserDeps) AddGoal(ctx context.Context, in AddGoalIn) (out AddGoalOut) {
 		if content != "" {
 			err = json.Unmarshal([]byte(content), &mv)
 			if err != nil {
-				r = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "unmarshal "+title+" json"))
+				r = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(ErrNotValidContent, "unmarshal "+title+" json"))
 			}
 		}
 
@@ -123,7 +125,7 @@ func (d *UserDeps) FindOrgPeriodGoal(ctx context.Context, pid string) (out FindO
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 		return
 	}
 

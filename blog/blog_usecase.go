@@ -15,6 +15,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var ErrBlogNotFound = errors.New("blog tidak ditemukan")
+
 type BlogIn struct {
 	Title        string
 	ShortDesc    string
@@ -126,7 +128,7 @@ func (d *BlogDeps) AddBlog(ctx context.Context, in AddBlogIn) (out AddBlogOut) {
 	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 
 	if err = ValidateAddBlogIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "add blog validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
@@ -232,13 +234,13 @@ func (d *BlogDeps) FindBlogById(ctx context.Context, pid string) (out FindBlogOu
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrBlogNotFound)
 		return
 	}
 
 	blog, err := d.BlogRepository.FindUndeletedById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find blog by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrBlogNotFound)
 		return
 	}
 	if err != nil {
@@ -291,19 +293,19 @@ func (d *BlogDeps) EditBlog(ctx context.Context, pid string, in EditBlogIn) (out
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	if err = ValidateEditBlogIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "edit blog validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrBlogNotFound)
 		return
 	}
 
 	blog, err := d.BlogRepository.FindUndeletedById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find blog by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrBlogNotFound)
 		return
 	}
 	if err != nil {
@@ -354,13 +356,13 @@ func (d *BlogDeps) RemoveBlog(ctx context.Context, pid string) (out RemoveBlogOu
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrBlogNotFound)
 		return
 	}
 
 	_, err = d.BlogRepository.FindUndeletedById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find position by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrBlogNotFound)
 		return
 	}
 	if err != nil {

@@ -41,7 +41,7 @@ func TestQueryMemberDues(t *testing.T) {
 		},
 		{
 			Name:               "Query Member Dues Fail, Id not UUID",
-			ExpectedStatusCode: http.StatusBadRequest,
+			ExpectedStatusCode: http.StatusNotFound,
 			Id:                 "blablabla",
 		},
 	}
@@ -54,7 +54,7 @@ func TestQueryMemberDues(t *testing.T) {
 			}
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
-			res := duesDeps.QueryMemberDues(ctx, c.Id, "")
+			res := duesDeps.QueryMemberDues(ctx, c.Id, "", "")
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 
@@ -121,7 +121,7 @@ func TestQueryMembersDues(t *testing.T) {
 			}
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
-			res := duesDeps.QueryMembersDues(ctx, c.Id, "")
+			res := duesDeps.QueryMembersDues(ctx, c.Id, "", "")
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 

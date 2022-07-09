@@ -77,9 +77,13 @@ var (
 	}
 )
 
-var upload dues.Uploader = func(filename string, file io.Reader) (string, error) {
-	return "", nil
-}
+var (
+	upload dues.FileUploader = func(filename string, file io.Reader) (string, error) {
+		return "", nil
+	}
+	captureException dues.ExceptionCapturer = func(exception error) {}
+	captureMessage   dues.MessageCapturer   = func(message string) {}
+)
 
 func LoadTables(conn *pgxpool.Pool) error {
 	tx, err := conn.Begin(context.Background())
@@ -246,7 +250,15 @@ func TestMain(m *testing.M) {
 	memberRepository = user.NewMemberRepository(db)
 	cashflowRepository = cashflow.NewRepository(db)
 
-	duesDeps = dues.NewDeps(upload, duesRepository, memberDuesRepository, memberRepository, cashflowRepository)
+	duesDeps = dues.NewDeps(
+		captureMessage,
+		captureException,
+		upload,
+		duesRepository,
+		memberDuesRepository,
+		memberRepository,
+		cashflowRepository,
+	)
 
 	LoadTables(db)
 

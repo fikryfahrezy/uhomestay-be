@@ -29,7 +29,7 @@ func (d *HistoryDeps) AddHistory(ctx context.Context, in AddHistoryIn) (out AddH
 	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 
 	if err = ValidateAddHistoryIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "add history validaion"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 

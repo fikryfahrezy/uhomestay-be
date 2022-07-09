@@ -14,6 +14,13 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
+var (
+	ErrParentDirNotFound = errors.New("folder induk  tidak ditemukan")
+	ErrDirNotFound       = errors.New("folder tidak ditemukan")
+	ErrFileNotFound      = errors.New("file tidak ditemukan")
+	ErrDocumentNotFound  = errors.New("file atau folder tidak ditemukan")
+)
+
 type (
 	AddDirDocumentIn struct {
 		Name      string    `json:"name"`
@@ -34,7 +41,7 @@ func (d *DocumentDeps) AddDirDocument(ctx context.Context, in AddDirDocumentIn) 
 	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 
 	if err = ValidateAddDirDocumentIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "add document validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
@@ -46,7 +53,7 @@ func (d *DocumentDeps) AddDirDocument(ctx context.Context, in AddDirDocumentIn) 
 	if in.DirId.Int64 != 0 {
 		doc, err := d.DocumentRepository.FindDirById(ctx, uint64(in.DirId.Int64))
 		if errors.Is(err, pgx.ErrNoRows) {
-			out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find dir document by id"))
+			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrParentDirNotFound)
 			return
 		}
 		if err != nil {
@@ -96,7 +103,7 @@ func (d *DocumentDeps) AddFileDocument(ctx context.Context, in AddFileDocumentIn
 	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 
 	if err = ValidateAddFileDocumentIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "add document validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
@@ -108,7 +115,7 @@ func (d *DocumentDeps) AddFileDocument(ctx context.Context, in AddFileDocumentIn
 	if in.DirId.Int64 != 0 {
 		doc, err := d.DocumentRepository.FindDirById(ctx, uint64(in.DirId.Int64))
 		if errors.Is(err, pgx.ErrNoRows) {
-			out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find dir document by id"))
+			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrParentDirNotFound)
 			return
 		}
 		if err != nil {
@@ -241,7 +248,7 @@ func (d *DocumentDeps) EditDirDocument(ctx context.Context, pid string, in EditD
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrDirNotFound)
 		return
 	}
 
@@ -252,7 +259,7 @@ func (d *DocumentDeps) EditDirDocument(ctx context.Context, pid string, in EditD
 
 	document, err := d.DocumentRepository.FindById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) || document.Type != Dir {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find document by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrDirNotFound)
 		return
 	}
 	if err != nil {
@@ -268,7 +275,7 @@ func (d *DocumentDeps) EditDirDocument(ctx context.Context, pid string, in EditD
 	if document.DirId != 0 {
 		doc, err := d.DocumentRepository.FindDirById(ctx, document.DirId)
 		if errors.Is(err, pgx.ErrNoRows) {
-			out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find dir document by id"))
+			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrParentDirNotFound)
 			return
 		}
 		if err != nil {
@@ -314,18 +321,18 @@ func (d *DocumentDeps) EditFileDocument(ctx context.Context, pid string, in Edit
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrFileNotFound)
 		return
 	}
 
 	if err = ValidateEditFileDocumentIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "edit document validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	document, err := d.DocumentRepository.FindById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) || document.Type != Filetype {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find document by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrFileNotFound)
 		return
 	}
 	if err != nil {
@@ -341,7 +348,7 @@ func (d *DocumentDeps) EditFileDocument(ctx context.Context, pid string, in Edit
 	if document.DirId != 0 {
 		doc, err := d.DocumentRepository.FindDirById(ctx, document.DirId)
 		if errors.Is(err, pgx.ErrNoRows) {
-			out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find dir document by id"))
+			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrParentDirNotFound)
 			return
 		}
 		if err != nil {
@@ -404,13 +411,13 @@ func (d *DocumentDeps) RemoveDocument(ctx context.Context, pid string) (out Remo
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrDocumentNotFound)
 		return
 	}
 
 	document, err := d.DocumentRepository.FindById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find document by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrDocumentNotFound)
 		return
 	}
 	if err != nil {
@@ -470,7 +477,7 @@ func (d *DocumentDeps) FindDocumentChildren(ctx context.Context, pid, q, cursor 
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrParentDirNotFound)
 		return
 	}
 

@@ -13,6 +13,11 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrCashflowNotFound = errors.New("cashflow tidak ditemukan")
+	ErrDateFormat       = errors.New("format tanggal tidak sesuai <tahun>-<bulan>-<hari>")
+)
+
 type (
 	AddCashflowIn struct {
 		Date      string                `mapstructure:"date"`
@@ -37,7 +42,7 @@ func (d *CashflowDeps) AddCashflow(ctx context.Context, in AddCashflowIn) (out A
 	ct, _ := typeFromString(in.Type)
 
 	if err = ValidateAddCashflowIn(in, ct); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "add cashflow validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
@@ -63,7 +68,7 @@ func (d *CashflowDeps) AddCashflow(ctx context.Context, in AddCashflowIn) (out A
 
 	date, err := time.Parse("2006-01-02", in.Date)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "parse date"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrDateFormat)
 		return
 	}
 
@@ -107,7 +112,7 @@ type (
 	}
 )
 
-func (d *CashflowDeps) QueryCashflow(ctx context.Context, cursor string) (out QueryCashflowOut) {
+func (d *CashflowDeps) QueryCashflow(ctx context.Context, cursor, limit string) (out QueryCashflowOut) {
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	duefFlow := func(ctx context.Context, status CashflowType, flow chan float64, res chan resp.Response) {
@@ -139,10 +144,15 @@ func (d *CashflowDeps) QueryCashflow(ctx context.Context, cursor string) (out Qu
 	nextCursor := make(chan int64)
 	cRes := make(chan resp.Response)
 
-	go func(ctx context.Context, cursor string, oc chan []CashflowOut, nc chan int64, res chan resp.Response) {
+	go func(ctx context.Context, cursor, limit string, oc chan []CashflowOut, nc chan int64, res chan resp.Response) {
 		var r resp.Response
 		fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
-		cashflows, err := d.CashflowRepository.Query(ctx, fromCursor, 25)
+		nlimit, _ := strconv.ParseInt(limit, 10, 64)
+		if nlimit == 0 {
+			nlimit = 25
+		}
+
+		cashflows, err := d.CashflowRepository.Query(ctx, fromCursor, nlimit)
 		if err != nil {
 			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query cashflows"))
 		}
@@ -168,7 +178,7 @@ func (d *CashflowDeps) QueryCashflow(ctx context.Context, cursor string) (out Qu
 		oc <- outCashflows
 		nc <- nextCursor
 		res <- r
-	}(ctx, cursor, outCashflows, nextCursor, cRes)
+	}(ctx, cursor, limit, outCashflows, nextCursor, cRes)
 
 	inFV := <-inFlow
 	inRV := <-inRes
@@ -227,26 +237,26 @@ func (d *CashflowDeps) EditCashflow(ctx context.Context, pid string, in EditCash
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrCashflowNotFound)
 		return
 	}
 
 	ct, _ := typeFromString(in.Type)
 
 	if err = ValidateEditCashflowIn(in, ct); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "edit cashflow validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	date, err := time.Parse("2006-01-02", in.Date)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "parse date"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrDateFormat)
 		return
 	}
 
 	cashflow, err := d.CashflowRepository.FindById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find cashflow by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrCashflowNotFound)
 		return
 	}
 	if err != nil {
@@ -309,13 +319,13 @@ func (d *CashflowDeps) RemoveCashflow(ctx context.Context, pid string) (out Remo
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrCashflowNotFound)
 		return
 	}
 
 	_, err = d.CashflowRepository.FindById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find cashflow by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrCashflowNotFound)
 		return
 	}
 	if err != nil {

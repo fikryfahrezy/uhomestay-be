@@ -1,8 +1,6 @@
 package user
 
 import (
-	"errors"
-
 	"golang.org/x/sync/errgroup"
 )
 
@@ -11,7 +9,7 @@ func ValidateAddGoalIn(i AddGoalIn) error {
 
 	g.Go(func() error {
 		if i.OrgPeriodId < 1 {
-			return errors.New("org period id required")
+			return ErrOrgPeriodRequired
 		}
 		return nil
 	})

@@ -5,38 +5,47 @@ import (
 	"io"
 
 	"github.com/cloudinary/cloudinary-go/api/uploader"
+	"github.com/getsentry/sentry-go"
 )
 
 type (
-	Uploader = func(filename string, file io.Reader) (string, string, error)
-	Mover    = func(from, to string) (string, error)
+	FileUploader      func(filename string, file io.Reader) (string, string, error)
+	FileMover         func(from, to string) (string, error)
+	ExceptionCapturer func(exception error)
+	MessageCapturer   func(message string)
 )
 
 type BlogDeps struct {
 	ImgCldTmpFolder string
 	ImgClgFolder    string
-	MoveFile        Mover
-	Upload          Uploader
+	CaptureMessage  MessageCapturer
+	CaptureExeption ExceptionCapturer
+	MoveFile        FileMover
+	Upload          FileUploader
 	BlogRepository  *BlogRepository
 }
 
 func NewDeps(
 	imgClgFolder string,
 	imgCldTmpFolder string,
-	moveFile Mover,
-	upload Uploader,
+	captureMessage MessageCapturer,
+	captureExeption ExceptionCapturer,
+	moveFile FileMover,
+	upload FileUploader,
 	blogRepository *BlogRepository,
 ) *BlogDeps {
 	return &BlogDeps{
 		ImgClgFolder:    imgClgFolder,
 		ImgCldTmpFolder: imgCldTmpFolder,
+		CaptureMessage:  captureMessage,
+		CaptureExeption: captureExeption,
 		MoveFile:        moveFile,
 		Upload:          upload,
 		BlogRepository:  blogRepository,
 	}
 }
 
-func FileUploader(uploadParams uploader.UploadParams, upload func(ctx context.Context, file interface{}, uploadParams uploader.UploadParams) (*uploader.UploadResult, error)) func(filename string, file io.Reader) (url string, id string, err error) {
+func FileUpload(uploadParams uploader.UploadParams, upload func(ctx context.Context, file interface{}, uploadParams uploader.UploadParams) (*uploader.UploadResult, error)) FileUploader {
 	return func(filename string, file io.Reader) (url string, id string, err error) {
 		ctx := context.Background()
 		uploadParams.PublicID = filename
@@ -50,7 +59,7 @@ func FileUploader(uploadParams uploader.UploadParams, upload func(ctx context.Co
 	}
 }
 
-func FileMover(move func(ctx context.Context, params uploader.RenameParams) (*uploader.RenameResult, error)) func(from, to string) (url string, err error) {
+func FileMove(move func(ctx context.Context, params uploader.RenameParams) (*uploader.RenameResult, error)) FileMover {
 	return func(from, to string) (url string, err error) {
 		ctx := context.Background()
 
@@ -63,5 +72,17 @@ func FileMover(move func(ctx context.Context, params uploader.RenameParams) (*up
 		}
 
 		return resp.SecureURL, nil
+	}
+}
+
+func CaptureExeption(capture func(exception error) *sentry.EventID) ExceptionCapturer {
+	return func(exception error) {
+		capture(exception)
+	}
+}
+
+func CaptureMessage(capture func(message string) *sentry.EventID) MessageCapturer {
+	return func(message string) {
+		capture(message)
 	}
 }

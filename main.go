@@ -136,7 +136,9 @@ func main() {
 		conf.JwtIssuerUrl,
 		conf.Argon2Salt,
 		conf.JwtAudiences,
-		user.FileUploader(uploader.UploadParams{
+		user.CaptureMessage(sentry.CaptureMessage),
+		user.CaptureExeption(sentry.CaptureException),
+		user.FileUpload(uploader.UploadParams{
 			Transformation: "c_crop,g_center/q_auto/f_auto",
 			Tags:           []string{"profile"},
 			Folder:         "uhomestay/profile",
@@ -151,7 +153,9 @@ func main() {
 	)
 
 	documentDeps := document.NewDeps(
-		document.FileUploader(uploader.UploadParams{
+		document.CaptureMessage(sentry.CaptureMessage),
+		document.CaptureExeption(sentry.CaptureException),
+		document.FileUpload(uploader.UploadParams{
 			Tags:         []string{"document"},
 			Folder:       "uhomestay/document",
 			ResourceType: "raw",
@@ -159,14 +163,20 @@ func main() {
 		documentRepository,
 	)
 
-	historyDeps := history.NewDeps(historyRepository)
+	historyDeps := history.NewDeps(
+		history.CaptureMessage(sentry.CaptureMessage),
+		history.CaptureExeption(sentry.CaptureException),
+		historyRepository,
+	)
 
 	blogImgFolder := "uhomestay/blog-images-tmp"
 	blogDeps := blog.NewDeps(
 		"uhomestay/blog-images",
 		blogImgFolder,
-		blog.FileMover(cld.Upload.Rename),
-		blog.FileUploader(uploader.UploadParams{
+		blog.CaptureMessage(sentry.CaptureMessage),
+		blog.CaptureExeption(sentry.CaptureException),
+		blog.FileMove(cld.Upload.Rename),
+		blog.FileUpload(uploader.UploadParams{
 			Tags:         []string{"blogs"},
 			Folder:       blogImgFolder,
 			ResourceType: "raw",
@@ -175,7 +185,9 @@ func main() {
 	)
 
 	cashflowDeps := cashflow.NewDeps(
-		cashflow.FileUploader(uploader.UploadParams{
+		cashflow.CaptureMessage(sentry.CaptureMessage),
+		cashflow.CaptureExeption(sentry.CaptureException),
+		cashflow.FileUpload(uploader.UploadParams{
 			Tags:         []string{"cashflow"},
 			Folder:       "uhomestay/cashflows",
 			ResourceType: "raw",
@@ -184,7 +196,9 @@ func main() {
 	)
 
 	duesDeps := dues.NewDeps(
-		dues.FileUploader(uploader.UploadParams{
+		dues.CaptureMessage(sentry.CaptureMessage),
+		dues.CaptureExeption(sentry.CaptureException),
+		dues.FileUpload(uploader.UploadParams{
 			Tags:         []string{"dues"},
 			Folder:       "uhomestay/dues",
 			ResourceType: "raw",
@@ -196,6 +210,8 @@ func main() {
 	)
 
 	dashboardDeps := dashboard.NewDeps(
+		dashboard.CaptureMessage(sentry.CaptureMessage),
+		dashboard.CaptureExeption(sentry.CaptureException),
 		historyDeps,
 		documentDeps,
 		blogDeps,
@@ -212,5 +228,9 @@ func main() {
 		dashboardDeps,
 	)
 
-	restApi.RestApiHandler()
+	if conf.Env == "uat" {
+		restApi.RestApiHandlerUat()
+	} else {
+		restApi.RestApiHandler()
+	}
 }

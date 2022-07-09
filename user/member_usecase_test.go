@@ -683,7 +683,7 @@ func TestRemoveMember(t *testing.T) {
 		},
 		{
 			Name:               "Remove Member Fail, ID not UUID",
-			ExpectedStatusCode: http.StatusBadRequest,
+			ExpectedStatusCode: http.StatusNotFound,
 			Id:                 "blablabla",
 		},
 		{
@@ -774,7 +774,7 @@ func TestFindMemberDetail(t *testing.T) {
 		},
 		{
 			Name:               "Find Member Detail Fail, ID not UUID",
-			ExpectedStatusCode: http.StatusBadRequest,
+			ExpectedStatusCode: http.StatusNotFound,
 			Id:                 "blablabla",
 		},
 		{
@@ -825,7 +825,7 @@ func TestApproveMember(t *testing.T) {
 		},
 		{
 			Name:               "Approve Member Fail, ID not UUID",
-			ExpectedStatusCode: http.StatusBadRequest,
+			ExpectedStatusCode: http.StatusNotFound,
 			Id:                 "blablabla",
 		},
 		{
@@ -949,7 +949,7 @@ func TestUpdatProfile(t *testing.T) {
 		},
 		{
 			Name:               "Update Member Profile Fail, Id not UUID",
-			ExpectedStatusCode: http.StatusBadRequest,
+			ExpectedStatusCode: http.StatusNotFound,
 			Id:                 "blablabla",
 			In: user.UpdateProfileIn{
 				Name:              "Name",

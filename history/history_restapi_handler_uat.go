@@ -1,17 +1,16 @@
-package user
+package history
 
 import (
 	"encoding/json"
 	"net/http"
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/resp"
-	"github.com/go-chi/chi/v5"
 )
 
-func (d *UserDeps) PostGoal(w http.ResponseWriter, r *http.Request) {
+func (d *HistoryDeps) PostHistoryUat(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
-	var in AddGoalIn
+	var in AddHistoryIn
 	err := decoder.Decode(&in)
 	if err != nil {
 		d.CaptureExeption(err)
@@ -19,16 +18,15 @@ func (d *UserDeps) PostGoal(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out := d.AddGoal(r.Context(), in)
+	out := d.AddHistory(r.Context(), in)
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
 	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) GetOrgPeriodGoal(w http.ResponseWriter, r *http.Request) {
-	id := chi.URLParam(r, "id")
-	out := d.FindOrgPeriodGoal(r.Context(), id)
+func (d *HistoryDeps) GetHistoryUat(w http.ResponseWriter, r *http.Request) {
+	out := d.FindLatestHistory(r.Context())
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
 	}

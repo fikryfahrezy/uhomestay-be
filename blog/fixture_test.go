@@ -40,11 +40,15 @@ var (
 )
 
 var (
-	upload blog.Uploader = func(filename string, file io.Reader) (string, string, error) {
+	upload blog.FileUploader = func(filename string, file io.Reader) (string, string, error) {
 		return "", "", nil
 	}
-	moveFile blog.Mover = func(from, to string) (string, error) {
+	moveFile blog.FileMover = func(from, to string) (string, error) {
 		return "", nil
+	}
+	captureException blog.ExceptionCapturer = func(exception error) {
+	}
+	captureMessage blog.MessageCapturer = func(message string) {
 	}
 )
 
@@ -185,7 +189,15 @@ func TestMain(m *testing.M) {
 	}
 
 	blogRepository = blog.NewRepository("imgchc", redisClient, postgrePool)
-	blogDeps = blog.NewDeps(imgFolder, imgTmpFolder, moveFile, upload, blogRepository)
+	blogDeps = blog.NewDeps(
+		imgFolder,
+		imgTmpFolder,
+		captureMessage,
+		captureException,
+		moveFile,
+		upload,
+		blogRepository,
+	)
 
 	LoadTables(postgrePool)
 

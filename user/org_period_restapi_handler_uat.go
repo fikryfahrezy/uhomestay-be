@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (d *UserDeps) PostPeriod(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) PostPeriodUat(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 	var in AddPeriodIn
 	err := decoder.Decode(&in)
@@ -27,7 +27,7 @@ func (d *UserDeps) PostPeriod(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) GetPeriods(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) GetPeriodsUat(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 	out := d.QueryPeriod(r.Context(), cursor)
 	if out.Error != nil {
@@ -36,7 +36,7 @@ func (d *UserDeps) GetPeriods(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) GetActivePeriod(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) GetActivePeriodUat(w http.ResponseWriter, r *http.Request) {
 	out := d.FindActivePeriod(r.Context())
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
@@ -44,7 +44,7 @@ func (d *UserDeps) GetActivePeriod(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) PutPeriod(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) PutPeriodUat(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var in EditPeriodIn
@@ -63,7 +63,7 @@ func (d *UserDeps) PutPeriod(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) DeletePeriod(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) DeletePeriodUat(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	out := d.RemovePeriod(r.Context(), id)
 	if out.Error != nil {
@@ -72,7 +72,7 @@ func (d *UserDeps) DeletePeriod(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) PatchPeriodStatus(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) PatchPeriodStatusUat(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var in SwitchPeriodStatusIn
@@ -91,7 +91,7 @@ func (d *UserDeps) PatchPeriodStatus(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) GetPeriodStructure(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) GetPeriodStructureUat(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	out := d.QueryPeriodStructure(r.Context(), id)
 	if out.Error != nil {
@@ -100,7 +100,7 @@ func (d *UserDeps) GetPeriodStructure(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) PeriodForm(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) PeriodFormUat(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 	w.Header().Add("Content-Type", "text/html")
 

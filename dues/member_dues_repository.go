@@ -178,7 +178,7 @@ func (r *MemberDuesRepository) FindUnpaidByIdAndMemberId(ctx context.Context, id
 		WHERE deleted_at IS NULL
 			AND id = $1
 			AND member_id = $2
-			AND status != 'paid'
+			AND status = 'unpaid'
 	`
 
 	var query MemberDuesQuerier
@@ -408,4 +408,36 @@ func (r *MemberDuesRepository) DeleteByDuesId(ctx context.Context, duesId uint64
 	}
 
 	return nil
+}
+
+func (r *MemberDuesRepository) QueryAmtByDuesId(ctx context.Context, duesId uint64) ([]MemberDuesAmtViewModel, error) {
+	sqlQuery := `
+		SELECT
+			d.idr_amount,
+			md.status
+		FROM dues d
+			LEFT JOIN member_dues md ON md.dues_id = d.id
+		WHERE d.deleted_at IS NULL
+			AND md.deleted_at IS NULL
+			AND d.id = $1
+	`
+
+	rows, _ := r.PostgreDb.Query(
+		context.Background(),
+		sqlQuery,
+		duesId,
+	)
+	defer rows.Close()
+
+	var mps []*MemberDuesAmtViewModel
+	if err := pgxscan.ScanAll(&mps, rows); err != nil {
+		return []MemberDuesAmtViewModel{}, err
+	}
+
+	ms := make([]MemberDuesAmtViewModel, len(mps))
+	for i, m := range mps {
+		ms[i] = *m
+	}
+
+	return ms, nil
 }

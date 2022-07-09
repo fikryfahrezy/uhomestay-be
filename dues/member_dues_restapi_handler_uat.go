@@ -5,12 +5,11 @@ import (
 	"net/http"
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/httpdecode"
-	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/jwt"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/resp"
 	"github.com/go-chi/chi/v5"
 )
 
-func (d *DuesDeps) GetMemberDues(w http.ResponseWriter, r *http.Request) {
+func (d *DuesDeps) GetMemberDuesUat(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 	id := chi.URLParam(r, "id")
 	limit := r.URL.Query().Get("limit")
@@ -21,7 +20,7 @@ func (d *DuesDeps) GetMemberDues(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *DuesDeps) GetMembersDues(w http.ResponseWriter, r *http.Request) {
+func (d *DuesDeps) GetMembersDuesUat(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 	id := chi.URLParam(r, "id")
 	limit := r.URL.Query().Get("limit")
@@ -32,14 +31,7 @@ func (d *DuesDeps) GetMembersDues(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *DuesDeps) PostMemberDues(w http.ResponseWriter, r *http.Request) {
-	var jwtPayload jwt.JwtPrivateClaim
-	if err := jwt.DecodeCustomClaims(r, &jwtPayload); err != nil {
-		d.CaptureExeption(err)
-		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
-		return
-	}
-
+func (d *DuesDeps) PostMemberDuesUat(w http.ResponseWriter, r *http.Request) {
 	var in PayMemberDuesIn
 	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.MultipartToFileHookFunc); err != nil {
 		d.CaptureExeption(err)
@@ -47,15 +39,23 @@ func (d *DuesDeps) PostMemberDues(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	username := r.URL.Query().Get("u")
+	m, err := d.MemberRepository.FindByUsername(username)
+	if err != nil {
+		d.CaptureExeption(err)
+		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
+		return
+	}
+
 	id := chi.URLParam(r, "id")
-	out := d.PayMemberDues(r.Context(), jwtPayload.Uid, id, in)
+	out := d.PayMemberDues(r.Context(), m.Id.UUID.String(), id, in)
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
 	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *DuesDeps) PutMemberDues(w http.ResponseWriter, r *http.Request) {
+func (d *DuesDeps) PutMemberDuesUat(w http.ResponseWriter, r *http.Request) {
 	var in EditMemberDuesIn
 	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.MultipartToFileHookFunc, httpdecode.BoolToNullBoolHookFunc); err != nil {
 		d.CaptureExeption(err)
@@ -71,7 +71,7 @@ func (d *DuesDeps) PutMemberDues(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *DuesDeps) PatchMemberDues(w http.ResponseWriter, r *http.Request) {
+func (d *DuesDeps) PatchMemberDuesUat(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var in PaidMemberDuesIn

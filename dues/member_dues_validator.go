@@ -6,12 +6,17 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+var (
+	ErrFileRequired   = errors.New("file tidak boleh kosong")
+	ErrIsPaidRequired = errors.New("status persetujuan tidak boleh kosong")
+)
+
 func ValidatePayMemberDuesIn(i PayMemberDuesIn) error {
 	g := new(errgroup.Group)
 
 	g.Go(func() error {
 		if i.File.File == nil || i.File.Filename == "" {
-			return errors.New("file required")
+			return ErrFileRequired
 		}
 		return nil
 	})
@@ -27,7 +32,7 @@ func ValidateEditMemberDuesIn(i EditMemberDuesIn) error {
 
 	g.Go(func() error {
 		if i.File.File == nil || i.File.Filename == "" {
-			return errors.New("file required")
+			return ErrFileRequired
 		}
 		return nil
 	})
@@ -43,7 +48,7 @@ func ValidatePaidMemberDuesIn(i PaidMemberDuesIn) error {
 
 	g.Go(func() error {
 		if !i.IsPaid.Valid {
-			return errors.New("is_paid required")
+			return ErrIsPaidRequired
 		}
 		return nil
 	})

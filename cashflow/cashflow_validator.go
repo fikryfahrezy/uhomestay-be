@@ -7,25 +7,31 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+var (
+	ErrUnknownType       = errors.New("tipe cashflow tidak diketahui, tipe yang diperbolehkan 'pemasukan' atau 'pengeluaran'")
+	ErrDateRequired      = errors.New("tanggal tidak boleh kosong")
+	ErrIdrAmountRequired = errors.New("jumlah nominal rupiah tidak boleh kosong")
+)
+
 func ValidateAddCashflowIn(i AddCashflowIn, ct CashflowType) error {
 	g := new(errgroup.Group)
 
 	g.Go(func() error {
 		if ct == Unknown {
-			return errors.New("type unknown")
+			return ErrUnknownType
 		}
 
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.Date, " ") == "" {
-			return errors.New("date required")
+			return ErrDateRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.IdrAmount, " ") == "" {
-			return errors.New("idr_amount required")
+			return ErrIdrAmountRequired
 		}
 		return nil
 	})
@@ -41,20 +47,20 @@ func ValidateEditCashflowIn(i EditCashflowIn, ct CashflowType) error {
 
 	g.Go(func() error {
 		if ct == Unknown {
-			return errors.New("type unknown")
+			return ErrUnknownType
 		}
 
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.Date, " ") == "" {
-			return errors.New("date required")
+			return ErrDateRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.IdrAmount, " ") == "" {
-			return errors.New("idr_amount required")
+			return ErrIdrAmountRequired
 		}
 		return nil
 	})

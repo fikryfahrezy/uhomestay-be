@@ -19,6 +19,7 @@ type Config struct {
 	PostgreUrl      string
 	MongoUri        string
 	RedisUrl        string
+	Env             string
 	JwtAudiences    []string
 }
 
@@ -92,6 +93,12 @@ func LoadConfig() Config {
 		redisUrl = "redis://localhost:6379"
 	}
 	c.RedisUrl = redisUrl
+
+	env := os.Getenv("ENVI")
+	if env == "" {
+		env = "dev"
+	}
+	c.Env = env
 
 	return c
 }

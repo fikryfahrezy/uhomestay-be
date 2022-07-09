@@ -7,77 +7,92 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+var (
+	ErrMemberNameRequired     = errors.New("nama anggota tidak boleh kosong")
+	ErrHomestayNameRequired   = errors.New("nama homestay anggota tidak boleh kosong")
+	ErrUsernameRequired       = errors.New("username anggota tidak boleh kosong")
+	ErrPositionRequired       = errors.New("jabatan tidak boleh kosong")
+	ErrOrgPeriodRequired      = errors.New("periode organisasi tidak boleh kosong")
+	ErrWaPhoneRequired        = errors.New("nomor whats app anggota tidak boleh kosong")
+	ErrOtherPhoneRequired     = errors.New("nomor lainnya anggota tidak boleh kosong")
+	ErrHomestayAddresRequired = errors.New("alamat homestay anggota tidak boleh kosong")
+	ErrLongitudeRequired      = errors.New("titik garis bujur map homestay anggota tidak boleh kosong")
+	ErrLatitudeRequired       = errors.New("titik garis lintang map homestay anggota tidak boleh kosong")
+	ErrPasswordRequired       = errors.New("password anggota tidak boleh kosong")
+	ErrIsAdminRequired        = errors.New("status admin tidak boleh kosong")
+)
+
 func ValidateAddMemberIn(i AddMemberIn) error {
 	g := new(errgroup.Group)
 	g.Go(func() error {
 		if strings.Trim(i.Name, " ") == "" {
-			return errors.New("name required")
+			return ErrMemberNameRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayName, " ") == "" {
-			return errors.New("homestay_name required")
+			return ErrHomestayNameRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.Username, " ") == "" {
-			return errors.New("username required")
+			return ErrUsernameRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if i.PositionId == 0 {
-			return errors.New("position_id required")
+			return ErrPositionRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if i.PeriodId == 0 {
-			return errors.New("period_id required")
+			return ErrOrgPeriodRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.WaPhone, " ") == "" {
-			return errors.New("wa_phone required")
+			return ErrWaPhoneRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.OtherPhone, " ") == "" {
-			return errors.New("other_phone required")
+			return ErrOtherPhoneRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayAddress, " ") == "" {
-			return errors.New("homestay_address required")
+			return ErrHomestayAddresRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayLatitude, " ") == "" {
-			return errors.New("homestay_latitude required")
+			return ErrLatitudeRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayLongitude, " ") == "" {
-			return errors.New("homestay_longitude required")
+			return ErrLongitudeRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.Password, " ") == "" {
-			return errors.New("password required")
+			return ErrPasswordRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if !i.IsAdmin.Valid {
-			return errors.New("is_admin required")
+			return ErrIsAdminRequired
 		}
 		return nil
 	})
@@ -92,55 +107,55 @@ func ValidateRegisterIn(i RegisterIn) error {
 	g := new(errgroup.Group)
 	g.Go(func() error {
 		if strings.Trim(i.Name, " ") == "" {
-			return errors.New("name required")
+			return ErrMemberNameRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayName, " ") == "" {
-			return errors.New("homestay_name required")
+			return ErrHomestayNameRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.Username, " ") == "" {
-			return errors.New("username required")
+			return ErrUsernameRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.WaPhone, " ") == "" {
-			return errors.New("wa_phone required")
+			return ErrWaPhoneRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.OtherPhone, " ") == "" {
-			return errors.New("other_phone required")
+			return ErrOtherPhoneRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayAddress, " ") == "" {
-			return errors.New("homestay_address required")
+			return ErrHomestayAddresRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayLatitude, " ") == "" {
-			return errors.New("homestay_latitude required")
+			return ErrLatitudeRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayLongitude, " ") == "" {
-			return errors.New("homestay_longitude required")
+			return ErrLongitudeRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.Password, " ") == "" {
-			return errors.New("password required")
+			return ErrPasswordRequired
 		}
 		return nil
 	})
@@ -161,7 +176,7 @@ func ValidateLoginIn(i LoginIn) error {
 	})
 	g.Go(func() error {
 		if strings.Trim(i.Password, " ") == "" {
-			return errors.New("password required")
+			return ErrPasswordRequired
 		}
 		return nil
 	})
@@ -176,61 +191,61 @@ func ValidateEditMemberIn(i EditMemberIn) error {
 	g := new(errgroup.Group)
 	g.Go(func() error {
 		if strings.Trim(i.Name, " ") == "" {
-			return errors.New("name required")
+			return ErrMemberNameRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayName, " ") == "" {
-			return errors.New("homestay_name required")
+			return ErrHomestayNameRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.Username, " ") == "" {
-			return errors.New("username required")
+			return ErrUsernameRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if i.PositionId == 0 {
-			return errors.New("position_id required")
+			return ErrPositionRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if i.PeriodId == 0 {
-			return errors.New("period_id required")
+			return ErrOrgPeriodRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.WaPhone, " ") == "" {
-			return errors.New("wa_phone required")
+			return ErrWaPhoneRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.OtherPhone, " ") == "" {
-			return errors.New("other_phone required")
+			return ErrOtherPhoneRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayAddress, " ") == "" {
-			return errors.New("homestay_address required")
+			return ErrHomestayAddresRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayLatitude, " ") == "" {
-			return errors.New("homestay_latitude required")
+			return ErrLatitudeRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayLongitude, " ") == "" {
-			return errors.New("homestay_longitude required")
+			return ErrLongitudeRequired
 		}
 		return nil
 	})
@@ -242,7 +257,7 @@ func ValidateEditMemberIn(i EditMemberIn) error {
 	})
 	g.Go(func() error {
 		if !i.IsAdmin.Valid {
-			return errors.New("is_admin required")
+			return ErrIsAdminRequired
 		}
 		return nil
 	})
@@ -257,50 +272,50 @@ func ValidateUpdateProfileIn(i UpdateProfileIn) error {
 	g := new(errgroup.Group)
 	g.Go(func() error {
 		if strings.Trim(i.Name, " ") == "" {
-			return errors.New("name required")
+			return ErrMemberNameRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayName, " ") == "" {
-			return errors.New("homestay_name required")
+			return ErrHomestayNameRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.Username, " ") == "" {
-			return errors.New("username required")
+			return ErrUsernameRequired
 		}
 		return nil
 	})
 
 	g.Go(func() error {
 		if strings.Trim(i.WaPhone, " ") == "" {
-			return errors.New("wa_phone required")
+			return ErrWaPhoneRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.OtherPhone, " ") == "" {
-			return errors.New("other_phone required")
+			return ErrOtherPhoneRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayAddress, " ") == "" {
-			return errors.New("homestay_address required")
+			return ErrHomestayAddresRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayLatitude, " ") == "" {
-			return errors.New("homestay_latitude required")
+			return ErrLatitudeRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.HomestayLongitude, " ") == "" {
-			return errors.New("homestay_longitude required")
+			return ErrLongitudeRequired
 		}
 		return nil
 	})

@@ -12,6 +12,14 @@ import (
 	"github.com/pkg/errors"
 )
 
+var (
+	ErrDuesNotFound  = errors.New("tagihan iuran tidak ditemukan")
+	ErrDateInThePast = errors.New("tanggal tidak boleh di masa lalu")
+	ErrDateFormat    = errors.New("format tanggal tidak sesuai <tahun>-<bulan>-<hari>")
+	ErrExistDues     = errors.New("tagihan iuran untuk bulan ini sudah ada")
+	ErrProcessedDues = errors.New("seseorang telah melalukan pembayaran untuk tagihan iuran ini, tidak dapat dimodifikasi")
+)
+
 type (
 	AddDuesIn struct {
 		Date      string `json:"date"`
@@ -31,18 +39,18 @@ func (d *DuesDeps) AddDues(ctx context.Context, in AddDuesIn) (out AddDuesOut) {
 	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 
 	if err = ValidateAddDuesIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "add dues validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	date, err := time.Parse("2006-01-02", in.Date)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "parse date"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrDateFormat)
 		return
 	}
 
 	if timediff.IsPast(date) {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.New("cannot create dues in the past"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrDateInThePast)
 		return
 	}
 
@@ -53,7 +61,7 @@ func (d *DuesDeps) AddDues(ctx context.Context, in AddDuesIn) (out AddDuesOut) {
 	}
 
 	if dues.Id != 0 {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.New("dues for this month already exist"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrExistDues)
 		return
 	}
 
@@ -153,7 +161,7 @@ func (d *DuesDeps) EditDues(ctx context.Context, pid string, in EditDuesIn) (out
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrDuesNotFound)
 		return
 	}
 
@@ -164,18 +172,18 @@ func (d *DuesDeps) EditDues(ctx context.Context, pid string, in EditDuesIn) (out
 
 	date, err := time.Parse("2006-01-02", in.Date)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "parse date"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrDateFormat)
 		return
 	}
 
 	if timediff.IsPast(date) {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.New("cannot edit dues to the past"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrDateInThePast)
 		return
 	}
 
 	dues, err := d.DuesRepository.FindById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find dues by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrDuesNotFound)
 		return
 	}
 	if err != nil {
@@ -190,7 +198,7 @@ func (d *DuesDeps) EditDues(ctx context.Context, pid string, in EditDuesIn) (out
 	}
 
 	if otherDues.Id != 0 {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.New("dues for this month already exist"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrExistDues)
 		return
 	}
 
@@ -201,7 +209,7 @@ func (d *DuesDeps) EditDues(ctx context.Context, pid string, in EditDuesIn) (out
 	}
 
 	if len(duesList) != 0 {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.New("someone already paid dues, cannot change"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrProcessedDues)
 		return
 	}
 
@@ -234,13 +242,13 @@ func (d *DuesDeps) RemoveDues(ctx context.Context, pid string) (out RemoveDuesOu
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrDuesNotFound)
 		return
 	}
 
 	dues, err := d.DuesRepository.FindById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find dues by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrDuesNotFound)
 		return
 	}
 	if err != nil {
@@ -255,7 +263,7 @@ func (d *DuesDeps) RemoveDues(ctx context.Context, pid string) (out RemoveDuesOu
 	}
 
 	if len(duesList) != 0 {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.New("someone already paid dues, cannot change"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrProcessedDues)
 		return
 	}
 
@@ -289,27 +297,23 @@ func (d *DuesDeps) CheckPaidDues(ctx context.Context, pid string) (out CheckPaid
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.StatusCode = http.StatusBadRequest
-		err = errors.Wrap(err, "parse uint")
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrDuesNotFound)
 		return
 	}
 
 	dues, err := d.DuesRepository.FindById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.StatusCode = http.StatusNotFound
-		err = errors.Wrap(err, "no row find dues by id")
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrDuesNotFound)
 		return
 	}
 	if err != nil {
-		out.StatusCode = http.StatusInternalServerError
-		err = errors.Wrap(err, "find dues by id")
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find dues by id"))
 		return
 	}
 
 	duesList, err := d.MemberDuesRepository.CheckSomeonePaid(ctx, dues.Id)
 	if err != nil {
-		out.StatusCode = http.StatusInternalServerError
-		err = errors.Wrap(err, "check someone paid dues")
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrProcessedDues)
 		return
 	}
 

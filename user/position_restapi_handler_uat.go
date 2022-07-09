@@ -10,7 +10,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (d *UserDeps) PostPosition(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) PostPositionUat(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var in AddPositionIn
@@ -28,7 +28,7 @@ func (d *UserDeps) PostPosition(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) GetPositions(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) GetPositionsUat(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 	limit := r.URL.Query().Get("limit")
 	out := d.QueryPosition(r.Context(), cursor, limit)
@@ -38,7 +38,7 @@ func (d *UserDeps) GetPositions(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) GetPositionLevels(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) GetPositionLevelsUat(w http.ResponseWriter, r *http.Request) {
 	out := d.QueryPositionLevel(r.Context())
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
@@ -46,7 +46,7 @@ func (d *UserDeps) GetPositionLevels(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) PutPositions(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) PutPositionsUat(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var in EditPositionIn
@@ -65,7 +65,7 @@ func (d *UserDeps) PutPositions(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) DeletePosition(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) DeletePositionUat(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	out := d.RemovePosition(r.Context(), id)
 	if out.Error != nil {
@@ -74,7 +74,7 @@ func (d *UserDeps) DeletePosition(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) PositionForm(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) PositionFormUat(w http.ResponseWriter, r *http.Request) {
 	out := d.QueryPositionLevel(r.Context())
 	if out.Error != nil {
 		w.WriteHeader(out.StatusCode)

@@ -14,6 +14,13 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
+var (
+	ErrDateInThePast         = errors.New("tanggal tidak boleh di masa lalu")
+	ErrDateFormat            = errors.New("format tanggal tidak sesuai <tahun>-<bulan>-<hari>")
+	ErrEndDateLowerThanStart = errors.New("tanggal berakhir tidak boleh sebelum tanggal mulai")
+	ErrOrgPeriodNotFound     = errors.New("periode organisasi tidak ditemukan")
+)
+
 func (d *UserDeps) SaveOrgStructure(ctx context.Context, periodId uint64, ps []PositionIn) error {
 	if len(ps) == 0 {
 		return nil
@@ -24,8 +31,7 @@ func (d *UserDeps) SaveOrgStructure(ctx context.Context, periodId uint64, ps []P
 	for _, p := range ps {
 		positionId, err := strconv.ParseUint(strconv.FormatInt(p.Id, 10), 10, 64)
 		if err != nil {
-			err = errors.Wrap(err, "parse period id")
-			return err
+			return ErrPositionNotFound
 		}
 
 		positionIds = append(positionIds, positionId)
@@ -63,8 +69,7 @@ func (d *UserDeps) SaveOrgStructure(ctx context.Context, periodId uint64, ps []P
 		}
 		positionId, err := strconv.ParseUint(strconv.FormatInt(p.Id, 10), 10, 64)
 		if err != nil {
-			err = errors.Wrap(err, "parse period id")
-			return err
+			return ErrOrgPeriodNotFound
 		}
 
 		if _, ok := cacher[positionId]; ok {
@@ -119,24 +124,24 @@ func (d *UserDeps) AddPeriod(ctx context.Context, in AddPeriodIn) (out AddPeriod
 	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 
 	if err = ValidateAddPeriodIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "add period validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	startDate, err := time.Parse("2006-01-02", in.StartDate)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "parse start date"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrDateFormat)
 		return
 	}
 
 	endDate, err := time.Parse("2006-01-02", in.EndDate)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "parse end date"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrDateFormat)
 		return
 	}
 
 	if isPast := timediff.Compare(endDate, startDate); isPast {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.New("end_date cannot lower than start_date"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrEndDateLowerThanStart)
 		return
 	}
 
@@ -146,7 +151,7 @@ func (d *UserDeps) AddPeriod(ctx context.Context, in AddPeriodIn) (out AddPeriod
 		if content != "" {
 			err = json.Unmarshal([]byte(content), &mv)
 			if err != nil {
-				r = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "unmarshal "+title+" json"))
+				r = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(ErrNotValidContent, "unmarshal "+title+" json"))
 			}
 		}
 
@@ -293,18 +298,18 @@ func (d *UserDeps) EditPeriod(ctx context.Context, pid string, in EditPeriodIn) 
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 		return
 	}
 
 	if err = ValidateEditPeriodIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "edit period validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	period, err := d.OrgPeriodRepository.FindActiveBydId(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find period by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 		return
 	}
 	if err != nil {
@@ -314,18 +319,18 @@ func (d *UserDeps) EditPeriod(ctx context.Context, pid string, in EditPeriodIn) 
 
 	startDate, err := time.Parse("2006-01-02", in.StartDate)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "parse start date"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrDateFormat)
 		return
 	}
 
 	endDate, err := time.Parse("2006-01-02", in.EndDate)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "parse end date"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrDateFormat)
 		return
 	}
 
 	if isPast := timediff.Compare(endDate, startDate); isPast {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.New("end_date cannot lower than start_date"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrEndDateLowerThanStart)
 		return
 	}
 
@@ -335,7 +340,7 @@ func (d *UserDeps) EditPeriod(ctx context.Context, pid string, in EditPeriodIn) 
 		if content != "" {
 			err = json.Unmarshal([]byte(content), &mv)
 			if err != nil {
-				r = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "unmarshal "+title+" json"))
+				r = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(ErrNotValidContent, "unmarshal "+title+" json"))
 			}
 		}
 
@@ -423,13 +428,13 @@ func (d *UserDeps) RemovePeriod(ctx context.Context, pid string) (out RemovePeri
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 		return
 	}
 
 	period, err := d.OrgPeriodRepository.FindUndeletedById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find period by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 		return
 	}
 	if err != nil {
@@ -477,13 +482,13 @@ func (d *UserDeps) SwitchPeriodStatus(ctx context.Context, pid string, in Switch
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 		return
 	}
 
 	period, err := d.OrgPeriodRepository.FindUndeletedById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find period by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 		return
 	}
 	if err != nil {
@@ -595,7 +600,7 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 		return
 	}
 

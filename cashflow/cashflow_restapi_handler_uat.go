@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (d *CashflowDeps) PostCashflow(w http.ResponseWriter, r *http.Request) {
+func (d *CashflowDeps) PostCashflowUat(w http.ResponseWriter, r *http.Request) {
 	var in AddCashflowIn
 	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.IntToNulIntHookFunc, httpdecode.MultipartToFileHookFunc, httpdecode.BoolToNullBoolHookFunc); err != nil {
 		d.CaptureExeption(err)
@@ -23,7 +23,7 @@ func (d *CashflowDeps) PostCashflow(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *CashflowDeps) PutCashflow(w http.ResponseWriter, r *http.Request) {
+func (d *CashflowDeps) PutCashflowUat(w http.ResponseWriter, r *http.Request) {
 	var in EditCashflowIn
 	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.IntToNulIntHookFunc, httpdecode.MultipartToFileHookFunc, httpdecode.BoolToNullBoolHookFunc); err != nil {
 		d.CaptureExeption(err)
@@ -39,7 +39,7 @@ func (d *CashflowDeps) PutCashflow(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *CashflowDeps) DeleteCashflow(w http.ResponseWriter, r *http.Request) {
+func (d *CashflowDeps) DeleteCashflowUat(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	out := d.RemoveCashflow(r.Context(), id)
 	if out.Error != nil {
@@ -48,7 +48,7 @@ func (d *CashflowDeps) DeleteCashflow(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *CashflowDeps) GetCashflows(w http.ResponseWriter, r *http.Request) {
+func (d *CashflowDeps) GetCashflowsUat(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 	limit := r.URL.Query().Get("limit")
 	out := d.QueryCashflow(r.Context(), cursor, limit)
