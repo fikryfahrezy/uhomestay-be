@@ -7,12 +7,19 @@ import (
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/cashflow"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/user"
 	"github.com/cloudinary/cloudinary-go/api/uploader"
+	"github.com/getsentry/sentry-go"
 )
 
-type Uploader = func(filename string, file io.Reader) (string, error)
+type (
+	FileUploader      func(filename string, file io.Reader) (string, error)
+	ExceptionCapturer func(exception error)
+	MessageCapturer   func(message string)
+)
 
 type DuesDeps struct {
-	Upload               Uploader
+	CaptureMessage       MessageCapturer
+	CaptureExeption      ExceptionCapturer
+	Upload               FileUploader
 	DuesRepository       *DuesRepository
 	MemberDuesRepository *MemberDuesRepository
 	MemberRepository     *user.MemberRepository
@@ -20,13 +27,17 @@ type DuesDeps struct {
 }
 
 func NewDeps(
-	upload Uploader,
+	captureMessage MessageCapturer,
+	captureExeption ExceptionCapturer,
+	upload FileUploader,
 	duesRepository *DuesRepository,
 	memberDuesRepository *MemberDuesRepository,
 	memberRepository *user.MemberRepository,
 	cashflowRepository *cashflow.CashflowRepository,
 ) *DuesDeps {
 	return &DuesDeps{
+		CaptureMessage:       captureMessage,
+		CaptureExeption:      captureExeption,
 		Upload:               upload,
 		DuesRepository:       duesRepository,
 		MemberDuesRepository: memberDuesRepository,
@@ -35,7 +46,7 @@ func NewDeps(
 	}
 }
 
-func FileUploader(uploadParams uploader.UploadParams, upload func(ctx context.Context, file interface{}, uploadParams uploader.UploadParams) (*uploader.UploadResult, error)) func(filename string, file io.Reader) (url string, err error) {
+func FileUpload(uploadParams uploader.UploadParams, upload func(ctx context.Context, file interface{}, uploadParams uploader.UploadParams) (*uploader.UploadResult, error)) FileUploader {
 	return func(filename string, file io.Reader) (url string, err error) {
 		ctx := context.Background()
 		uploadParams.PublicID = filename
@@ -46,5 +57,17 @@ func FileUploader(uploadParams uploader.UploadParams, upload func(ctx context.Co
 		}
 
 		return resp.SecureURL, nil
+	}
+}
+
+func CaptureExeption(capture func(exception error) *sentry.EventID) ExceptionCapturer {
+	return func(exception error) {
+		capture(exception)
+	}
+}
+
+func CaptureMessage(capture func(message string) *sentry.EventID) MessageCapturer {
+	return func(message string) {
+		capture(message)
 	}
 }

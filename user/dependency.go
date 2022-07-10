@@ -7,16 +7,23 @@ import (
 	"path/filepath"
 
 	"github.com/cloudinary/cloudinary-go/api/uploader"
+	"github.com/getsentry/sentry-go"
 )
 
-type Uploader = func(filename string, file io.Reader) (string, error)
+type (
+	FileUploader      func(filename string, file io.Reader) (string, error)
+	ExceptionCapturer func(exception error)
+	MessageCapturer   func(message string)
+)
 
 type UserDeps struct {
 	JwtKey                 []byte
 	JwtIssuerUrl           string
 	Argon2Salt             string
 	JwtAudiences           []string
-	Upload                 Uploader
+	CaptureMessage         MessageCapturer
+	CaptureExeption        ExceptionCapturer
+	Upload                 FileUploader
 	Tmpl                   embed.FS
 	MemberRepository       *MemberRepository
 	PositionRepository     *PositionRepository
@@ -30,7 +37,9 @@ func NewDeps(
 	jwtIssuerUrl string,
 	argon2Salt string,
 	jwtAudiences []string,
-	upload Uploader,
+	captureMessage MessageCapturer,
+	captureExeption ExceptionCapturer,
+	upload FileUploader,
 	tmpl embed.FS,
 	memberRepository *MemberRepository,
 	positionRepository *PositionRepository,
@@ -42,6 +51,8 @@ func NewDeps(
 		JwtKey:                 jwtKey,
 		JwtIssuerUrl:           jwtIssuerUrl,
 		Argon2Salt:             argon2Salt,
+		CaptureMessage:         captureMessage,
+		CaptureExeption:        captureExeption,
 		JwtAudiences:           jwtAudiences,
 		Upload:                 upload,
 		Tmpl:                   tmpl,
@@ -53,7 +64,7 @@ func NewDeps(
 	}
 }
 
-func FileUploader(uploadParams uploader.UploadParams, upload func(ctx context.Context, file interface{}, uploadParams uploader.UploadParams) (*uploader.UploadResult, error)) func(filename string, file io.Reader) (url string, err error) {
+func FileUpload(uploadParams uploader.UploadParams, upload func(ctx context.Context, file interface{}, uploadParams uploader.UploadParams) (*uploader.UploadResult, error)) FileUploader {
 	return func(filename string, file io.Reader) (url string, err error) {
 		filename = filename[:len(filename)-len(filepath.Ext(filename))]
 		ctx := context.Background()
@@ -65,5 +76,17 @@ func FileUploader(uploadParams uploader.UploadParams, upload func(ctx context.Co
 		}
 
 		return resp.SecureURL, nil
+	}
+}
+
+func CaptureExeption(capture func(exception error) *sentry.EventID) ExceptionCapturer {
+	return func(exception error) {
+		capture(exception)
+	}
+}
+
+func CaptureMessage(capture func(message string) *sentry.EventID) MessageCapturer {
+	return func(message string) {
+		capture(message)
 	}
 }

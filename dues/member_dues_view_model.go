@@ -21,3 +21,8 @@ type DuesMemberViewModel struct {
 	Status        DuesStatus
 	CreatedAt     time.Time
 }
+
+type MemberDuesAmtViewModel struct {
+	IdrAmount string
+	Status    DuesStatus
+}

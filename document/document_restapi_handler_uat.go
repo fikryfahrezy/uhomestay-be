@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (d *DocumentDeps) PostDirDocument(w http.ResponseWriter, r *http.Request) {
+func (d *DocumentDeps) PostDirDocumentUat(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var in AddDirDocumentIn
@@ -27,7 +27,7 @@ func (d *DocumentDeps) PostDirDocument(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *DocumentDeps) PostFileDocument(w http.ResponseWriter, r *http.Request) {
+func (d *DocumentDeps) PostFileDocumentUat(w http.ResponseWriter, r *http.Request) {
 	var in AddFileDocumentIn
 	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.IntToNulIntHookFunc, httpdecode.MultipartToFileHookFunc, httpdecode.BoolToNullBoolHookFunc); err != nil {
 		d.CaptureExeption(err)
@@ -42,7 +42,7 @@ func (d *DocumentDeps) PostFileDocument(w http.ResponseWriter, r *http.Request) 
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *DocumentDeps) PutDirDocument(w http.ResponseWriter, r *http.Request) {
+func (d *DocumentDeps) PutDirDocumentUat(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var in EditDirDocumentIn
@@ -61,7 +61,7 @@ func (d *DocumentDeps) PutDirDocument(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *DocumentDeps) PutFileDocument(w http.ResponseWriter, r *http.Request) {
+func (d *DocumentDeps) PutFileDocumentUat(w http.ResponseWriter, r *http.Request) {
 	var in EditFileDocumentIn
 	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.MultipartToFileHookFunc, httpdecode.BoolToNullBoolHookFunc); err != nil {
 		d.CaptureExeption(err)
@@ -77,7 +77,7 @@ func (d *DocumentDeps) PutFileDocument(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *DocumentDeps) DeleteDocument(w http.ResponseWriter, r *http.Request) {
+func (d *DocumentDeps) DeleteDocumentUat(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	out := d.RemoveDocument(r.Context(), id)
 	if out.Error != nil {
@@ -86,7 +86,7 @@ func (d *DocumentDeps) DeleteDocument(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *DocumentDeps) GetDocuments(w http.ResponseWriter, r *http.Request) {
+func (d *DocumentDeps) GetDocumentsUat(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
 	cursor := r.URL.Query().Get("cursor")
 	limit := r.URL.Query().Get("limit")
@@ -97,7 +97,7 @@ func (d *DocumentDeps) GetDocuments(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *DocumentDeps) GetDocumentChildren(w http.ResponseWriter, r *http.Request) {
+func (d *DocumentDeps) GetDocumentChildrenUat(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
 	id := chi.URLParam(r, "id")
 	cursor := r.URL.Query().Get("cursor")

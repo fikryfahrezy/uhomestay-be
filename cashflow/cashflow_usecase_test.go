@@ -172,7 +172,7 @@ func TestQueryCashflow(t *testing.T) {
 			tx, err := db.Begin(context.Background())
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
-			res := cashflowDeps.QueryCashflow(ctx, "")
+			res := cashflowDeps.QueryCashflow(ctx, "", "")
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 

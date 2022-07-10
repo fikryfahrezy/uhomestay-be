@@ -246,7 +246,7 @@ func (r *DocumentRepository) Query(ctx context.Context, q string, id, limit int6
 	order := "id"
 	if q != "" {
 		q = q + ":*"
-		like = "textsearchable_index_col @@ to_tsquery($2)"
+		like = "textsearchable_index_col @@ websearch_to_tsquery($2)"
 		order = "textrank_index_col"
 	}
 
@@ -305,7 +305,7 @@ func (r *DocumentRepository) FindChildren(ctx context.Context, dirId uint64, q s
 	order := "id"
 	if q != "" {
 		q = q + ":*"
-		like = "textsearchable_index_col @@ to_tsquery($3)"
+		like = "textsearchable_index_col @@ websearch_to_tsquery($3)"
 		order = "textrank_index_col"
 	}
 

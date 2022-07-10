@@ -493,7 +493,7 @@ func (r *MemberRepository) Query(ctx context.Context, uid pgtypeuuid.UUID, q str
 	order := "id"
 	if q != "" {
 		q = q + ":*"
-		like = "textsearchable_index_col @@ to_tsquery($3)"
+		like = "textsearchable_index_col @@ websearch_to_tsquery($3)"
 		order = "textrank_index_col"
 	}
 

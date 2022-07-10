@@ -10,6 +10,8 @@ import (
 	"github.com/pkg/errors"
 )
 
+var ErrPositionNotFound = errors.New("jabatan tidak ditemukan")
+
 type (
 	AddPositionIn struct {
 		Name  string `json:"name"`
@@ -29,7 +31,7 @@ func (d *UserDeps) AddPosition(ctx context.Context, in AddPositionIn) (out AddPo
 	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 
 	if err = ValidateAddPositionIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "add position validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
@@ -156,12 +158,12 @@ func (d *UserDeps) EditPosition(ctx context.Context, pid string, in EditPosition
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
 		return
 	}
 
 	if err = ValidateEditPositionIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "edit position validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
@@ -173,7 +175,7 @@ func (d *UserDeps) EditPosition(ctx context.Context, pid string, in EditPosition
 
 	position, err := d.PositionRepository.FindUndeletedById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find position by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
 		return
 	}
 	if err != nil {
@@ -210,7 +212,7 @@ func (d *UserDeps) RemovePosition(ctx context.Context, pid string) (out RemovePo
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "parse uint"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
 		return
 	}
 

@@ -33,7 +33,7 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	c := make(chan CashflowRes)
 	cr := make(chan resp.Response)
 	go func(ctx context.Context, c chan CashflowRes, res chan resp.Response) {
-		out := d.QueryCashflow(ctx, "")
+		out := d.QueryCashflow(ctx, "", "5")
 
 		l := len(out.Res.Cashflows)
 		if l > 5 {
@@ -159,7 +159,7 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	md := make(chan []MembersDuesOut)
 	mdr := make(chan resp.Response)
 	go func(ctx context.Context, md chan []MembersDuesOut, res chan resp.Response) {
-		out := d.QueryMembersDues(ctx, "0", "")
+		out := d.QueryMembersDues(ctx, "0", "", "5")
 
 		l := len(out.Res.MemberDues)
 		if l > 5 {

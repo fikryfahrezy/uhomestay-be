@@ -7,17 +7,22 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+var (
+	ErrPeriodStartDateRequired = errors.New("tanggal mulai periode tidak boleh kosong")
+	ErrPeriodEndDateRequired   = errors.New("tanggal mulai periode tidak boleh kosong")
+)
+
 func ValidateAddPeriodIn(i AddPeriodIn) error {
 	g := new(errgroup.Group)
 	g.Go(func() error {
 		if strings.Trim(i.StartDate, " ") == "" {
-			return errors.New("start_date required")
+			return ErrPeriodStartDateRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.EndDate, " ") == "" {
-			return errors.New("end_date required")
+			return ErrPeriodEndDateRequired
 		}
 		return nil
 	})
@@ -32,13 +37,13 @@ func ValidateEditPeriodIn(i EditPeriodIn) error {
 	g := new(errgroup.Group)
 	g.Go(func() error {
 		if strings.Trim(i.StartDate, " ") == "" {
-			return errors.New("start_date required")
+			return ErrPeriodStartDateRequired
 		}
 		return nil
 	})
 	g.Go(func() error {
 		if strings.Trim(i.EndDate, " ") == "" {
-			return errors.New("end_date required")
+			return ErrPeriodEndDateRequired
 		}
 		return nil
 	})

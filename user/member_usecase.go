@@ -23,6 +23,13 @@ import (
 	"gopkg.in/guregu/null.v4"
 )
 
+var (
+	ErrDuplicateUniqueProperty = errors.New("username, nomor whats app, atau nomor lainnya sudah terpakai anggota lain")
+	ErrMemberNotFound          = errors.New("anggota tidak ditemukan")
+	ErrNotApprovedMember       = errors.New("akun anggota belum disetujui pengelola")
+	ErrPasswordNotMatch        = errors.New("password tidak sesuai")
+)
+
 type (
 	AddMemberIn struct {
 		PositionId        int64                 `mapstructure:"position_id"`
@@ -61,13 +68,13 @@ func (d *UserDeps) MemberSaver(ctx context.Context, in AddMemberIn, isApproved b
 	if in.PeriodId != 0 {
 		periodId, err = strconv.ParseUint(strconv.FormatInt(in.PeriodId, 10), 10, 64)
 		if err != nil {
-			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find parse by id"))
+			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 			return
 		}
 
 		_, err = d.OrgPeriodRepository.FindUndeletedById(ctx, periodId)
 		if errors.Is(err, pgx.ErrNoRows) {
-			out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find period by id"))
+			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 			return
 		}
 		if err != nil {
@@ -80,17 +87,17 @@ func (d *UserDeps) MemberSaver(ctx context.Context, in AddMemberIn, isApproved b
 	if in.PositionId != 0 {
 		positionId, err = strconv.ParseUint(strconv.FormatInt(in.PositionId, 10), 10, 64)
 		if err != nil {
-			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "parse period id"))
+			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
 			return
 		}
 
 		_, err = d.PositionRepository.FindUndeletedById(ctx, positionId)
 		if errors.Is(err, pgx.ErrNoRows) {
-			out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find position by id"))
+			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
 			return
 		}
 		if err != nil {
-			out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "find position by id"))
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find position by id"))
 			return
 		}
 	}
@@ -109,12 +116,12 @@ func (d *UserDeps) MemberSaver(ctx context.Context, in AddMemberIn, isApproved b
 	}
 	existingMember, err := d.MemberRepository.CheckUniqueField(ctx, member)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "check unique field"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "check unique field"))
 		return
 	}
 
 	if !existingMember.Id.UUID.IsNil() {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(errors.New("unique field already exist"), "duplication"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrDuplicateUniqueProperty)
 		return
 	}
 
@@ -185,7 +192,7 @@ func (d *UserDeps) AddMember(ctx context.Context, in AddMemberIn) (out AddMember
 	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 
 	if err = ValidateAddMemberIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "member register validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
@@ -226,7 +233,7 @@ func (d *UserDeps) MemberRegister(ctx context.Context, in RegisterIn) (out Regis
 	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 
 	if err = ValidateRegisterIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "member register validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
@@ -262,7 +269,7 @@ func (d *UserDeps) MemberRegister(ctx context.Context, in RegisterIn) (out Regis
 			Uid: saverOut.Res.Id,
 		})
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "jwt signer"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "jwt signer"))
 		return
 	}
 
@@ -290,13 +297,13 @@ func (d *UserDeps) MemberLogin(ctx context.Context, in LoginIn) (out LoginOut) {
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	if err = ValidateLoginIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "member login validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	member, err := d.MemberRepository.FindByUsername(in.Identifier)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find member by username"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
@@ -306,12 +313,12 @@ func (d *UserDeps) MemberLogin(ctx context.Context, in LoginIn) (out LoginOut) {
 	}
 
 	if !member.IsApproved {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.New("member not approved yet"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrNotApprovedMember)
 		return
 	}
 
 	if err = agron2.Argon2Verify(member.Password, in.Password, agron2.Argon2Id); err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "verify password"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrPasswordNotMatch)
 		return
 	}
 
@@ -342,13 +349,13 @@ func (d *UserDeps) AdminLogin(ctx context.Context, in LoginIn) (out LoginOut) {
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	if err = ValidateLoginIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "member login validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	member, err := d.MemberRepository.FindAdminByByUsername(in.Identifier)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find admin member by username"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
@@ -358,7 +365,7 @@ func (d *UserDeps) AdminLogin(ctx context.Context, in LoginIn) (out LoginOut) {
 	}
 
 	if err = agron2.Argon2Verify(member.Password, in.Password, agron2.Argon2Id); err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "verify password"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrPasswordNotMatch)
 		return
 	}
 
@@ -416,18 +423,18 @@ func (d *UserDeps) EditMember(ctx context.Context, uid string, in EditMemberIn) 
 
 	_, err = uuid.FromString(uid)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "member id not valid"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrMemberNotFound)
 		return
 	}
 
 	if err = ValidateEditMemberIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "edit member validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	member, err := d.MemberRepository.FindById(ctx, uid)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find member by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
@@ -445,14 +452,14 @@ func (d *UserDeps) EditMember(ctx context.Context, uid string, in EditMemberIn) 
 	var periodId uint64
 	periodId, err = strconv.ParseUint(strconv.FormatInt(in.PeriodId, 10), 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "parse period id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 		return
 	}
 
 	if periodId != orgStructure.OrgPeriodId {
 		_, err = d.OrgPeriodRepository.FindById(ctx, periodId)
 		if errors.Is(err, pgx.ErrNoRows) {
-			out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find period by id"))
+			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrOrgPeriodNotFound)
 			return
 		}
 		if err != nil {
@@ -464,14 +471,14 @@ func (d *UserDeps) EditMember(ctx context.Context, uid string, in EditMemberIn) 
 	var positionId uint64
 	positionId, err = strconv.ParseUint(strconv.FormatInt(in.PositionId, 10), 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "parse period id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
 		return
 	}
 
 	if positionId != orgStructure.PositionId {
 		_, err = d.PositionRepository.FindById(ctx, positionId)
 		if errors.Is(err, pgx.ErrNoRows) {
-			out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find position by id"))
+			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
 			return
 		}
 		if err != nil {
@@ -492,12 +499,12 @@ func (d *UserDeps) EditMember(ctx context.Context, uid string, in EditMemberIn) 
 
 	existingMember, err := d.MemberRepository.CheckOtherUniqueField(ctx, uid, member)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "check other unique field"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "check other unique field"))
 		return
 	}
 
 	if !existingMember.Id.UUID.IsNil() {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(errors.New("unique field already exist"), "duplication"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrDuplicateUniqueProperty)
 		return
 	}
 
@@ -570,17 +577,17 @@ func (d *UserDeps) RemoveMember(ctx context.Context, uid string) (out RemoveMemb
 
 	_, err = uuid.FromString(uid)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "member id not valid"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
 	_, err = d.MemberRepository.FindById(ctx, uid)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find member by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "find member by id"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find member by id"))
 		return
 	}
 
@@ -708,7 +715,7 @@ func (d *UserDeps) FindMemberDetail(ctx context.Context, uid string) (out FindMe
 
 	_, err = uuid.FromString(uid)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "member id not valid"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
@@ -721,7 +728,7 @@ func (d *UserDeps) FindMemberDetail(ctx context.Context, uid string) (out FindMe
 		member, r = func(ctx context.Context, uid string) (MemberModel, resp.Response) {
 			member, err := d.MemberRepository.FindById(ctx, uid)
 			if errors.Is(err, pgx.ErrNoRows) {
-				return MemberModel{}, resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find member by id"))
+				return MemberModel{}, resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 			}
 
 			if err != nil {
@@ -794,6 +801,16 @@ func (d *UserDeps) FindMemberDetail(ctx context.Context, uid string) (out FindMe
 		return
 	}
 
+	periodStart := "- / "
+	if !period.StartDate.IsZero() {
+		periodStart = period.StartDate.Format("2006-01-02") + " / "
+	}
+
+	periodEnd := "-"
+	if !period.EndDate.IsZero() {
+		periodEnd = period.EndDate.Format("2006-01-02")
+	}
+
 	out.Res = MemberDetailRes{
 		Id:                member.Id.UUID.String(),
 		Name:              member.Name,
@@ -808,7 +825,7 @@ func (d *UserDeps) FindMemberDetail(ctx context.Context, uid string) (out FindMe
 		IsAdmin:           member.IsAdmin,
 		IsApproved:        member.IsApproved,
 		PeriodId:          period.Id,
-		Period:            period.StartDate.Format("2006-01-02") + "|" + period.EndDate.Format("2006-01-02"),
+		Period:            periodStart + periodEnd,
 		PositionId:        position.Id,
 		Position:          position.Name,
 	}
@@ -832,13 +849,13 @@ func (d *UserDeps) ApproveMember(ctx context.Context, uid string) (out MemberApp
 
 	_, err = uuid.FromString(uid)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "member id not valid"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
 	member, err := d.MemberRepository.FindById(ctx, uid)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find member by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
@@ -848,7 +865,7 @@ func (d *UserDeps) ApproveMember(ctx context.Context, uid string) (out MemberApp
 	}
 
 	if member.IsApproved {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.New("member already approved"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
@@ -891,18 +908,18 @@ func (d *UserDeps) UpdatProfile(ctx context.Context, uid string, in UpdateProfil
 
 	_, err = uuid.FromString(uid)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(err, "member id not valid"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
 	if err = ValidateUpdateProfileIn(in); err != nil {
-		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", errors.Wrap(err, "edit member validation"))
+		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	member, err := d.MemberRepository.FindById(ctx, uid)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", errors.Wrap(err, "no row find member by id"))
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
 	}
 
@@ -927,7 +944,7 @@ func (d *UserDeps) UpdatProfile(ctx context.Context, uid string, in UpdateProfil
 	}
 
 	if !existingMember.Id.UUID.IsNil() {
-		out.Response = resp.NewResponse(http.StatusBadRequest, "", errors.Wrap(errors.New("unique field already exist"), "duplication"))
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrDuplicateUniqueProperty)
 		return
 	}
 

@@ -131,9 +131,13 @@ var (
 	}
 )
 
-var upload user.Uploader = func(filename string, file io.Reader) (string, error) {
-	return "", nil
-}
+var (
+	upload user.FileUploader = func(filename string, file io.Reader) (string, error) {
+		return "", nil
+	}
+	captureException user.ExceptionCapturer = func(exception error) {}
+	captureMessage   user.MessageCapturer   = func(message string) {}
+)
 
 func LoadTables(conn *pgxpool.Pool) error {
 	tx, err := conn.Begin(context.Background())
@@ -342,6 +346,8 @@ func TestMain(m *testing.M) {
 		conf.JwtIssuerUrl,
 		conf.Argon2Salt,
 		conf.JwtAudiences,
+		captureMessage,
+		captureException,
 		upload,
 		tmpl,
 		memberRepository,

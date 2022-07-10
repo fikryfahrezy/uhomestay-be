@@ -6,7 +6,7 @@ import (
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/resp"
 )
 
-func (d *DashboardDeps) GetPrivateDashboard(w http.ResponseWriter, r *http.Request) {
+func (d *DashboardDeps) GetPrivateDashboardUat(w http.ResponseWriter, r *http.Request) {
 	out := d.GetPrivate(r.Context())
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
@@ -14,7 +14,7 @@ func (d *DashboardDeps) GetPrivateDashboard(w http.ResponseWriter, r *http.Reque
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *DashboardDeps) GetPublicDashboard(w http.ResponseWriter, r *http.Request) {
+func (d *DashboardDeps) GetPublicDashboardUat(w http.ResponseWriter, r *http.Request) {
 	out := d.GetPublic(r.Context())
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)

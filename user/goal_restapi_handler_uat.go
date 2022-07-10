@@ -8,7 +8,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (d *UserDeps) PostGoal(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) PostGoalUat(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var in AddGoalIn
@@ -26,7 +26,7 @@ func (d *UserDeps) PostGoal(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *UserDeps) GetOrgPeriodGoal(w http.ResponseWriter, r *http.Request) {
+func (d *UserDeps) GetOrgPeriodGoalUat(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	out := d.FindOrgPeriodGoal(r.Context(), id)
 	if out.Error != nil {

@@ -33,9 +33,13 @@ var (
 	}
 )
 
-var upload document.Uploader = func(filename string, file io.Reader) (string, error) {
-	return "", nil
-}
+var (
+	upload document.FileUploader = func(filename string, file io.Reader) (string, error) {
+		return "", nil
+	}
+	captureException document.ExceptionCapturer = func(exception error) {}
+	captureMessage   document.MessageCapturer   = func(message string) {}
+)
 
 func createDocumentChildren(d *document.DocumentRepository, doc document.DocumentModel) (p document.DocumentModel, c document.DocumentModel, err error) {
 	p, err = d.Save(context.Background(), doc)
@@ -164,7 +168,12 @@ func TestMain(m *testing.M) {
 	}
 
 	documentRepository = document.NewRepository(db)
-	documentDeps = document.NewDeps(upload, documentRepository)
+	documentDeps = document.NewDeps(
+		captureMessage,
+		captureException,
+		upload,
+		documentRepository,
+	)
 
 	LoadTables(db)
 

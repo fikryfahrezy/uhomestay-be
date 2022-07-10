@@ -9,7 +9,7 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (d *BlogDeps) PostBlog(w http.ResponseWriter, r *http.Request) {
+func (d *BlogDeps) PostBlogUat(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var in AddBlogIn
@@ -27,7 +27,7 @@ func (d *BlogDeps) PostBlog(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *BlogDeps) GetBlogs(w http.ResponseWriter, r *http.Request) {
+func (d *BlogDeps) GetBlogsUat(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
 	cursor := r.URL.Query().Get("cursor")
 	out := d.QueryBlog(r.Context(), q, cursor)
@@ -37,7 +37,7 @@ func (d *BlogDeps) GetBlogs(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *BlogDeps) GetBlog(w http.ResponseWriter, r *http.Request) {
+func (d *BlogDeps) GetBlogUat(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	out := d.FindBlogById(r.Context(), idParam)
 	if out.Error != nil {
@@ -46,7 +46,7 @@ func (d *BlogDeps) GetBlog(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *BlogDeps) PutBlogs(w http.ResponseWriter, r *http.Request) {
+func (d *BlogDeps) PutBlogsUat(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
 	var in EditBlogIn
@@ -65,7 +65,7 @@ func (d *BlogDeps) PutBlogs(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *BlogDeps) DeleteBlog(w http.ResponseWriter, r *http.Request) {
+func (d *BlogDeps) DeleteBlogUat(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
 	out := d.RemoveBlog(r.Context(), idParam)
 	if out.Error != nil {
@@ -74,7 +74,7 @@ func (d *BlogDeps) DeleteBlog(w http.ResponseWriter, r *http.Request) {
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *BlogDeps) PostImage(w http.ResponseWriter, r *http.Request) {
+func (d *BlogDeps) PostImageUat(w http.ResponseWriter, r *http.Request) {
 	var in UploadImgIn
 	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.MultipartToFileHookFunc); err != nil {
 		d.CaptureExeption(err)
