@@ -103,7 +103,11 @@ func main() {
 	}
 
 	err = sentry.Init(sentry.ClientOptions{
-		Dsn: conf.SentryDsn,
+		Dsn:              conf.SentryDsn,
+		Environment:      "all",
+		Release:          "uhomestay@1.0.0",
+		Debug:            true,
+		TracesSampleRate: 0.7,
 	})
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)

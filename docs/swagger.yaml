@@ -2254,8 +2254,15 @@ components:
         data:
           type: object
           properties:
+            dues_id:
+              type: number
             cursor:
               type: number
+            dues_date:
+              type: string
+              format: date
+            dues_amount:
+              type: string
             paid_dues:
               type: string
             unpaid_dues:

@@ -103,7 +103,7 @@ type (
 		TotalCash   string        `json:"total_cash"`
 		IncomeCash  string        `json:"income_cash"`
 		OutcomeCash string        `json:"outcome_cash"`
-		Cursor      int64         `json:"curor"`
+		Cursor      int64         `json:"cursor"`
 		Cashflows   []CashflowOut `json:"cashflows"`
 	}
 	QueryCashflowOut struct {

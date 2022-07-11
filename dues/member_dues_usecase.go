@@ -178,7 +178,10 @@ type (
 		ProfilePicUrl string `json:"profile_pic_url"`
 	}
 	QueryMembersDuesRes struct {
+		DuesId     int64            `json:"dues_id"`
 		Cursor     int64            `json:"cursor"`
+		DuesDate   string           `json:"dues_date"`
+		DuesAmount string           `json:"dues_amount"`
 		PaidDues   string           `json:"paid_dues"`
 		UnpaidDues string           `json:"unpaid_dues"`
 		MemberDues []MembersDuesOut `json:"member_dues"`
@@ -318,7 +321,10 @@ func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid, cursor, limit stri
 	}
 
 	out.Res = QueryMembersDuesRes{
+		DuesId:     int64(dues.Id),
 		Cursor:     nextCursorV,
+		DuesDate:   dues.Date.Format("2006-01-02"),
+		DuesAmount: dues.IdrAmount,
 		MemberDues: outMemberDuesV,
 		PaidDues:   strconv.FormatFloat(paidDuesV, 'f', -1, 64),
 		UnpaidDues: strconv.FormatFloat(unpaidDuesV, 'f', -1, 64),
