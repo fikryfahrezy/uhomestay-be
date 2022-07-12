@@ -162,44 +162,6 @@ func (r *MemberRepository) FindByUsername(username string) (m MemberModel, err e
 	return m, nil
 }
 
-func (r *MemberRepository) FindAdminByByUsername(username string) (m MemberModel, err error) {
-	sqlQuery := `
-		SELECT
-			id,
-			name,
-			other_phone,
-			wa_phone,
-			homestay_name,
-			homestay_address,
-			homestay_latitude,
-			homestay_longitude,
-			profile_pic_url,
-			username,
-			password,
-			is_admin,
-			is_approved,
-			created_at,
-			updated_at,
-			deleted_at
-		FROM members
-		WHERE deleted_at IS NULL
-			AND username = $1
-			AND is_admin = true
-	`
-
-	rows, _ := r.PostgreDb.Query(
-		context.Background(),
-		sqlQuery,
-		username,
-	)
-
-	if err = pgxscan.ScanOne(&m, rows); err != nil {
-		return MemberModel{}, err
-	}
-
-	return m, nil
-}
-
 func (r *MemberRepository) CheckOtherUniqueField(ctx context.Context, uid string, m MemberModel) (em MemberModel, err error) {
 	sqlQuery := `
 		SELECT id

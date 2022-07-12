@@ -232,9 +232,5 @@ func main() {
 		dashboardDeps,
 	)
 
-	if conf.Env == "uat" {
-		restApi.RestApiHandlerUat()
-	} else {
-		restApi.RestApiHandler()
-	}
+	restApi.RestApiHandler()
 }

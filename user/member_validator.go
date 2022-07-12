@@ -43,7 +43,7 @@ func ValidateAddMemberIn(i AddMemberIn) error {
 		return nil
 	})
 	g.Go(func() error {
-		if i.PositionId == 0 {
+		if len(i.PositionIds) == 0 {
 			return ErrPositionRequired
 		}
 		return nil
@@ -208,7 +208,7 @@ func ValidateEditMemberIn(i EditMemberIn) error {
 		return nil
 	})
 	g.Go(func() error {
-		if i.PositionId == 0 {
+		if len(i.PositionIds) == 0 {
 			return ErrPositionRequired
 		}
 		return nil

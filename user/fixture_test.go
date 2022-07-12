@@ -237,9 +237,11 @@ func createFullUser(u *user.UserDeps, member user.MemberModel, period user.OrgPe
 	}
 
 	orgStructure := user.OrgStructureModel{
-		MemberId:    uid,
-		PositionId:  nposition.Id,
-		OrgPeriodId: nperiod.Id,
+		PositionName:  nposition.Name,
+		PositionLevel: nposition.Level,
+		MemberId:      uid,
+		PositionId:    nposition.Id,
+		OrgPeriodId:   nperiod.Id,
 	}
 
 	if err = u.OrgStructureRepository.Save(context.Background(), orgStructure); err != nil {

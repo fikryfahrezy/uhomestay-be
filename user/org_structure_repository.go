@@ -33,13 +33,15 @@ type (
 func (r *OrgStructureRepository) Save(ctx context.Context, m OrgStructureModel) error {
 	sqlQuery := `
 		INSERT INTO org_structures (
+			position_name,
+			position_level,
 			member_id,
 			position_id,
 			org_period_id,
 			created_at,
 			deleted_at
 		)
-		VALUES ($1, $2, $3, $4, $5)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
 	`
 
 	var exec OrgStructureExecutor
@@ -56,6 +58,8 @@ func (r *OrgStructureRepository) Save(ctx context.Context, m OrgStructureModel) 
 	_, err = exec(
 		context.Background(),
 		sqlQuery,
+		m.PositionName,
+		m.PositionLevel,
 		m.MemberId,
 		m.PositionId,
 		m.OrgPeriodId,
@@ -70,47 +74,17 @@ func (r *OrgStructureRepository) Save(ctx context.Context, m OrgStructureModel) 
 	return nil
 }
 
-func (r *OrgStructureRepository) Query(ctx context.Context) (ms []OrgStructureModel, err error) {
-	sqlQuery := `
-		SELECT
-			org_structures.member_id,
-			org_structures.position_id,
-			org_structures.org_period_id,
-			org_structures.created_at,
-			org_structures.deleted_at
-		FROM org_structures
-		WHERE deleted_at IS NULL
-		ORDER BY org_structures.id DESC
-	`
-
-	rows, _ := r.PostgreDb.Query(
-		context.Background(),
-		sqlQuery,
-	)
-
-	defer rows.Close()
-
-	var mps []*OrgStructureModel
-	if err := pgxscan.ScanAll(&mps, rows); err != nil {
-		return []OrgStructureModel{}, err
-	}
-
-	ms = make([]OrgStructureModel, len(mps))
-	for i, m := range mps {
-		ms[i] = *m
-	}
-
-	return ms, nil
-}
-
 func (r *OrgStructureRepository) FindLatestByMemberId(ctx context.Context, uid string) (m OrgStructureModel, err error) {
 	sqlQuery := `
 		SELECT
-			org_structures.member_id,
-			org_structures.position_id,
-			org_structures.org_period_id,
-			org_structures.created_at,
-			org_structures.deleted_at
+			id,
+			position_name,
+			position_level,
+			member_id,
+			position_id,
+			org_period_id,
+			created_at,
+			deleted_at
 		FROM org_structures
 		WHERE member_id = $1
 		ORDER BY org_structures.id DESC
@@ -158,7 +132,7 @@ func (r *OrgStructureRepository) BulkSave(ctx context.Context, ms []OrgStructure
 	_, err = copyFrom(
 		context.Background(),
 		pgx.Identifier{"org_structures"},
-		[]string{"member_id", "position_id", "org_period_id", "created_at", "deleted_at"},
+		[]string{"position_name", "position_level", "member_id", "position_id", "org_period_id", "created_at", "deleted_at"},
 		pgx.CopyFromSlice(len(ms), func(i int) ([]interface{}, error) {
 			memberId := pgtypeuuid.UUID{
 				Status: pgtype.Null,
@@ -171,7 +145,7 @@ func (r *OrgStructureRepository) BulkSave(ctx context.Context, ms []OrgStructure
 				}
 			}
 
-			return []interface{}{memberId, ms[i].PositionId, ms[i].OrgPeriodId, t, nil}, nil
+			return []interface{}{ms[i].PositionName, ms[i].PositionLevel, memberId, ms[i].PositionId, ms[i].OrgPeriodId, t, nil}, nil
 		}),
 	)
 
@@ -185,11 +159,14 @@ func (r *OrgStructureRepository) BulkSave(ctx context.Context, ms []OrgStructure
 func (r *OrgStructureRepository) FindByPeriodId(ctx context.Context, periodId uint64) (ms []OrgStructureModel, err error) {
 	sqlQuery := `
 		SELECT
-			org_structures.member_id,
-			org_structures.position_id,
-			org_structures.org_period_id,
-			org_structures.created_at,
-			org_structures.deleted_at
+			id,
+			position_name,
+			position_level,
+			member_id,
+			position_id,
+			org_period_id,
+			created_at,
+			deleted_at
 		FROM org_structures
 		WHERE deleted_at IS NULL
 		AND org_period_id = $1
@@ -249,6 +226,85 @@ func (r *OrgStructureRepository) DeleteByPeriodId(ctx context.Context, periodId 
 		sqlQuery,
 		t,
 		periodId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *OrgStructureRepository) FindByOrgIdAndMemberId(ctx context.Context, orgId uint64, uid string) (m []OrgStructureModel, err error) {
+	sqlQuery := `
+		SELECT
+			id,
+			position_name,
+			position_level,
+			member_id,
+			position_id,
+			org_period_id,
+			created_at,
+			deleted_at
+		FROM org_structures
+		WHERE org_period_id = $1
+			AND member_id = $2
+			AND deleted_at IS NULL
+		ORDER BY id DESC
+	`
+
+	var query OrgStructureQuerier
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		query = tx.Query
+	} else {
+		query = r.PostgreDb.Query
+	}
+
+	rows, _ := query(
+		context.Background(),
+		sqlQuery,
+		orgId,
+		uid,
+	)
+
+	var mps []*OrgStructureModel
+	if err := pgxscan.ScanAll(&mps, rows); err != nil {
+		return []OrgStructureModel{}, err
+	}
+
+	ms := make([]OrgStructureModel, len(mps))
+	for i, m := range mps {
+		ms[i] = *m
+	}
+
+	return ms, nil
+}
+
+func (r *OrgStructureRepository) DeleteByOrgIdAndMemberId(ctx context.Context, orgId uint64, uid string) error {
+	sqlQuery := `
+	UPDATE org_structures 
+	SET deleted_at = $1 
+	WHERE org_period_id = $2 AND member_id = $3
+`
+
+	var exec OrgStructureExecutor
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		exec = tx.Exec
+	} else {
+		exec = r.PostgreDb.Exec
+	}
+
+	var err error
+	t := time.Now()
+
+	_, err = exec(
+		context.Background(),
+		sqlQuery,
+		t,
+		orgId,
+		uid,
 	)
 
 	if err != nil {

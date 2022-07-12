@@ -58,6 +58,8 @@ CREATE TABLE IF NOT EXISTS org_periods (
 
 CREATE TABLE IF NOT EXISTS org_structures (
   id BIGSERIAL PRIMARY KEY,
+  position_name VARCHAR(200) DEFAULT '' NOT NULL,
+  position_level SMALLINT DEFAULT 0 NOT NULL,
   member_id UUID NOT NULL REFERENCES members(id),
   position_id BIGINT NOT NULL REFERENCES positions(id),
   org_period_id BIGINT NOT NULL REFERENCES org_periods(id),

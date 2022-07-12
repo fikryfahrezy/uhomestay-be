@@ -32,7 +32,7 @@ func (d *UserDeps) PostRegisterMember(w http.ResponseWriter, r *http.Request) {
 
 func (d *UserDeps) PostMember(w http.ResponseWriter, r *http.Request) {
 	var in AddMemberIn
-	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.BoolToNullBoolHookFunc, httpdecode.MultipartToFileHookFunc); err != nil {
+	if err := httpdecode.MultipartX(r, &in, 10*1024, httpdecode.BoolToNullBoolHookFunc, httpdecode.MultipartToFileHookFunc); err != nil {
 		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
@@ -83,7 +83,7 @@ func (d *UserDeps) PostLoginAdmin(w http.ResponseWriter, r *http.Request) {
 
 func (d *UserDeps) PutMember(w http.ResponseWriter, r *http.Request) {
 	var in EditMemberIn
-	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.BoolToNullBoolHookFunc, httpdecode.MultipartToFileHookFunc); err != nil {
+	if err := httpdecode.MultipartX(r, &in, 10*1024, httpdecode.BoolToNullBoolHookFunc, httpdecode.MultipartToFileHookFunc); err != nil {
 		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
@@ -206,4 +206,22 @@ func (d *UserDeps) RegisterForm(w http.ResponseWriter, r *http.Request) {
 	}
 
 	t.Execute(w, out)
+}
+
+func (d *UserDeps) GetMemberJwt(w http.ResponseWriter, r *http.Request) {
+	username := chi.URLParam(r, "username")
+	out := d.MemberLoginWithUsername(r.Context(), username)
+	if out.Error != nil {
+		d.CaptureExeption(out.Error)
+	}
+	out.HttpJSON(w, resp.NewHttpBody(out.Res))
+}
+
+func (d *UserDeps) GetAdminJwt(w http.ResponseWriter, r *http.Request) {
+	username := chi.URLParam(r, "username")
+	out := d.MemberLoginWithUsername(r.Context(), username)
+	if out.Error != nil {
+		d.CaptureExeption(out.Error)
+	}
+	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }

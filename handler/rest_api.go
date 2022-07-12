@@ -123,6 +123,11 @@ func (p *RestApiConf) RestApiHandler() {
 	r.Post("/api/v1/login/members", p.DashboardDeps.PostLoginMember)
 	r.Post("/api/v1/login/admins", p.DashboardDeps.PostLoginAdmin)
 
+	if p.Conf.Env == "uat" {
+		r.Patch("/get-admin-jwt/{username}", p.DashboardDeps.GetAdminJwt)
+		r.Patch("/get-member-jwt/{username}", p.DashboardDeps.GetMemberJwt)
+	}
+
 	r.Get("/api/v1/members", p.DashboardDeps.GetMembers)
 	r.Get("/api/v1/members/{id}", p.DashboardDeps.GetMember)
 	r.With(jwtMidd).Get("/api/v1/profile", p.DashboardDeps.GetProfileMember)
@@ -137,9 +142,9 @@ func (p *RestApiConf) RestApiHandler() {
 	r.Get("/api/v1/periods/{id}/structures", p.DashboardDeps.GetPeriodStructure)
 	r.With(adminJwtMidd).With(trxMidd).Post("/api/v1/periods", p.DashboardDeps.PostPeriod)
 	r.With(adminJwtMidd).Post("/api/v1/periods/goals", p.DashboardDeps.PostGoal)
-	r.With(adminJwtMidd).With(trxMidd).Put("/api/v1/periods/{id}", p.DashboardDeps.PutPeriod)
+	// r.With(adminJwtMidd).With(trxMidd).Put("/api/v1/periods/{id}", p.DashboardDeps.PutPeriod)
 	r.With(adminJwtMidd).With(trxMidd).Delete("/api/v1/periods/{id}", p.DashboardDeps.DeletePeriod)
-	r.With(adminJwtMidd).With(trxMidd).Patch("/api/v1/periods/{id}/status", p.DashboardDeps.PatchPeriodStatus)
+	// r.With(adminJwtMidd).With(trxMidd).Patch("/api/v1/periods/{id}/status", p.DashboardDeps.PatchPeriodStatus)
 	r.Get("/api/v1/periods/{id}/goal", p.DashboardDeps.GetOrgPeriodGoal)
 
 	r.Get("/api/v1/positions", p.DashboardDeps.GetPositions)

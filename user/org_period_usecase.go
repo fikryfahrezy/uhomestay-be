@@ -40,7 +40,7 @@ func (d *UserDeps) SaveOrgStructure(ctx context.Context, periodId uint64, ps []P
 		}
 	}
 
-	cacher := make(map[interface{}]bool)
+	cacher := make(map[interface{}]int)
 
 	members, err := d.MemberRepository.QueryInId(ctx, memberIds)
 	if err != nil {
@@ -48,8 +48,8 @@ func (d *UserDeps) SaveOrgStructure(ctx context.Context, periodId uint64, ps []P
 		return err
 	}
 
-	for _, m := range members {
-		cacher[m.Id.UUID.String()] = true
+	for i, m := range members {
+		cacher[m.Id.UUID.String()] = i
 	}
 
 	positions, err := d.PositionRepository.QueryInId(ctx, positionIds)
@@ -58,8 +58,8 @@ func (d *UserDeps) SaveOrgStructure(ctx context.Context, periodId uint64, ps []P
 		return err
 	}
 
-	for _, p := range positions {
-		cacher[p.Id] = true
+	for i, p := range positions {
+		cacher[p.Id] = i
 	}
 
 	var structures []OrgStructureModel
@@ -72,7 +72,9 @@ func (d *UserDeps) SaveOrgStructure(ctx context.Context, periodId uint64, ps []P
 			return ErrOrgPeriodNotFound
 		}
 
-		if _, ok := cacher[positionId]; ok {
+		if v, ok := cacher[positionId]; ok {
+			orgStructure.PositionName = positions[v].Name
+			orgStructure.PositionLevel = positions[v].Level
 			orgStructure.PositionId = positionId
 			for _, m := range p.Members {
 				if _, ok = cacher[m.Id]; ok {
@@ -647,46 +649,45 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 
 	tn := time.Now()
 
-	// For save member id as key and the time of member id added to org structure as value
-	// Because there are possibly multiple member ids in one structure
-	// Used as a Set or Map of unique member id by the most recent
-	membCIds := make(map[string]time.Duration)
+	// For save position id as key and the time of position id added to org structure as value
+	// Because there are possibly multiple position ids in one structure
+	// Used as a Set or Map of unique position id by the most recent
+	posCIds := make(map[uint64]time.Duration)
 
-	// For save member id as key and the org structure where it is in as value
-	// Used as a Set or Map of unique member org structure by that member id
-	newStruct := make(map[string]OrgStructureModel)
+	// For save position id as key and the org structure where it is in as value
+	// Used as a Set or Map of unique member org structure by that position id
+	newStruct := make(map[uint64]OrgStructureModel)
 
-	// Grouping by latest member id
-	// Fill the `membCIds` and `newStruct`
-	for _, s := range structures {
-		memId := s.MemberId
-		ts := tn.Sub(s.CreatedAt)
-		_, ok := membCIds[memId]
-		if !ok {
-			membCIds[memId] = ts
-		}
+	// For groping member id by position id
+	memChc := make(map[uint64]map[string]string)
 
-		if ts < membCIds[memId] {
-			membCIds[memId] = ts
-		}
-
-		newStruct[memId] = s
-	}
-
-	// Collect member ids and position ids from new struct
-	// for query `in` to database, to check if all member ids and position ids
+	// For save member ids from org structs
+	// for query `in` to database, to check if all member ids
 	// are exist in database
 	memberIds := make([]string, 0, len(structures))
-	positionIds := make([]uint64, 0, len(structures))
-	for _, p := range newStruct {
-		positionIds = append(positionIds, p.PositionId)
-		memberIds = append(memberIds, p.MemberId)
-	}
 
-	positions, err := d.PositionRepository.QueryUndeletedInId(ctx, positionIds)
-	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query position in id"))
-		return
+	// Grouping by position_id
+	// Fill the `membCIds` and `newStruct`
+	for _, s := range structures {
+		posId := s.PositionId
+		memId := s.MemberId
+		ts := tn.Sub(s.CreatedAt)
+		_, ok := posCIds[posId]
+		if !ok {
+			posCIds[posId] = ts
+		}
+
+		if ts < posCIds[posId] {
+			posCIds[posId] = ts
+		}
+
+		if _, ok := memChc[posId]; !ok {
+			memChc[posId] = map[string]string{}
+		}
+
+		memberIds = append(memberIds, memId)
+		memChc[posId][memId] = memId
+		newStruct[posId] = s
 	}
 
 	// Build the org strcuture
@@ -694,12 +695,12 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 	// by use position id as key and org structure as value
 	// Used array of position object for in org structure
 	outPostMap := make(map[uint64]StructurePositionOut)
-	for _, p := range positions {
-		outPostMap[p.Id] = StructurePositionOut{
-			Id:      p.Id,
-			Name:    p.Name,
-			Level:   p.Level,
-			Members: make([]StructureMemberOut, 0, len(membCIds)),
+	for _, p := range newStruct {
+		outPostMap[p.PositionId] = StructurePositionOut{
+			Id:      p.PositionId,
+			Name:    p.PositionName,
+			Level:   p.PositionLevel,
+			Members: make([]StructureMemberOut, 0, len(posCIds)),
 		}
 	}
 
@@ -726,7 +727,9 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 	// based on what that member position
 	for _, s := range newStruct {
 		p := outPostMap[s.PositionId]
-		p.Members = append(p.Members, outMemMap[s.MemberId])
+		for _, m := range memChc[s.PositionId] {
+			p.Members = append(p.Members, outMemMap[m])
+		}
 		outPostMap[s.PositionId] = p
 	}
 

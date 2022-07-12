@@ -880,7 +880,7 @@ paths:
         - in: path
           name: id
           schema:
-            type: number
+            type: integer
           required: true
       responses:
         "200":
@@ -902,7 +902,7 @@ paths:
         - in: path
           name: id
           schema:
-            type: number
+            type: integer
           required: true
       requestBody:
         required: true
@@ -930,7 +930,7 @@ paths:
         - in: path
           name: id
           schema:
-            type: number
+            type: integer
           required: true
       responses:
         "200":
@@ -1474,8 +1474,10 @@ components:
           type: string
         is_admin:
           type: boolean
-        position_id:
-          type: integer
+        position_ids:
+          type: array
+          items:
+            type: integer
         period_id:
           type: integer
         profile:
@@ -1492,7 +1494,7 @@ components:
         - homestay_latitude
         - homestay_longitude
         - is_admin
-        - position_id
+        - position_ids
         - period_id
     QueryMemberRes:
       type: object
@@ -1605,10 +1607,17 @@ components:
                 type: integer
               period:
                 type: string
-              position_id:
-                type: integer
-              position:
-                type: string
+              positions:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    id:
+                      type: integer
+                    level:
+                      type: integer
+                    name:
+                      type: string
     UpdateMemberBodyIn:
       type: object
       properties:
@@ -1633,8 +1642,10 @@ components:
           type: string
         is_admin:
           type: boolean
-        position_id:
-          type: integer
+        position_ids:
+          type: array
+          items:
+            type: integer
         period_id:
           type: integer
         profile:
@@ -1650,7 +1661,7 @@ components:
         - homestay_latitude
         - homestay_longitude
         - is_admin
-        - position_id
+        - position_ids
         - period_id
     AddPositionBodyIn:
       type: object
@@ -1677,7 +1688,7 @@ components:
           type: object
           properties:
             cursor:
-              type: number
+              type: integer
             positions:
               type: array
               items:
@@ -1774,7 +1785,7 @@ components:
           type: object
           properties:
             cursor:
-              type: number
+              type: integer
             periods:
               type: array
               items:
@@ -1920,7 +1931,7 @@ components:
           type: object
           properties:
             cursor:
-              type: number
+              type: integer
             documents:
               type: array
               items:
@@ -1988,7 +1999,7 @@ components:
           type: object
           properties:
             id:
-              type: number
+              type: integer
             content:
               type: string
             content_text:
@@ -2029,14 +2040,14 @@ components:
           type: object
           properties:
             cursor:
-              type: number
+              type: integer
             blogs:
               type: array
               items:
                 type: object
                 properties:
                   id:
-                    type: number
+                    type: integer
                   title:
                     type: string
                   short_desc:
@@ -2055,7 +2066,7 @@ components:
           type: object
           properties:
             id:
-              type: number
+              type: integer
             title:
               type: string
             short_desc:
@@ -2110,7 +2121,7 @@ components:
           type: object
           properties:
             id:
-              type: number
+              type: integer
     CashflowBodyIn:
       type: object
       properties:
@@ -2145,14 +2156,14 @@ components:
             outcome_cash:
               type: string
             cursor:
-              type: number
+              type: integer
             cashflows:
               type: array
               items:
                 type: object
                 properties:
                   id:
-                    type: number
+                    type: integer
                   date:
                     type: string
                     format: date
@@ -2172,7 +2183,7 @@ components:
           type: object
           properties:
             id:
-              type: number
+              type: integer
     DuesBodyIn:
       type: object
       properties:
@@ -2192,14 +2203,14 @@ components:
           type: object
           properties:
             cursor:
-              type: number
+              type: integer
             dues:
               type: array
               items:
                 type: object
                 properties:
                   id:
-                    type: number
+                    type: integer
                   date:
                     type: string
                     format: date
@@ -2228,16 +2239,16 @@ components:
             unpaid_dues:
               type: string
             cursor:
-              type: number
+              type: integer
             dues:
               type: array
               items:
                 type: object
                 properties:
                   id:
-                    type: number
+                    type: integer
                   dues_id:
-                    type: number
+                    type: integer
                   date:
                     type: string
                     format: date
@@ -2255,9 +2266,9 @@ components:
           type: object
           properties:
             dues_id:
-              type: number
+              type: integer
             cursor:
-              type: number
+              type: integer
             dues_date:
               type: string
               format: date
@@ -2273,7 +2284,7 @@ components:
                 type: object
                 properties:
                   id:
-                    type: number
+                    type: integer
                   member_id:
                     type: string
                   status:
@@ -2290,7 +2301,7 @@ components:
           type: object
           properties:
             id:
-              type: number
+              type: integer
     MemberDuesBodyIn:
       type: object
       properties:
@@ -2455,7 +2466,7 @@ components:
                     type: object
                     properties:
                       id:
-                        type: number
+                        type: integer
                       date:
                         type: string
                         format: date
@@ -2470,7 +2481,7 @@ components:
               type: object
               properties:
                 id:
-                  type: number
+                  type: integer
                 date:
                   type: string
                   format: date
@@ -2499,7 +2510,7 @@ components:
                 type: object
                 properties:
                   id:
-                    type: number
+                    type: integer
                   member_id:
                     type: string
                   status:

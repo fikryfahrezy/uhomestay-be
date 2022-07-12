@@ -115,3 +115,41 @@ func MultipartToFileHookFunc(f reflect.Type, t reflect.Type, data interface{}) (
 
 	return data, nil
 }
+
+func MultipartX(r *http.Request, in interface{}, maxMemory int64, fs ...mapstructure.DecodeHookFunc) error {
+	err := r.ParseMultipartForm(maxMemory)
+	if err != nil {
+		return err
+	}
+
+	formValues := make(map[string]interface{})
+	formFile := r.MultipartForm
+	for k, v := range formFile.Value {
+		if k == "position_ids" {
+			formValues[k] = v
+			continue
+		}
+
+		formValues[k] = v[0]
+	}
+
+	for k, v := range formFile.File {
+		formValues[k] = v[0]
+	}
+
+	decoder, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
+		Result:           &in,
+		WeaklyTypedInput: true,
+		DecodeHook:       mapstructure.ComposeDecodeHookFunc(fs...),
+	})
+	if err != nil {
+		return err
+	}
+
+	err = decoder.Decode(formValues)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

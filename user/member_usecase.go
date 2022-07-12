@@ -32,7 +32,6 @@ var (
 
 type (
 	AddMemberIn struct {
-		PositionId        int64                 `mapstructure:"position_id"`
 		PeriodId          int64                 `mapstructure:"period_id"`
 		Name              string                `mapstructure:"name"`
 		Username          string                `mapstructure:"username"`
@@ -43,6 +42,7 @@ type (
 		HomestayAddress   string                `mapstructure:"homestay_address"`
 		HomestayLatitude  string                `mapstructure:"homestay_latitude"`
 		HomestayLongitude string                `mapstructure:"homestay_longitude"`
+		PositionIds       []int64               `mapstructure:"position_ids"`
 		IsAdmin           null.Bool             `mapstructure:"is_admin"`
 		File              httpdecode.FileHeader `mapstructure:"profile"`
 	}
@@ -83,21 +83,30 @@ func (d *UserDeps) MemberSaver(ctx context.Context, in AddMemberIn, isApproved b
 		}
 	}
 
-	var positionId uint64
-	if in.PositionId != 0 {
-		positionId, err = strconv.ParseUint(strconv.FormatInt(in.PositionId, 10), 10, 64)
-		if err != nil {
-			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
-			return
+	var positions []PositionModel
+	if len(in.PositionIds) != 0 {
+		positionIds := make([]uint64, len(in.PositionIds))
+		for i, posId := range in.PositionIds {
+			positionId, err := strconv.ParseUint(strconv.FormatInt(posId, 10), 10, 64)
+			if err != nil {
+				out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
+				return
+			}
+			positionIds[i] = positionId
 		}
 
-		_, err = d.PositionRepository.FindUndeletedById(ctx, positionId)
+		positions, err = d.PositionRepository.QueryUndeletedInId(ctx, positionIds)
 		if errors.Is(err, pgx.ErrNoRows) {
 			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
 			return
 		}
 		if err != nil {
 			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find position by id"))
+			return
+		}
+
+		if len(positions) == 0 {
+			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
 			return
 		}
 	}
@@ -169,14 +178,19 @@ func (d *UserDeps) MemberSaver(ctx context.Context, in AddMemberIn, isApproved b
 		return
 	}
 
-	if positionId != 0 && periodId != 0 {
-		orgStructure := OrgStructureModel{
-			MemberId:    memberId,
-			PositionId:  positionId,
-			OrgPeriodId: periodId,
+	if len(positions) != 0 && periodId != 0 {
+		structures := make([]OrgStructureModel, len(positions))
+		for i, position := range positions {
+			structures[i] = OrgStructureModel{
+				PositionName:  position.Name,
+				PositionLevel: position.Level,
+				MemberId:      memberId,
+				PositionId:    position.Id,
+				OrgPeriodId:   periodId,
+			}
 		}
 
-		if err = d.OrgStructureRepository.Save(ctx, orgStructure); err != nil {
+		if err = d.OrgStructureRepository.BulkSave(ctx, structures); err != nil {
 			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "save sturcture"))
 			return
 		}
@@ -353,7 +367,7 @@ func (d *UserDeps) AdminLogin(ctx context.Context, in LoginIn) (out LoginOut) {
 		return
 	}
 
-	member, err := d.MemberRepository.FindAdminByByUsername(in.Identifier)
+	member, err := d.MemberRepository.FindByUsername(in.Identifier)
 	if errors.Is(err, pgx.ErrNoRows) {
 		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
 		return
@@ -361,6 +375,16 @@ func (d *UserDeps) AdminLogin(ctx context.Context, in LoginIn) (out LoginOut) {
 
 	if err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find member by username"))
+		return
+	}
+
+	if !member.IsAdmin {
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
+		return
+	}
+
+	if !member.IsApproved {
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrNotApprovedMember)
 		return
 	}
 
@@ -404,8 +428,8 @@ type (
 		HomestayLatitude  string                `mapstructure:"homestay_latitude"`
 		HomestayLongitude string                `mapstructure:"homestay_longitude"`
 		IsAdmin           null.Bool             `mapstructure:"is_admin"`
-		PositionId        int64                 `mapstructure:"position_id"`
 		PeriodId          int64                 `mapstructure:"period_id"`
+		PositionIds       []int64               `mapstructure:"position_ids"`
 		File              httpdecode.FileHeader `mapstructure:"profile"`
 	}
 	EditMemberRes struct {
@@ -468,15 +492,21 @@ func (d *UserDeps) EditMember(ctx context.Context, uid string, in EditMemberIn) 
 		}
 	}
 
-	var positionId uint64
-	positionId, err = strconv.ParseUint(strconv.FormatInt(in.PositionId, 10), 10, 64)
-	if err != nil {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
-		return
+	unsignedPositionIds := make([]uint64, len(in.PositionIds))
+	if len(in.PositionIds) != 0 {
+		for i, posId := range in.PositionIds {
+			positionId, err := strconv.ParseUint(strconv.FormatInt(posId, 10), 10, 64)
+			if err != nil {
+				out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
+				return
+			}
+			unsignedPositionIds[i] = positionId
+		}
 	}
 
-	if positionId != orgStructure.PositionId {
-		_, err = d.PositionRepository.FindById(ctx, positionId)
+	var positions []PositionModel
+	if len(unsignedPositionIds) != 0 {
+		positions, err = d.PositionRepository.QueryUndeletedInId(ctx, unsignedPositionIds)
 		if errors.Is(err, pgx.ErrNoRows) {
 			out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
 			return
@@ -485,6 +515,11 @@ func (d *UserDeps) EditMember(ctx context.Context, uid string, in EditMemberIn) 
 			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find position by id"))
 			return
 		}
+	}
+
+	if len(positions) == 0 {
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrPositionNotFound)
+		return
 	}
 
 	member.Name = in.Name
@@ -544,14 +579,26 @@ func (d *UserDeps) EditMember(ctx context.Context, uid string, in EditMemberIn) 
 		return
 	}
 
-	if periodId != orgStructure.OrgPeriodId || positionId != orgStructure.PositionId {
-		orgStructure = OrgStructureModel{
-			MemberId:    member.Id.UUID.String(),
-			PositionId:  positionId,
-			OrgPeriodId: periodId,
+	if periodId != orgStructure.OrgPeriodId || len(positions) != 0 {
+		memId := member.Id.UUID.String()
+		structures := make([]OrgStructureModel, len(positions))
+		for i, position := range positions {
+			structures[i] = OrgStructureModel{
+				PositionName:  position.Name,
+				PositionLevel: position.Level,
+				MemberId:      memId,
+				PositionId:    position.Id,
+				OrgPeriodId:   periodId,
+			}
 		}
-		if err = d.OrgStructureRepository.Save(ctx, orgStructure); err != nil {
-			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "save structure"))
+
+		if err = d.OrgStructureRepository.DeleteByOrgIdAndMemberId(ctx, orgStructure.OrgPeriodId, memId); err != nil {
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "delete by org and member id"))
+			return
+		}
+
+		if err = d.OrgStructureRepository.BulkSave(ctx, structures); err != nil {
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "save sturcture"))
 			return
 		}
 	}
@@ -685,23 +732,27 @@ func (d *UserDeps) QueryMember(ctx context.Context, q, cursor, limit string) (ou
 }
 
 type (
+	MemberPosition struct {
+		Id    uint64 `json:"id"`
+		Level int16  `json:"level"`
+		Name  string `json:"name"`
+	}
 	MemberDetailRes struct {
-		Id                string `json:"id"`
-		Name              string `json:"name"`
-		Username          string `json:"username"`
-		WaPhone           string `json:"wa_phone"`
-		OtherPhone        string `json:"other_phone"`
-		HomestayName      string `json:"homestay_name"`
-		HomestayAddress   string `json:"homestay_address"`
-		HomestayLatitude  string `json:"homestay_latitude"`
-		HomestayLongitude string `json:"homestay_longitude"`
-		ProfilePicUrl     string `json:"profile_pic_url"`
-		IsAdmin           bool   `json:"is_admin"`
-		IsApproved        bool   `json:"is_approved"`
-		PeriodId          uint64 `json:"period_id"`
-		Period            string `json:"period"`
-		PositionId        uint64 `json:"position_id"`
-		Position          string `json:"position"`
+		Id                string           `json:"id"`
+		Name              string           `json:"name"`
+		Username          string           `json:"username"`
+		WaPhone           string           `json:"wa_phone"`
+		OtherPhone        string           `json:"other_phone"`
+		HomestayName      string           `json:"homestay_name"`
+		HomestayAddress   string           `json:"homestay_address"`
+		HomestayLatitude  string           `json:"homestay_latitude"`
+		HomestayLongitude string           `json:"homestay_longitude"`
+		ProfilePicUrl     string           `json:"profile_pic_url"`
+		IsAdmin           bool             `json:"is_admin"`
+		IsApproved        bool             `json:"is_approved"`
+		PeriodId          uint64           `json:"period_id"`
+		Period            string           `json:"period"`
+		Positions         []MemberPosition `json:"positions"`
 	}
 	FindMemberDetailOut struct {
 		resp.Response
@@ -743,37 +794,37 @@ func (d *UserDeps) FindMemberDetail(ctx context.Context, uid string) (out FindMe
 	}(ctx, uid, mc, mR)
 
 	pc := make(chan OrgPeriodModel)
-	psc := make(chan PositionModel)
+	psc := make(chan []OrgStructureModel)
 	rs := make(chan resp.Response)
-	go func(ctx context.Context, uid string, pc chan OrgPeriodModel, psc chan PositionModel, res chan resp.Response) {
+	go func(ctx context.Context, uid string, pc chan OrgPeriodModel, psc chan []OrgStructureModel, res chan resp.Response) {
 		var period OrgPeriodModel
-		var position PositionModel
+		var position []OrgStructureModel
 		var r resp.Response
 
-		period, position, r = func(ctx context.Context, uid string) (OrgPeriodModel, PositionModel, resp.Response) {
+		period, position, r = func(ctx context.Context, uid string) (OrgPeriodModel, []OrgStructureModel, resp.Response) {
 			var period OrgPeriodModel
-			var position PositionModel
+			var position []OrgStructureModel
 
 			orgStructure, err := d.OrgStructureRepository.FindLatestByMemberId(ctx, uid)
 			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-				return OrgPeriodModel{}, PositionModel{}, resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find user org structure by member id"))
+				return OrgPeriodModel{}, []OrgStructureModel{}, resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find user org structure by member id"))
 			}
 
 			if errors.Is(err, pgx.ErrNoRows) {
 				err = nil
 			}
 
-			if orgStructure.PositionId != 0 {
-				position, err = d.PositionRepository.FindById(ctx, orgStructure.PositionId)
+			if orgStructure.OrgPeriodId != 0 {
+				position, err = d.OrgStructureRepository.FindByOrgIdAndMemberId(ctx, orgStructure.OrgPeriodId, orgStructure.MemberId)
 				if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-					return OrgPeriodModel{}, PositionModel{}, resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find position by id"))
+					return OrgPeriodModel{}, []OrgStructureModel{}, resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find position by id"))
 				}
 			}
 
 			if orgStructure.OrgPeriodId != 0 {
 				period, err = d.OrgPeriodRepository.FindById(ctx, orgStructure.OrgPeriodId)
 				if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-					return OrgPeriodModel{}, PositionModel{}, resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find period by id"))
+					return OrgPeriodModel{}, []OrgStructureModel{}, resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find period by id"))
 				}
 			}
 
@@ -788,7 +839,7 @@ func (d *UserDeps) FindMemberDetail(ctx context.Context, uid string) (out FindMe
 	member := <-mc
 	mRV := <-mR
 	period := <-pc
-	position := <-psc
+	positions := <-psc
 	rsV := <-rs
 
 	if mRV.Error != nil {
@@ -811,6 +862,14 @@ func (d *UserDeps) FindMemberDetail(ctx context.Context, uid string) (out FindMe
 		periodEnd = period.EndDate.Format("2006-01-02")
 	}
 
+	positionRes := make([]MemberPosition, len(positions))
+	for i, pos := range positions {
+		positionRes[i] = MemberPosition{
+			Id:   pos.PositionId,
+			Name: pos.PositionName,
+		}
+	}
+
 	out.Res = MemberDetailRes{
 		Id:                member.Id.UUID.String(),
 		Name:              member.Name,
@@ -826,8 +885,7 @@ func (d *UserDeps) FindMemberDetail(ctx context.Context, uid string) (out FindMe
 		IsApproved:        member.IsApproved,
 		PeriodId:          period.Id,
 		Period:            periodStart + periodEnd,
-		PositionId:        position.Id,
-		Position:          position.Name,
+		Positions:         positionRes,
 	}
 
 	return
@@ -985,6 +1043,96 @@ func (d *UserDeps) UpdatProfile(ctx context.Context, uid string, in UpdateProfil
 	}
 
 	out.Res.Id = uid
+
+	return
+}
+
+func (d *UserDeps) MemberLoginWithUsername(ctx context.Context, username string) (out LoginOut) {
+	var err error
+	out.Response = resp.NewResponse(http.StatusOK, "", nil)
+
+	member, err := d.MemberRepository.FindByUsername(username)
+	if errors.Is(err, pgx.ErrNoRows) {
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
+		return
+	}
+
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find member by username"))
+		return
+	}
+
+	if !member.IsApproved {
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrNotApprovedMember)
+		return
+	}
+
+	jwtToken, err := jwt.Sign(
+		"",
+		"token",
+		d.JwtIssuerUrl,
+		d.JwtKey,
+		d.JwtAudiences,
+		time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC),
+		time.Time{},
+		time.Time{},
+		jwt.JwtPrivateClaim{
+			Uid: member.Id.UUID.String(),
+		})
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "jwt signer"))
+		return
+	}
+
+	out.Res.Token = jwtToken
+
+	return
+}
+
+func (d *UserDeps) AdminLoginWithUsername(ctx context.Context, username string) (out LoginOut) {
+	var err error
+	out.Response = resp.NewResponse(http.StatusOK, "", nil)
+
+	member, err := d.MemberRepository.FindByUsername(username)
+	if errors.Is(err, pgx.ErrNoRows) {
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
+		return
+	}
+
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find member by username"))
+		return
+	}
+
+	if !member.IsAdmin {
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
+		return
+	}
+
+	if !member.IsApproved {
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrNotApprovedMember)
+		return
+	}
+
+	jwtToken, err := jwt.Sign(
+		"",
+		"token",
+		d.JwtIssuerUrl,
+		d.JwtKey,
+		d.JwtAudiences,
+		time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC),
+		time.Time{},
+		time.Time{},
+		jwt.JwtPrivateAdminClaim{
+			Uid:     member.Id.UUID.String(),
+			IsAdmin: true,
+		})
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "jwt signer"))
+		return
+	}
+
+	out.Res.Token = jwtToken
 
 	return
 }
