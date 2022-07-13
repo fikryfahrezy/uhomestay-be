@@ -23,8 +23,7 @@ jobs:
       - run: go test ./...
         env:
           GOPROXY: "https://proxy.golang.org"
-
-  cd:
+  cd-dev:
     name: Deploy to Heroku
     needs: ci
     runs-on: ubuntu-latest
@@ -45,3 +44,24 @@ jobs:
           heroku container:login
           heroku container:push web -a uhomestay-dev
           heroku container:release web -a uhomestay-dev
+  cd-uat:
+    name: Deploy to Heroku
+    needs: ci
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - run: curl https://cli-assets.heroku.com/install-ubuntu.sh | sh
+      - env:
+          HEROKU_API_KEY: ${{ secrets.HEROKU_API_KEY_TEL_U }}
+          HEROKU_EMAIL: ${{ secrets.HEROKU_EMAIL_TEL_U }}
+        run: |
+          touch ~/.netrc
+          echo "machine api.heroku.com" >> ~/.netrc
+          echo "  login $HEROKU_EMAIL" >> ~/.netrc
+          echo "  password $HEROKU_API_KEY" >> ~/.netrc
+          echo "machine git.heroku.com" >> ~/.netrc
+          echo "  login $HEROKU_EMAIL" >> ~/.netrc
+          echo "  password $HEROKU_API_KEY" >> ~/.netrc
+          heroku container:login
+          heroku container:push web -a uhomestay-kamojang
+          heroku container:release web -a uhomestay-kamojang
