@@ -170,8 +170,10 @@ func (r *MemberRepository) CheckOtherUniqueField(ctx context.Context, uid string
 			username = $1
 			OR other_phone = $2
 			OR wa_phone = $3
+			OR other_phone = $4
+			OR wa_phone = $5
 		) AND deleted_at IS NULL
-		AND id != $4 LIMIT 1
+		AND id != $6 LIMIT 1
 	`
 
 	var queryRow MemberQuerierRow
@@ -189,6 +191,8 @@ func (r *MemberRepository) CheckOtherUniqueField(ctx context.Context, uid string
 		m.Username,
 		m.OtherPhone,
 		m.WaPhone,
+		m.WaPhone,
+		m.OtherPhone,
 		uid,
 	).Scan(&xid)
 

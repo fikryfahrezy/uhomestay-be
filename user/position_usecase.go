@@ -183,12 +183,25 @@ func (d *UserDeps) EditPosition(ctx context.Context, pid string, in EditPosition
 		return
 	}
 
+	orgStruct, err := d.OrgStructureRepository.FindByPosIdAndActivePeriod(ctx, position.Id)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find by position id and active period"))
+		return
+	}
+
 	position.Name = in.Name
 	position.Level = int16(level)
 
 	if err = d.PositionRepository.UpdateById(ctx, position.Id, position); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "update position by id"))
 		return
+	}
+
+	if orgStruct.Id != 0 {
+		if err := d.OrgStructureRepository.UpdatePosByPosIdAndOrgId(ctx, position.Id, orgStruct.OrgPeriodId, position); err != nil {
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "edit position by position id and org id"))
+			return
+		}
 	}
 
 	out.Res.Id = id

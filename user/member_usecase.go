@@ -270,22 +270,24 @@ func (d *UserDeps) MemberRegister(ctx context.Context, in RegisterIn) (out Regis
 		return
 	}
 
-	jwtToken, err := jwt.Sign(
-		"",
-		"token",
-		d.JwtIssuerUrl,
-		d.JwtKey,
-		d.JwtAudiences,
-		time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC),
-		time.Time{},
-		time.Time{},
-		jwt.JwtPrivateClaim{
-			Uid: saverOut.Res.Id,
-		})
-	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "jwt signer"))
-		return
-	}
+	// jwtToken, err := jwt.Sign(
+	// 	"",
+	// 	"token",
+	// 	d.JwtIssuerUrl,
+	// 	d.JwtKey,
+	// 	d.JwtAudiences,
+	// 	time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC),
+	// 	time.Time{},
+	// 	time.Time{},
+	// 	jwt.JwtPrivateClaim{
+	// 		Uid: saverOut.Res.Id,
+	// 	})
+	// if err != nil {
+	// 	out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "jwt signer"))
+	// 	return
+	// }
+
+	jwtToken := ""
 
 	out.Res.Token = jwtToken
 

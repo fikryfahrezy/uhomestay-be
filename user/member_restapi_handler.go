@@ -143,14 +143,14 @@ func (d *UserDeps) PutMemberProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var in EditMemberIn
+	var in UpdateProfileIn
 	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.BoolToNullBoolHookFunc, httpdecode.MultipartToFileHookFunc); err != nil {
 		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
 	}
 
-	out := d.EditMember(r.Context(), jwtPayload.Uid, in)
+	out := d.UpdatProfile(r.Context(), jwtPayload.Uid, in)
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
 	}

@@ -313,3 +313,81 @@ func (r *OrgStructureRepository) DeleteByOrgIdAndMemberId(ctx context.Context, o
 
 	return nil
 }
+
+func (r *OrgStructureRepository) FindByPosIdAndActivePeriod(ctx context.Context, posId uint64) (m OrgStructureModel, err error) {
+	sqlQuery := `
+	SELECT
+		orgs.id,
+		position_name,
+		position_level,
+		member_id,
+		position_id,
+		org_period_id,
+		orgs.created_at,
+		orgs.deleted_at
+	FROM org_structures orgs
+	LEFT JOIN org_periods op on op.id = orgs.org_period_id 
+	WHERE orgs.position_id = $1 AND op.is_active = true AND op.deleted_at IS NULL
+	ORDER BY orgs.id DESC
+	LIMIT 1
+	`
+
+	var query OrgStructureQuerier
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		query = tx.Query
+	} else {
+		query = r.PostgreDb.Query
+	}
+
+	var rows pgx.Rows
+
+	rows, err = query(
+		context.Background(),
+		sqlQuery,
+		posId,
+	)
+
+	if err != nil {
+		return OrgStructureModel{}, err
+	}
+
+	if err = pgxscan.ScanOne(&m, rows); err != nil {
+		return OrgStructureModel{}, err
+	}
+
+	return m, nil
+}
+
+func (r *OrgStructureRepository) UpdatePosByPosIdAndOrgId(ctx context.Context, posId, periodId uint64, pos PositionModel) error {
+	sqlQuery := `
+		UPDATE org_structures
+		SET (position_name, position_level) = ($1, $2)
+		WHERE position_id = $3 AND org_period_id = $4
+	`
+
+	var exec OrgStructureExecutor
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		exec = tx.Exec
+	} else {
+		exec = r.PostgreDb.Exec
+	}
+
+	var err error
+
+	_, err = exec(
+		context.Background(),
+		sqlQuery,
+		pos.Name,
+		pos.Level,
+		posId,
+		periodId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
