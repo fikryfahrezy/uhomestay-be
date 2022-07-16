@@ -168,8 +168,7 @@ func (r *OrgStructureRepository) FindByPeriodId(ctx context.Context, periodId ui
 			created_at,
 			deleted_at
 		FROM org_structures
-		WHERE deleted_at IS NULL
-		AND org_period_id = $1
+		WHERE org_period_id = $1
 	`
 
 	var query OrgStructureQuerier
@@ -390,4 +389,78 @@ func (r *OrgStructureRepository) UpdatePosByPosIdAndOrgId(ctx context.Context, p
 	}
 
 	return nil
+}
+
+func (r *OrgStructureRepository) UndeleteByPeriodId(ctx context.Context, periodId uint64) error {
+	sqlQuery := `
+		UPDATE org_structures 
+		SET deleted_at = NULL
+		WHERE org_period_id = $1
+	`
+
+	var exec OrgStructureExecutor
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		exec = tx.Exec
+	} else {
+		exec = r.PostgreDb.Exec
+	}
+
+	var err error
+	_, err = exec(
+		context.Background(),
+		sqlQuery,
+		periodId,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+func (r *OrgStructureRepository) FindLatestUndeletedByMemberId(ctx context.Context, uid string) (m OrgStructureModel, err error) {
+	sqlQuery := `
+		SELECT
+			id,
+			position_name,
+			position_level,
+			member_id,
+			position_id,
+			org_period_id,
+			created_at,
+			deleted_at
+		FROM org_structures
+		WHERE member_id = $1
+		AND deleted_at IS NULL
+		ORDER BY org_structures.id DESC
+		LIMIT 1
+	`
+
+	var query OrgStructureQuerier
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		query = tx.Query
+	} else {
+		query = r.PostgreDb.Query
+	}
+
+	var rows pgx.Rows
+
+	rows, err = query(
+		context.Background(),
+		sqlQuery,
+		uid,
+	)
+
+	if err != nil {
+		return OrgStructureModel{}, err
+	}
+
+	if err = pgxscan.ScanOne(&m, rows); err != nil {
+		return OrgStructureModel{}, err
+	}
+
+	return m, nil
 }

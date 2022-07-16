@@ -9,7 +9,6 @@ import (
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	errpkg "github.com/pkg/errors"
 )
 
 type OrgPeriodRepository struct {
@@ -392,16 +391,9 @@ func (r *OrgPeriodRepository) QueryActive(ctx context.Context) (pm OrgPeriodMode
 	return pm, nil
 }
 
-func (r *OrgPeriodRepository) EnableOtherLastInactiveTx(ctx context.Context, id uint64, isActiveBefore bool) error {
-	var err error
-	var periodsLen int
-
-	if !isActiveBefore {
-
-		var ms []OrgPeriodModel
-
-		sqlQuery := `
-		SELECT 
+func (r *OrgPeriodRepository) FindOtherLastTx(ctx context.Context) (m OrgPeriodModel, err error) {
+	sqlQuery := `
+		SELECT
 			id,
 			start_date,
 			end_date,
@@ -411,51 +403,34 @@ func (r *OrgPeriodRepository) EnableOtherLastInactiveTx(ctx context.Context, id 
 			deleted_at
 		FROM org_periods
 		WHERE deleted_at IS NULL
-		AND is_active = true
+		ORDER BY id DESC
+		LIMIT 1
 	`
 
-		var query OrgPeriodQuerier
-		tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
-		if ok {
-			query = tx.Query
-		} else {
-			query = r.PostgreDb.Query
-		}
-
-		var rows pgx.Rows
-		rows, _ = query(
-			context.Background(),
-			sqlQuery,
-		)
-
-		defer rows.Close()
-
-		var mps []*OrgPeriodModel
-		if err := pgxscan.ScanAll(&mps, rows); err != nil {
-			return err
-		}
-
-		ms = make([]OrgPeriodModel, len(mps))
-		for i, m := range mps {
-			ms[i] = *m
-		}
-
-		if err != nil {
-			err = errpkg.Wrap(err, "query active period")
-			return err
-		}
-
-		periodsLen = len(ms)
+	var query OrgPeriodQuerier
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		query = tx.Query
+	} else {
+		query = r.PostgreDb.Query
 	}
 
-	if periodsLen == 0 {
-		if err = r.EnableOtherLatest(ctx, id); err != nil {
-			err = errpkg.Wrap(err, "enable other last period")
-			return err
-		}
+	var rows pgx.Rows
+
+	rows, err = query(
+		context.Background(),
+		sqlQuery,
+	)
+
+	if err != nil {
+		return OrgPeriodModel{}, err
 	}
 
-	return nil
+	if err = pgxscan.ScanOne(&m, rows); err != nil {
+		return OrgPeriodModel{}, err
+	}
+
+	return m, nil
 }
 
 func (r *OrgPeriodRepository) FindById(ctx context.Context, id uint64) (m OrgPeriodModel, err error) {

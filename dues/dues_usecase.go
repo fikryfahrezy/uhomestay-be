@@ -128,7 +128,7 @@ func (d *DuesDeps) QueryDues(ctx context.Context, cursor, limit string) (out Que
 	for i, d := range dues {
 		outDues[i] = DuesOut{
 			Id:        int64(d.Id),
-			Date:      d.Date.Format("2006-01-02"),
+			Date:      d.Date.Format("2006-01"),
 			IdrAmount: d.IdrAmount,
 		}
 	}

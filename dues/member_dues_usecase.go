@@ -123,7 +123,7 @@ func (d *DuesDeps) QueryMemberDues(ctx context.Context, uid string, cursor, limi
 			outMemberDues[i] = MemberDuesOut{
 				Id:           int64(d.Id),
 				DuesId:       int64(d.DuesId),
-				Date:         d.Date.Format("2006-01-02"),
+				Date:         d.Date.Format("2006-01"),
 				Status:       status.String,
 				IdrAmout:     d.IdrAmount,
 				ProveFileUrl: d.ProveFileUrl,
@@ -323,7 +323,7 @@ func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid, cursor, limit stri
 	out.Res = QueryMembersDuesRes{
 		DuesId:     int64(dues.Id),
 		Cursor:     nextCursorV,
-		DuesDate:   dues.Date.Format("2006-01-02"),
+		DuesDate:   dues.Date.Format("2006-01"),
 		DuesAmount: dues.IdrAmount,
 		MemberDues: outMemberDuesV,
 		PaidDues:   strconv.FormatFloat(paidDuesV, 'f', -1, 64),
@@ -551,7 +551,7 @@ func (d *DuesDeps) PaidMemberDues(ctx context.Context, pid string, in PaidMember
 		Date:         memberDues.CreatedAt,
 		IdrAmount:    dues.IdrAmount,
 		Type:         cashflow.Income,
-		Note:         "Pembayaran Iuran Anggota, Nama " + member.Name,
+		Note:         "Pembayaran Iuran Anggota, Nama " + member.Name + ", Tanggal " + dues.Date.Format("2006-01"),
 		ProveFileUrl: memberDues.ProveFileUrl,
 	}
 

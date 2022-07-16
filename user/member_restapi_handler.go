@@ -219,7 +219,16 @@ func (d *UserDeps) GetMemberJwt(w http.ResponseWriter, r *http.Request) {
 
 func (d *UserDeps) GetAdminJwt(w http.ResponseWriter, r *http.Request) {
 	username := chi.URLParam(r, "username")
-	out := d.MemberLoginWithUsername(r.Context(), username)
+	out := d.AdminLoginWithUsername(r.Context(), username)
+	if out.Error != nil {
+		d.CaptureExeption(out.Error)
+	}
+	out.HttpJSON(w, resp.NewHttpBody(out.Res))
+}
+
+func (d *UserDeps) GetUserJwt(w http.ResponseWriter, r *http.Request) {
+	username := chi.URLParam(r, "username")
+	out := d.UserLoginWithUsername(r.Context(), username)
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
 	}

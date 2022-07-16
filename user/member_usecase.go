@@ -807,7 +807,7 @@ func (d *UserDeps) FindMemberDetail(ctx context.Context, uid string) (out FindMe
 			var period OrgPeriodModel
 			var position []OrgStructureModel
 
-			orgStructure, err := d.OrgStructureRepository.FindLatestByMemberId(ctx, uid)
+			orgStructure, err := d.OrgStructureRepository.FindLatestUndeletedByMemberId(ctx, uid)
 			if err != nil && !errors.Is(err, pgx.ErrNoRows) {
 				return OrgPeriodModel{}, []OrgStructureModel{}, resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find user org structure by member id"))
 			}
@@ -1132,6 +1132,72 @@ func (d *UserDeps) AdminLoginWithUsername(ctx context.Context, username string) 
 	if err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "jwt signer"))
 		return
+	}
+
+	out.Res.Token = jwtToken
+
+	return
+}
+
+func (d *UserDeps) UserLoginWithUsername(ctx context.Context, username string) (out LoginOut) {
+	var err error
+	out.Response = resp.NewResponse(http.StatusOK, "", nil)
+
+	member, err := d.MemberRepository.FindByUsername(username)
+	if errors.Is(err, pgx.ErrNoRows) {
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrMemberNotFound)
+		return
+	}
+
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find member by username"))
+		return
+	}
+
+	if !member.IsApproved {
+		out.Response = resp.NewResponse(http.StatusBadRequest, "", ErrNotApprovedMember)
+		return
+	}
+
+	var jwtToken string
+
+	if member.IsAdmin {
+		jwtToken, err = jwt.Sign(
+			"",
+			"token",
+			d.JwtIssuerUrl,
+			d.JwtKey,
+			d.JwtAudiences,
+			time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Time{},
+			time.Time{},
+			jwt.JwtPrivateAdminClaim{
+				Uid:     member.Id.UUID.String(),
+				IsAdmin: true,
+			})
+		if err != nil {
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "jwt signer"))
+			return
+		}
+	}
+
+	if jwtToken == "" {
+		jwtToken, err = jwt.Sign(
+			"",
+			"token",
+			d.JwtIssuerUrl,
+			d.JwtKey,
+			d.JwtAudiences,
+			time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC),
+			time.Time{},
+			time.Time{},
+			jwt.JwtPrivateClaim{
+				Uid: member.Id.UUID.String(),
+			})
+		if err != nil {
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "jwt signer"))
+			return
+		}
 	}
 
 	out.Res.Token = jwtToken

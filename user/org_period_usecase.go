@@ -261,8 +261,8 @@ func (d *UserDeps) QueryPeriod(ctx context.Context, cursor string) (out QueryPer
 	for i, p := range periods {
 		outPeriods[i] = PeriodRes{
 			Id:        p.Id,
-			StartDate: p.StartDate.Format("2006-01-02"),
-			EndDate:   p.EndDate.Format("2006-01-02"),
+			StartDate: p.StartDate.Format("2006-01"),
+			EndDate:   p.EndDate.Format("2006-01"),
 			IsActive:  p.IsActive,
 		}
 	}
@@ -444,7 +444,7 @@ func (d *UserDeps) RemovePeriod(ctx context.Context, pid string) (out RemovePeri
 		return
 	}
 
-	isActiveBefore := period.IsActive
+	// isActiveBefore := period.IsActive
 	out.Res.Id = id
 
 	if err = d.OrgPeriodRepository.DeleteById(ctx, id); err != nil {
@@ -457,9 +457,36 @@ func (d *UserDeps) RemovePeriod(ctx context.Context, pid string) (out RemovePeri
 		return
 	}
 
-	if err = d.OrgPeriodRepository.EnableOtherLastInactiveTx(ctx, id, isActiveBefore); err != nil {
+	if err = d.OrgPeriodRepository.EnableOtherLatest(ctx, id); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "enable other last period"))
 		return
+	}
+
+	var otherPeriod OrgPeriodModel
+	otherPeriod, err = d.OrgPeriodRepository.FindOtherLastTx(ctx)
+	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count other last period"))
+		return
+	}
+
+	if otherPeriod.Id != 0 {
+		orgStructs, err := d.OrgStructureRepository.FindByPeriodId(ctx, otherPeriod.Id)
+		if err != nil {
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count other last period"))
+			return
+		}
+
+		if len(orgStructs) != 0 {
+			if err = d.OrgStructureRepository.DeleteByPeriodId(ctx, id); err != nil {
+				out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "delete org structure by period id"))
+				return
+			}
+
+			if err = d.OrgStructureRepository.UndeleteByPeriodId(ctx, otherPeriod.Id); err != nil {
+				out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "undelete org structure by period id"))
+				return
+			}
+		}
 	}
 
 	return
@@ -522,9 +549,20 @@ func (d *UserDeps) SwitchPeriodStatus(ctx context.Context, pid string, in Switch
 
 	isActiveBefore := period.IsActive
 
-	if err = d.OrgPeriodRepository.EnableOtherLastInactiveTx(ctx, id, isActiveBefore); err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "enable other last period"))
-		return
+	var otherPeriod OrgPeriodModel
+	if !isActiveBefore {
+		otherPeriod, err = d.OrgPeriodRepository.FindOtherLastTx(ctx)
+		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count other last period"))
+			return
+		}
+	}
+
+	if otherPeriod.Id == 0 {
+		if err = d.OrgPeriodRepository.EnableOtherLatest(ctx, id); err != nil {
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "enable other last period"))
+			return
+		}
 	}
 
 	return
@@ -778,8 +816,8 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 
 	res := StructureRes{
 		Id:        period.Id,
-		StartDate: period.StartDate.Format("2006-01-02"),
-		EndDate:   period.EndDate.Format("2006-01-02"),
+		StartDate: period.StartDate.Format("2006-01"),
+		EndDate:   period.EndDate.Format("2006-01"),
 		Positions: outPos,
 		Vision:    string(vV),
 		Mission:   string(mV),
