@@ -738,7 +738,7 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 			Id:      p.PositionId,
 			Name:    p.PositionName,
 			Level:   p.PositionLevel,
-			Members: make([]StructureMemberOut, 0, len(posCIds)),
+			Members: []StructureMemberOut{},
 		}
 	}
 
@@ -754,6 +754,10 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 	outMemMap := make(map[string]StructureMemberOut)
 	for _, m := range members {
 		id := m.Id.UUID.String()
+		if id == "" || !m.IsApproved {
+			continue
+		}
+
 		outMemMap[id] = StructureMemberOut{
 			Id:            id,
 			Name:          m.Name,
@@ -766,14 +770,24 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 	for _, s := range newStruct {
 		p := outPostMap[s.PositionId]
 		for _, m := range memChc[s.PositionId] {
-			p.Members = append(p.Members, outMemMap[m])
+			memMap, ok := outMemMap[m]
+			if !ok {
+				continue
+			}
+
+			p.Members = append(p.Members, memMap)
 		}
+
 		outPostMap[s.PositionId] = p
 	}
 
 	// Assemble all the datas
 	outPos := make([]StructurePositionOut, 0, len(outPostMap))
 	for _, v := range outPostMap {
+		if len(v.Members) == 0 {
+			continue
+		}
+
 		outPos = append(outPos, v)
 	}
 
