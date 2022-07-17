@@ -39,9 +39,10 @@ func (r *OrgStructureRepository) Save(ctx context.Context, m OrgStructureModel) 
 			position_id,
 			org_period_id,
 			created_at,
+			updated_at,
 			deleted_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 	`
 
 	var exec OrgStructureExecutor
@@ -64,6 +65,7 @@ func (r *OrgStructureRepository) Save(ctx context.Context, m OrgStructureModel) 
 		m.PositionId,
 		m.OrgPeriodId,
 		t,
+		t,
 		nil,
 	)
 
@@ -84,10 +86,11 @@ func (r *OrgStructureRepository) FindLatestByMemberId(ctx context.Context, uid s
 			position_id,
 			org_period_id,
 			created_at,
+			updated_at,
 			deleted_at
 		FROM org_structures
 		WHERE member_id = $1
-		ORDER BY org_structures.id DESC
+		ORDER BY id DESC
 		LIMIT 1
 	`
 
@@ -132,7 +135,7 @@ func (r *OrgStructureRepository) BulkSave(ctx context.Context, ms []OrgStructure
 	_, err = copyFrom(
 		context.Background(),
 		pgx.Identifier{"org_structures"},
-		[]string{"position_name", "position_level", "member_id", "position_id", "org_period_id", "created_at", "deleted_at"},
+		[]string{"position_name", "position_level", "member_id", "position_id", "org_period_id", "created_at", "updated_at", "deleted_at"},
 		pgx.CopyFromSlice(len(ms), func(i int) ([]interface{}, error) {
 			memberId := pgtypeuuid.UUID{
 				Status: pgtype.Null,
@@ -145,7 +148,7 @@ func (r *OrgStructureRepository) BulkSave(ctx context.Context, ms []OrgStructure
 				}
 			}
 
-			return []interface{}{ms[i].PositionName, ms[i].PositionLevel, memberId, ms[i].PositionId, ms[i].OrgPeriodId, t, nil}, nil
+			return []interface{}{ms[i].PositionName, ms[i].PositionLevel, memberId, ms[i].PositionId, ms[i].OrgPeriodId, t, t, nil}, nil
 		}),
 	)
 
@@ -166,6 +169,7 @@ func (r *OrgStructureRepository) FindByPeriodId(ctx context.Context, periodId ui
 			position_id,
 			org_period_id,
 			created_at,
+			updated_at,
 			deleted_at
 		FROM org_structures
 		WHERE org_period_id = $1
@@ -205,8 +209,8 @@ func (r *OrgStructureRepository) FindByPeriodId(ctx context.Context, periodId ui
 func (r *OrgStructureRepository) DeleteByPeriodId(ctx context.Context, periodId uint64) error {
 	sqlQuery := `
 		UPDATE org_structures 
-		SET deleted_at = $1 
-		WHERE org_period_id = $2
+		SET (updated_at, deleted_at) = ($1, $2)
+		WHERE org_period_id = $3
 	`
 
 	var exec OrgStructureExecutor
@@ -223,6 +227,7 @@ func (r *OrgStructureRepository) DeleteByPeriodId(ctx context.Context, periodId 
 	_, err = exec(
 		context.Background(),
 		sqlQuery,
+		t,
 		t,
 		periodId,
 	)
@@ -244,11 +249,11 @@ func (r *OrgStructureRepository) FindByOrgIdAndMemberId(ctx context.Context, org
 			position_id,
 			org_period_id,
 			created_at,
+			updated_at,
 			deleted_at
 		FROM org_structures
 		WHERE org_period_id = $1
 			AND member_id = $2
-			AND deleted_at IS NULL
 		ORDER BY id DESC
 	`
 
@@ -283,8 +288,8 @@ func (r *OrgStructureRepository) FindByOrgIdAndMemberId(ctx context.Context, org
 func (r *OrgStructureRepository) DeleteByOrgIdAndMemberId(ctx context.Context, orgId uint64, uid string) error {
 	sqlQuery := `
 	UPDATE org_structures 
-	SET deleted_at = $1 
-	WHERE org_period_id = $2 AND member_id = $3
+	SET (updated_at, deleted_at) = ($1, $2)
+	WHERE org_period_id = $3 AND member_id = $4
 `
 
 	var exec OrgStructureExecutor
@@ -301,6 +306,7 @@ func (r *OrgStructureRepository) DeleteByOrgIdAndMemberId(ctx context.Context, o
 	_, err = exec(
 		context.Background(),
 		sqlQuery,
+		t,
 		t,
 		orgId,
 		uid,
@@ -323,6 +329,7 @@ func (r *OrgStructureRepository) FindByPosIdAndActivePeriod(ctx context.Context,
 		position_id,
 		org_period_id,
 		orgs.created_at,
+		orgs.updated_at,
 		orgs.deleted_at
 	FROM org_structures orgs
 	LEFT JOIN org_periods op on op.id = orgs.org_period_id 
@@ -361,8 +368,8 @@ func (r *OrgStructureRepository) FindByPosIdAndActivePeriod(ctx context.Context,
 func (r *OrgStructureRepository) UpdatePosByPosIdAndOrgId(ctx context.Context, posId, periodId uint64, pos PositionModel) error {
 	sqlQuery := `
 		UPDATE org_structures
-		SET (position_name, position_level) = ($1, $2)
-		WHERE position_id = $3 AND org_period_id = $4
+		SET (position_name, position_level, updated_at) = ($1, $2, $3)
+		WHERE position_id = $4 AND org_period_id = $5
 	`
 
 	var exec OrgStructureExecutor
@@ -380,6 +387,7 @@ func (r *OrgStructureRepository) UpdatePosByPosIdAndOrgId(ctx context.Context, p
 		sqlQuery,
 		pos.Name,
 		pos.Level,
+		time.Now(),
 		posId,
 		periodId,
 	)
@@ -394,8 +402,8 @@ func (r *OrgStructureRepository) UpdatePosByPosIdAndOrgId(ctx context.Context, p
 func (r *OrgStructureRepository) UndeleteByPeriodId(ctx context.Context, periodId uint64) error {
 	sqlQuery := `
 		UPDATE org_structures 
-		SET deleted_at = NULL
-		WHERE org_period_id = $1
+		SET (updated_at, deleted_at) = ($1, NULL)
+		WHERE org_period_id = $2
 	`
 
 	var exec OrgStructureExecutor
@@ -410,6 +418,7 @@ func (r *OrgStructureRepository) UndeleteByPeriodId(ctx context.Context, periodI
 	_, err = exec(
 		context.Background(),
 		sqlQuery,
+		time.Now(),
 		periodId,
 	)
 
@@ -430,11 +439,11 @@ func (r *OrgStructureRepository) FindLatestUndeletedByMemberId(ctx context.Conte
 			position_id,
 			org_period_id,
 			created_at,
+			updated_at,
 			deleted_at
 		FROM org_structures
 		WHERE member_id = $1
-		AND deleted_at IS NULL
-		ORDER BY org_structures.id DESC
+		ORDER BY updated_at DESC
 		LIMIT 1
 	`
 

@@ -13,5 +13,6 @@ type OrgStructureModel struct {
 	PositionName  string
 	MemberId      string
 	CreatedAt     time.Time
+	UpdatedAt     time.Time
 	DeletedAt     sql.NullTime
 }

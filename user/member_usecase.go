@@ -864,12 +864,23 @@ func (d *UserDeps) FindMemberDetail(ctx context.Context, uid string) (out FindMe
 		periodEnd = period.EndDate.Format("2006-01-02")
 	}
 
-	positionRes := make([]MemberPosition, len(positions))
-	for i, pos := range positions {
-		positionRes[i] = MemberPosition{
+	positionRes := make([]MemberPosition, 0, len(positions))
+	for _, pos := range positions {
+		var isExist bool
+		for _, existPost := range positionRes {
+			if isExist = existPost.Id == pos.PositionId; isExist {
+				break
+			}
+		}
+
+		if isExist {
+			continue
+		}
+
+		positionRes = append(positionRes, MemberPosition{
 			Id:   pos.PositionId,
 			Name: pos.PositionName,
-		}
+		})
 	}
 
 	out.Res = MemberDetailRes{
