@@ -22,10 +22,9 @@ type (
 		ProveFileUrl string `json:"prove_file_url"`
 	}
 	CashflowRes struct {
-		TotalCash   string        `json:"total_cash"`
-		IncomeCash  string        `json:"income_cash"`
-		OutcomeCash string        `json:"outcome_cash"`
-		Cashflows   []CashflowOut `json:"cashflows"`
+		TotalCash   string `json:"total_cash"`
+		IncomeCash  string `json:"income_cash"`
+		OutcomeCash string `json:"outcome_cash"`
 	}
 	DocumentOut struct {
 		IsPrivate bool   `json:"is_private"`
@@ -78,6 +77,7 @@ type (
 		Status        string `json:"status"`
 		Name          string `json:"name"`
 		ProfilePicUrl string `json:"profile_pic_url"`
+		PayDate       string `json:"pay_date"`
 	}
 	FindOrgPeriodGoalRes struct {
 		Id          int64  `json:"id"`
@@ -110,5 +110,11 @@ type (
 		Id        uint64 `json:"id"`
 		StartDate string `json:"start_date"`
 		EndDate   string `json:"end_date"`
+	}
+	ImageOut struct {
+		Id          int64  `json:"id"`
+		Name        string `json:"name"`
+		Url         string `json:"url"`
+		Description string `json:"description"`
 	}
 )

@@ -29,12 +29,14 @@ type (
 		Status       string `json:"status"`
 		IdrAmout     string `json:"idr_amount"`
 		ProveFileUrl string `json:"prove_file_url"`
+		PayDate      string `json:"pay_date"`
 	}
 	MemberDuesRes struct {
+		Cursor     int64           `json:"cursor"`
+		Total      int64           `json:"total"`
 		TotalDues  string          `json:"total_dues"`
 		PaidDues   string          `json:"paid_dues"`
 		UnpaidDues string          `json:"unpaid_dues"`
-		Cursor     int64           `json:"cursor"`
 		Dues       []MemberDuesOut `json:"dues"`
 	}
 	QueryMemberDuesOut struct {
@@ -90,10 +92,11 @@ func (d *DuesDeps) QueryMemberDues(ctx context.Context, uid string, cursor, limi
 	go duefFlow(ctx, uid, Unpaid, unpaidDues, uRes)
 
 	outMemberDues := make(chan []MemberDuesOut)
+	memberDuesNumber := make(chan int64)
 	nextCursor := make(chan int64)
 	qRes := make(chan resp.Response)
 
-	go func(ctx context.Context, uid, cursor, limit string, md chan []MemberDuesOut, nc chan int64, res chan resp.Response) {
+	go func(ctx context.Context, uid, cursor, limit string, md chan []MemberDuesOut, mdN, nc chan int64, res chan resp.Response) {
 		var r resp.Response
 		fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
 		nlimit, _ := strconv.ParseInt(limit, 10, 64)
@@ -101,7 +104,7 @@ func (d *DuesDeps) QueryMemberDues(ctx context.Context, uid string, cursor, limi
 			nlimit = 25
 		}
 
-		memberdues, err := d.MemberDuesRepository.QueryMDVByUid(ctx, uid, fromCursor, nlimit)
+		memberdues, memberDuesN, err := d.MemberDuesRepository.QueryMDVByUid(ctx, uid, fromCursor, nlimit)
 		if err != nil {
 			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query member dues view by uid"))
 		}
@@ -120,6 +123,11 @@ func (d *DuesDeps) QueryMemberDues(ctx context.Context, uid string, cursor, limi
 				continue
 			}
 
+			payDate := "-"
+			if d.PayDate.Valid {
+				payDate = d.PayDate.Time.Format("2006-01-02")
+			}
+
 			outMemberDues[i] = MemberDuesOut{
 				Id:           int64(d.Id),
 				DuesId:       int64(d.DuesId),
@@ -127,19 +135,22 @@ func (d *DuesDeps) QueryMemberDues(ctx context.Context, uid string, cursor, limi
 				Status:       status.String,
 				IdrAmout:     d.IdrAmount,
 				ProveFileUrl: d.ProveFileUrl,
+				PayDate:      payDate,
 			}
 		}
 
 		md <- outMemberDues
+		mdN <- memberDuesN
 		nc <- nextCursor
 		res <- r
-	}(ctx, uid, cursor, limit, outMemberDues, nextCursor, qRes)
+	}(ctx, uid, cursor, limit, outMemberDues, memberDuesNumber, nextCursor, qRes)
 
 	paidDuesV := <-paidDues
 	pRV := <-pRes
 	unpaidDuesV := <-unpaidDues
 	uRV := <-uRes
 	outMemberDuesV := <-outMemberDues
+	memberDuesNV := <-memberDuesNumber
 	nextCursorV := <-nextCursor
 	qRV := <-qRes
 
@@ -159,10 +170,11 @@ func (d *DuesDeps) QueryMemberDues(ctx context.Context, uid string, cursor, limi
 	}
 
 	out.Res = MemberDuesRes{
+		Cursor:     nextCursorV,
+		Total:      memberDuesNV,
 		TotalDues:  strconv.FormatFloat(paidDuesV, 'f', -1, 64),
 		PaidDues:   strconv.FormatFloat(paidDuesV, 'f', -1, 64),
 		UnpaidDues: strconv.FormatFloat(unpaidDuesV, 'f', -1, 64),
-		Cursor:     nextCursorV,
 		Dues:       outMemberDuesV,
 	}
 
@@ -176,10 +188,12 @@ type (
 		Status        string `json:"status"`
 		Name          string `json:"name"`
 		ProfilePicUrl string `json:"profile_pic_url"`
+		PayDate       string `json:"pay_date"`
 	}
 	QueryMembersDuesRes struct {
 		DuesId     int64            `json:"dues_id"`
 		Cursor     int64            `json:"cursor"`
+		Total      int64            `json:"total"`
 		DuesDate   string           `json:"dues_date"`
 		DuesAmount string           `json:"dues_amount"`
 		PaidDues   string           `json:"paid_dues"`
@@ -190,11 +204,32 @@ type (
 		resp.Response
 		Res QueryMembersDuesRes
 	}
+	QueryMembersDuesQIn struct {
+		Cursor    string
+		Limit     string
+		StartDate string
+		EndDate   string
+	}
 )
 
-func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid, cursor, limit string) (out QueryMembersDuesOut) {
+func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid string, qin QueryMembersDuesQIn) (out QueryMembersDuesOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
+
+	var startDate, endDate time.Time
+	parsedStartDate, err := time.Parse(time.RFC3339, qin.StartDate+"T00:00:00Z")
+	if err == nil {
+		startDate = parsedStartDate
+	}
+
+	parsedEndDate, err := time.Parse(time.RFC3339, qin.EndDate+"T23:59:59Z")
+	if err == nil {
+		endDate = parsedEndDate
+	}
+
+	if !startDate.IsZero() && endDate.IsZero() {
+		endDate = startDate
+	}
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
@@ -222,14 +257,21 @@ func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid, cursor, limit stri
 	if dues.Id == 0 {
 		out.Res = QueryMembersDuesRes{
 			Cursor:     0,
-			MemberDues: make([]MembersDuesOut, 0, 0),
+			MemberDues: make([]MembersDuesOut, 0),
 		}
 		return
 	}
 
-	duefFlow := func(ctx context.Context, duesId uint64, paidDues chan float64, unpaidDues chan float64, res chan resp.Response) {
+	duefFlow := func(
+		ctx context.Context,
+		duesId uint64,
+		startDate, endDate time.Time,
+		paidDues chan float64,
+		unpaidDues chan float64,
+		res chan resp.Response,
+	) {
 		var r resp.Response
-		amts, err := d.MemberDuesRepository.QueryAmtByDuesId(ctx, duesId)
+		amts, err := d.MemberDuesRepository.QueryAmtByDuesId(ctx, duesId, startDate, endDate)
 		if err != nil {
 			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query dues amt by dues id"))
 		}
@@ -255,13 +297,22 @@ func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid, cursor, limit stri
 	paidDues := make(chan float64)
 	unpaidDues := make(chan float64)
 	pRes := make(chan resp.Response)
-	go duefFlow(ctx, dues.Id, paidDues, unpaidDues, pRes)
+	go duefFlow(ctx, dues.Id, startDate, endDate, paidDues, unpaidDues, pRes)
 
 	outMemberDues := make(chan []MembersDuesOut)
+	memberDuesNumber := make(chan int64)
 	nextCursor := make(chan int64)
 	qRes := make(chan resp.Response)
 
-	go func(ctx context.Context, dueId uint64, cursor, limit string, md chan []MembersDuesOut, nc chan int64, res chan resp.Response) {
+	go func(
+		ctx context.Context,
+		dueId uint64,
+		cursor, limit string,
+		startDate, endDate time.Time,
+		md chan []MembersDuesOut,
+		mdN, nc chan int64,
+		res chan resp.Response,
+	) {
 		var r resp.Response
 		fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
 		nlimit, _ := strconv.ParseInt(limit, 10, 64)
@@ -269,10 +320,14 @@ func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid, cursor, limit stri
 			nlimit = 25
 		}
 
-		memberDues, err := d.MemberDuesRepository.QueryDMVByDuesId(ctx, dues.Id, fromCursor, nlimit)
+		memberDuesNumber, err := d.MemberDuesRepository.CountDMVByDuesId(ctx, dues.Id, startDate, endDate)
 		if err != nil {
-			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query member dues by uid"))
-			return
+			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count member dues by dues id"))
+		}
+
+		memberDues, err := d.MemberDuesRepository.QueryDMVByDuesId(ctx, dues.Id, fromCursor, nlimit, startDate, endDate)
+		if err != nil {
+			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query member dues by dues id"))
 		}
 
 		mdsLen := len(memberDues)
@@ -289,24 +344,32 @@ func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid, cursor, limit stri
 				continue
 			}
 
+			payDate := "-"
+			if m.PayDate.Valid {
+				payDate = m.PayDate.Time.Format("2006-01-02")
+			}
+
 			outMembersDues[i] = MembersDuesOut{
 				Id:            int64(m.Id),
 				MemberId:      m.MemberId,
 				Status:        status.String,
 				Name:          m.Name,
 				ProfilePicUrl: m.ProfilePicUrl,
+				PayDate:       payDate,
 			}
 		}
 
 		md <- outMembersDues
+		mdN <- memberDuesNumber
 		nc <- nextCursor
 		res <- r
-	}(ctx, dues.Id, cursor, limit, outMemberDues, nextCursor, qRes)
+	}(ctx, dues.Id, qin.Cursor, qin.Limit, startDate, endDate, outMemberDues, memberDuesNumber, nextCursor, qRes)
 
 	paidDuesV := <-paidDues
 	unpaidDuesV := <-unpaidDues
 	pRV := <-pRes
 	outMemberDuesV := <-outMemberDues
+	memberDuesNV := <-memberDuesNumber
 	nextCursorV := <-nextCursor
 	qRV := <-qRes
 
@@ -323,9 +386,10 @@ func (d *DuesDeps) QueryMembersDues(ctx context.Context, pid, cursor, limit stri
 	out.Res = QueryMembersDuesRes{
 		DuesId:     int64(dues.Id),
 		Cursor:     nextCursorV,
-		DuesDate:   dues.Date.Format("2006-01"),
+		DuesDate:   dues.Date.Format("2006-01-02"),
 		DuesAmount: dues.IdrAmount,
 		MemberDues: outMemberDuesV,
+		Total:      memberDuesNV,
 		PaidDues:   strconv.FormatFloat(paidDuesV, 'f', -1, 64),
 		UnpaidDues: strconv.FormatFloat(unpaidDuesV, 'f', -1, 64),
 	}
@@ -399,6 +463,7 @@ func (d *DuesDeps) PayMemberDues(ctx context.Context, uid, pid string, in PayMem
 
 	memberDues.Status = Waiting
 	memberDues.ProveFileUrl = fileUrl
+	memberDues.PayDate.Scan(time.Now())
 
 	if err = d.MemberDuesRepository.UpdateById(ctx, id, memberDues); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "save member dues"))
@@ -444,7 +509,7 @@ func (d *DuesDeps) EditMemberDues(ctx context.Context, pid string, in EditMember
 		return
 	}
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find document by id"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find unpaid member dues by id"))
 		return
 	}
 
@@ -471,7 +536,7 @@ func (d *DuesDeps) EditMemberDues(ctx context.Context, pid string, in EditMember
 	memberDues.ProveFileUrl = fileUrl
 
 	if err = d.MemberDuesRepository.UpdateById(ctx, id, memberDues); err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "update document by id"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "update member dues by id"))
 		return
 	}
 
@@ -538,7 +603,7 @@ func (d *DuesDeps) PaidMemberDues(ctx context.Context, pid string, in PaidMember
 		return
 	}
 
-	if in.IsPaid.Valid && in.IsPaid.Bool == true {
+	if in.IsPaid.Valid && in.IsPaid.Bool {
 		memberDues.Status = Paid
 	}
 
@@ -551,7 +616,7 @@ func (d *DuesDeps) PaidMemberDues(ctx context.Context, pid string, in PaidMember
 		Date:         memberDues.CreatedAt,
 		IdrAmount:    dues.IdrAmount,
 		Type:         cashflow.Income,
-		Note:         "Pembayaran Iuran Anggota, Nama " + member.Name + ", Tanggal " + dues.Date.Format("2006-01"),
+		Note:         "Pembayaran Iuran Anggota, Nama " + member.Name,
 		ProveFileUrl: memberDues.ProveFileUrl,
 	}
 

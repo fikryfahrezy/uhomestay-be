@@ -6,6 +6,7 @@ import (
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/document"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/dues"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/history"
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/image"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/user"
 	"github.com/getsentry/sentry-go"
 )
@@ -19,6 +20,7 @@ type DashboardDeps struct {
 	CaptureMessage  MessageCapturer
 	CaptureExeption ExceptionCapturer
 	*history.HistoryDeps
+	*image.ImageDeps
 	*document.DocumentDeps
 	*blog.BlogDeps
 	*cashflow.CashflowDeps
@@ -30,6 +32,7 @@ func NewDeps(
 	captureMessage MessageCapturer,
 	captureExeption ExceptionCapturer,
 	historyDeps *history.HistoryDeps,
+	imageDeps *image.ImageDeps,
 	documentDeps *document.DocumentDeps,
 	blogDeps *blog.BlogDeps,
 	cashflowDeps *cashflow.CashflowDeps,
@@ -40,6 +43,7 @@ func NewDeps(
 		CaptureMessage:  captureMessage,
 		CaptureExeption: captureExeption,
 		HistoryDeps:     historyDeps,
+		ImageDeps:       imageDeps,
 		DocumentDeps:    documentDeps,
 		BlogDeps:        blogDeps,
 		CashflowDeps:    cashflowDeps,

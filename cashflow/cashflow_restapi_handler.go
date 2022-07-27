@@ -57,3 +57,11 @@ func (d *CashflowDeps) GetCashflows(w http.ResponseWriter, r *http.Request) {
 	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
+
+func (d *CashflowDeps) GetCashflowsStats(w http.ResponseWriter, r *http.Request) {
+	out := d.CalculateCashflow(r.Context())
+	if out.Error != nil {
+		d.CaptureExeption(out.Error)
+	}
+	out.HttpJSON(w, resp.NewHttpBody(out.Res))
+}

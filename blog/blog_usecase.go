@@ -132,14 +132,7 @@ func (d *BlogDeps) AddBlog(ctx context.Context, in AddBlogIn) (out AddBlogOut) {
 		return
 	}
 
-	blog, err := d.BlogModelBuilder(ctx, BlogIn{
-		Title:        in.Title,
-		ShortDesc:    in.ShortDesc,
-		ThumbnailUrl: in.ThumbnailUrl,
-		Content:      in.Content,
-		ContentText:  in.ContentText,
-		Slug:         in.Slug,
-	})
+	blog, err := d.BlogModelBuilder(ctx, BlogIn(in))
 	if err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "blog model builder"))
 		return
@@ -165,6 +158,7 @@ type (
 		CreatedAt    string `json:"created_at"`
 	}
 	QueryBlogRes struct {
+		Total  int64     `json:"total"`
 		Cursor int64     `json:"cursor"`
 		Blogs  []BlogOut `json:"blogs"`
 	}
@@ -177,6 +171,12 @@ type (
 func (d *BlogDeps) QueryBlog(ctx context.Context, q, cursor string) (out QueryBlogOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
+
+	blogNumber, err := d.BlogRepository.CountBlog(ctx)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count blog"))
+		return
+	}
 
 	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
 	blogs, err := d.BlogRepository.Query(ctx, q, fromCursor, 25)
@@ -204,6 +204,7 @@ func (d *BlogDeps) QueryBlog(ctx context.Context, q, cursor string) (out QueryBl
 	}
 
 	out.Res = QueryBlogRes{
+		Total:  blogNumber,
 		Cursor: nextCursor,
 		Blogs:  outBlogs,
 	}
@@ -366,12 +367,12 @@ func (d *BlogDeps) RemoveBlog(ctx context.Context, pid string) (out RemoveBlogOu
 		return
 	}
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find position by id"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find blog by id"))
 		return
 	}
 
 	if err = d.BlogRepository.DeleteById(ctx, id); err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "delete position by id"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "delete blog by id"))
 		return
 	}
 

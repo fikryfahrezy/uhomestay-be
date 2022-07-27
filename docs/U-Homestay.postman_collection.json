@@ -458,7 +458,7 @@
           "response": []
         },
         {
-          "name": "Approval",
+          "name": "Approve",
           "event": [
             {
               "listen": "test",
@@ -814,7 +814,7 @@
       "name": "Document",
       "item": [
         {
-          "name": "Query All",
+          "name": "Query All Copy",
           "request": {
             "method": "GET",
             "header": [],
@@ -866,7 +866,7 @@
           "response": []
         },
         {
-          "name": "Add File",
+          "name": "Add File Copy",
           "request": {
             "method": "POST",
             "header": [],
@@ -987,7 +987,7 @@
           "response": []
         },
         {
-          "name": "Remove",
+          "name": "Remove Copy",
           "request": {
             "method": "DELETE",
             "header": [],
@@ -1200,6 +1200,26 @@
               "raw": "{{HOST}}/api/v1/cashflows",
               "host": ["{{HOST}}"],
               "path": ["api", "v1", "cashflows"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Stats",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/cashflows/stats",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "cashflows", "stats"],
               "query": [
                 {
                   "key": "cursor",
@@ -1512,6 +1532,21 @@
                   "key": "cursor",
                   "value": "1",
                   "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "25",
+                  "disabled": true
+                },
+                {
+                  "key": "start_date",
+                  "value": "YYYY-MM-DD",
+                  "disabled": true
+                },
+                {
+                  "key": "end_date",
+                  "value": "YYYY-MM-DD",
+                  "disabled": true
                 }
               ],
               "variable": [
@@ -1605,6 +1640,83 @@
               "raw": "{{HOST}}/api/v1/dashboard",
               "host": ["{{HOST}}"],
               "path": ["api", "v1", "dashboard"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Image",
+      "item": [
+        {
+          "name": "Query All",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/images",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "images"],
+              "query": [
+                {
+                  "key": "cursor",
+                  "value": "1",
+                  "disabled": true
+                },
+                {
+                  "key": "limit",
+                  "value": "1",
+                  "disabled": true
+                }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Add",
+          "request": {
+            "method": "POST",
+            "header": [],
+            "body": {
+              "mode": "formdata",
+              "formdata": [
+                {
+                  "key": "file",
+                  "type": "file",
+                  "src": "/home/frz/Downloads/images.jpeg"
+                },
+                {
+                  "key": "description",
+                  "value": "string",
+                  "type": "text"
+                }
+              ]
+            },
+            "url": {
+              "raw": "{{HOST}}/api/v1/images",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "images"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Remove",
+          "request": {
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{HOST}}/api/v1/images/:id",
+              "host": ["{{HOST}}"],
+              "path": ["api", "v1", "images", ":id"],
+              "variable": [
+                {
+                  "key": "id",
+                  "value": "1"
+                }
+              ]
             }
           },
           "response": []

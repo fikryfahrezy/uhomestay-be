@@ -68,5 +68,6 @@ type MemberDuesModel struct {
 	Status       DuesStatus
 	CreatedAt    time.Time
 	UpdatedAt    time.Time
+	PayDate      sql.NullTime
 	DeletedAt    sql.NullTime
 }

@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 
 	arbitary "github.com/PA-D3RPLA/d3if43-htt-uhomestay/arbitrary"
@@ -41,6 +42,22 @@ func TestAddPosition(t *testing.T) {
 			ExpectedStatusCode: http.StatusUnprocessableEntity,
 			In: user.AddPositionIn{
 				Name: "Leader",
+			},
+		},
+		{
+			Name:               "Add Position with name 200 chars Success",
+			ExpectedStatusCode: http.StatusCreated,
+			In: user.AddPositionIn{
+				Name:  strings.Repeat("a", 200),
+				Level: 1,
+			},
+		},
+		{
+			Name:               "Add Position with name over 200 chars Success",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			In: user.AddPositionIn{
+				Name:  strings.Repeat("a", 201),
+				Level: 1,
 			},
 		},
 	}
@@ -200,6 +217,24 @@ func TestEditPosition(t *testing.T) {
 			Id:                 pid,
 			In: user.EditPositionIn{
 				Name: "Leader",
+			},
+		},
+		{
+			Name:               "Edit Position with name 200 chars Success",
+			ExpectedStatusCode: http.StatusOK,
+			Id:                 pid,
+			In: user.EditPositionIn{
+				Name:  strings.Repeat("a", 200),
+				Level: 1,
+			},
+		},
+		{
+			Name:               "Edit Position with name over 200 chars fail",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			Id:                 pid,
+			In: user.EditPositionIn{
+				Name:  strings.Repeat("a", 201),
+				Level: 1,
 			},
 		},
 	}

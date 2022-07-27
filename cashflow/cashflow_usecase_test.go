@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -124,6 +125,26 @@ func TestAddCashflow(t *testing.T) {
 			In: cashflow.AddCashflowIn{
 				Date: time.Now().Format("2006-01-02"),
 				Type: "income",
+			},
+		},
+		{
+			Name:               "Add Income Cashflow with Idr Amout 200 chars Success",
+			ExpectedStatusCode: http.StatusCreated,
+			In: cashflow.AddCashflowIn{
+				Date:      time.Now().Format("2006-01-02"),
+				IdrAmount: strings.Repeat("1", 200),
+				Type:      "income",
+				Note:      "Just Note",
+			},
+		},
+		{
+			Name:               "Add Income Cashflow with Idr Amout over 200 chars fail",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			In: cashflow.AddCashflowIn{
+				Date:      time.Now().Format("2006-01-02"),
+				IdrAmount: strings.Repeat("1", 201),
+				Type:      "income",
+				Note:      "Just Note",
 			},
 		},
 	}
@@ -326,6 +347,28 @@ func TestEditCashflow(t *testing.T) {
 				Type:      "income",
 			},
 		},
+		{
+			Name:               "Edit Income Cashflow with Idr Amount 200 chars success",
+			ExpectedStatusCode: http.StatusOK,
+			Id:                 pid,
+			In: cashflow.EditCashflowIn{
+				Date:      time.Now().Format("2006-01-02"),
+				IdrAmount: strings.Repeat("1", 200),
+				Type:      "income",
+				Note:      "Just Note",
+			},
+		},
+		{
+			Name:               "Edit Income Cashflow with Idr Amount over 200 chars success",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			Id:                 pid,
+			In: cashflow.EditCashflowIn{
+				Date:      time.Now().Format("2006-01-02"),
+				IdrAmount: strings.Repeat("1", 201),
+				Type:      "income",
+				Note:      "Just Note",
+			},
+		},
 	}
 
 	for _, c := range testCases {
@@ -381,6 +424,45 @@ func TestRemoveCashflow(t *testing.T) {
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
 			res := cashflowDeps.RemoveCashflow(ctx, c.Id)
+			tx.Commit(context.Background())
+			tx.Rollback(context.Background())
+
+			if res.StatusCode != c.ExpectedStatusCode {
+				t.Logf("%#v", res)
+				t.Log(err)
+				t.Fatalf("Expected response code %d. Got %d\n", c.ExpectedStatusCode, res.StatusCode)
+			}
+		})
+	}
+}
+
+func TestCalculateCashflow(t *testing.T) {
+	err := ClearTables(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = cashflowRepository.Save(context.Background(), cashflowSeed)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testCases := []struct {
+		Name               string
+		ExpectedStatusCode int
+	}{
+		{
+			Name:               "Calculate Cashflows Success",
+			ExpectedStatusCode: http.StatusOK,
+		},
+	}
+
+	for _, c := range testCases {
+		t.Run(c.Name, func(t *testing.T) {
+			tx, err := db.Begin(context.Background())
+
+			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
+			res := cashflowDeps.CalculateCashflow(ctx)
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 

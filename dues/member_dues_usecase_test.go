@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 
 	arbitary "github.com/PA-D3RPLA/d3if43-htt-uhomestay/arbitrary"
@@ -121,7 +122,7 @@ func TestQueryMembersDues(t *testing.T) {
 			}
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
-			res := duesDeps.QueryMembersDues(ctx, c.Id, "", "")
+			res := duesDeps.QueryMembersDues(ctx, c.Id, dues.QueryMembersDuesQIn{})
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 
@@ -204,6 +205,30 @@ func TestPayMemberDues(t *testing.T) {
 			In: dues.PayMemberDuesIn{
 				File: httpdecode.FileHeader{
 					Filename: fileName,
+					File:     f,
+				},
+			},
+		},
+		{
+			Name:               "Pay Member Dues with filename 200 chars, success",
+			ExpectedStatusCode: http.StatusNotFound,
+			Id:                 "999",
+			Uid:                uid,
+			In: dues.PayMemberDuesIn{
+				File: httpdecode.FileHeader{
+					Filename: strings.Repeat("a", 200),
+					File:     f,
+				},
+			},
+		},
+		{
+			Name:               "Pay Member Dues with filename over 200 chars, fail",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			Id:                 "999",
+			Uid:                uid,
+			In: dues.PayMemberDuesIn{
+				File: httpdecode.FileHeader{
+					Filename: strings.Repeat("a", 201),
 					File:     f,
 				},
 			},
@@ -296,6 +321,28 @@ func TestEditMemberDues(t *testing.T) {
 			In: dues.EditMemberDuesIn{
 				File: httpdecode.FileHeader{
 					Filename: fileName,
+					File:     f,
+				},
+			},
+		},
+		{
+			Name:               "Edit Dues  with Filename 200 chars Success",
+			ExpectedStatusCode: http.StatusOK,
+			Id:                 pid1,
+			In: dues.EditMemberDuesIn{
+				File: httpdecode.FileHeader{
+					Filename: strings.Repeat("a", 200),
+					File:     f,
+				},
+			},
+		},
+		{
+			Name:               "Edit Dues  with Filename over 200 chars fail",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			Id:                 pid1,
+			In: dues.EditMemberDuesIn{
+				File: httpdecode.FileHeader{
+					Filename: strings.Repeat("a", 201),
 					File:     f,
 				},
 			},

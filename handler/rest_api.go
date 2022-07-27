@@ -112,7 +112,7 @@ func (p *RestApiConf) RestApiHandler() {
 		httpSwagger.URL("/docs/swagger.yaml"), // The url pointing to API definition
 	))
 
-	r.Get("/registerform", p.DashboardDeps.RegisterForm)
+	r.Get("/registerform", sentryHandler.HandleFunc(p.DashboardDeps.RegisterForm))
 	r.Get("/positionform", p.DashboardDeps.PositionForm)
 	r.Get("/periodform", p.DashboardDeps.PeriodForm)
 	r.Post("/positions", p.DashboardDeps.PostPosition)
@@ -173,6 +173,7 @@ func (p *RestApiConf) RestApiHandler() {
 	r.With(adminJwtMidd).Post("/api/v1/blogs/image", p.DashboardDeps.PostImage)
 
 	r.Get("/api/v1/cashflows", p.DashboardDeps.GetCashflows)
+	r.Get("/api/v1/cashflows/stats", p.DashboardDeps.GetCashflowsStats)
 	r.With(adminJwtMidd).Post("/api/v1/cashflows", p.DashboardDeps.PostCashflow)
 	r.With(adminJwtMidd).Put("/api/v1/cashflows/{id}", p.DashboardDeps.PutCashflow)
 	r.With(adminJwtMidd).Delete("/api/v1/cashflows/{id}", p.DashboardDeps.DeleteCashflow)
@@ -192,6 +193,10 @@ func (p *RestApiConf) RestApiHandler() {
 	r.Get("/api/v1/dashboard", p.DashboardDeps.GetPublicDashboard)
 	r.With(adminJwtMidd).Get("/api/v1/dashboard/private", p.DashboardDeps.GetPrivateDashboard)
 
+	r.Get("/api/v1/images", p.DashboardDeps.GetImages)
+	r.With(adminJwtMidd).Post("/api/v1/images", p.DashboardDeps.PostGalleryImage)
+	r.With(adminJwtMidd).Delete("/api/v1/images/{id}", p.DashboardDeps.DeleteImage)
+
 	workDir, _ := os.Getwd()
 	filesDir := http.Dir(filepath.Join(workDir, "docs"))
 	ChiFileServer(r, "/docs", filesDir)
@@ -210,7 +215,7 @@ func ChiFileServer(r chi.Router, path string, root http.FileSystem) {
 	}
 
 	if path != "/" && path[len(path)-1] != '/' {
-		r.Get(path, http.RedirectHandler(path+"/", 301).ServeHTTP)
+		r.Get(path, http.RedirectHandler(path+"/", http.StatusMovedPermanently).ServeHTTP)
 		path += "/"
 	}
 	path += "*"

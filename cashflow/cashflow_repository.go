@@ -269,3 +269,32 @@ func (r *CashflowRepository) QueryAmtByStatus(ctx context.Context, status Cashfl
 
 	return ms, nil
 }
+
+func (r *CashflowRepository) CountCashflowByType(ctx context.Context, typ string) (n int64, err error) {
+	sqlQuery := `
+		SELECT COUNT(id) AS n
+		FROM cashflows 
+		WHERE deleted_at IS NULL
+			AND type = $1
+	`
+
+	var queryRow CashflowQuerierRow
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		queryRow = tx.QueryRow
+	} else {
+		queryRow = r.PostgreDb.QueryRow
+	}
+
+	err = queryRow(
+		context.Background(),
+		sqlQuery,
+		typ,
+	).Scan(&n)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
+}

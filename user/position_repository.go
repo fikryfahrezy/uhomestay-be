@@ -367,3 +367,30 @@ func (r *PositionRepository) FindById(ctx context.Context, id uint64) (m Positio
 
 	return m, nil
 }
+
+func (r *PositionRepository) CountPosition(ctx context.Context) (n int64, err error) {
+	sqlQuery := `
+		SELECT COUNT(id) AS n
+		FROM positions
+		WHERE deleted_at IS NULL
+	`
+
+	var queryRow MemberQuerierRow
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		queryRow = tx.QueryRow
+	} else {
+		queryRow = r.PostgreDb.QueryRow
+	}
+
+	err = queryRow(
+		context.Background(),
+		sqlQuery,
+	).Scan(&n)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
+}

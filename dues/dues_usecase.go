@@ -92,8 +92,7 @@ type (
 		IdrAmount string `json:"idr_amount"`
 	}
 	QueryDuesRes struct {
-		Cursor int64     `json:"cursor"`
-		Dues   []DuesOut `json:"dues"`
+		Dues []DuesOut `json:"dues"`
 	}
 	QueryDuesOut struct {
 		resp.Response
@@ -101,28 +100,17 @@ type (
 	}
 )
 
-func (d *DuesDeps) QueryDues(ctx context.Context, cursor, limit string) (out QueryDuesOut) {
+func (d *DuesDeps) QueryDues(ctx context.Context) (out QueryDuesOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
-	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
-	nlimit, _ := strconv.ParseInt(limit, 10, 64)
-	if nlimit == 0 {
-		nlimit = 25
-	}
-
-	dues, err := d.DuesRepository.Query(ctx, fromCursor, nlimit)
+	dues, err := d.DuesRepository.Query(ctx)
 	if err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query dues"))
 		return
 	}
 
 	duesLen := len(dues)
-
-	var nextCursor int64
-	if duesLen != 0 {
-		nextCursor = int64(dues[duesLen-1].Id)
-	}
 
 	outDues := make([]DuesOut, duesLen)
 	for i, d := range dues {
@@ -134,8 +122,7 @@ func (d *DuesDeps) QueryDues(ctx context.Context, cursor, limit string) (out Que
 	}
 
 	out.Res = QueryDuesRes{
-		Cursor: nextCursor,
-		Dues:   outDues,
+		Dues: outDues,
 	}
 
 	return
@@ -323,6 +310,37 @@ func (d *DuesDeps) CheckPaidDues(ctx context.Context, pid string) (out CheckPaid
 	}
 
 	out.Res.IsPaid = isPaid
+
+	return
+}
+
+type (
+	LatestDuesRes struct {
+		Id        int64  `json:"id"`
+		Date      string `json:"date"`
+		IdrAmount string `json:"idr_amount"`
+	}
+	LatestDuesOut struct {
+		resp.Response
+		Res LatestDuesRes
+	}
+)
+
+func (d *DuesDeps) FindLatestDues(ctx context.Context) (out LatestDuesOut) {
+	var err error
+	out.Response = resp.NewResponse(http.StatusOK, "", nil)
+
+	dues, err := d.DuesRepository.Latest(ctx)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query dues"))
+		return
+	}
+
+	out.Res = LatestDuesRes{
+		Id:        int64(dues.Id),
+		Date:      dues.Date.Format("2006-01"),
+		IdrAmount: dues.IdrAmount,
+	}
 
 	return
 }

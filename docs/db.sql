@@ -73,7 +73,8 @@ CREATE TYPE doctype AS ENUM ('dir', 'file');
 CREATE TABLE IF NOT EXISTS documents (
   id BIGSERIAL PRIMARY KEY,
   name VARCHAR(200) DEFAULT '' NOT NULL,
-  url VARCHAR(200) DEFAULT '' NOT NULL,
+  alphnum_name VARCHAR(200) DEFAULT '' NOT NULL,
+  url TEXT DEFAULT '' NOT NULL,
   type doctype DEFAULT 'file' NOT NULL,
   dir_id BIGINT DEFAULT 0 NOT NULL,
   is_private BOOLEAN DEFAULT false NOT NULL,
@@ -82,13 +83,15 @@ CREATE TABLE IF NOT EXISTS documents (
   deleted_at TIMESTAMP DEFAULT NULL,
   textsearchable_index_col tsvector GENERATED ALWAYS AS (
     to_tsvector('english',
-      coalesce(name, '') 
+      coalesce(alphnum_name, '')
+      || ' ' || coalesce(name, '')
       || ' ' || coalesce(url, '')
     )
   ) STORED,
   textrank_index_col tsvector GENERATED ALWAYS AS (
-    setweight(to_tsvector('english', coalesce(name, '')), 'A')
-    || setweight(to_tsvector('english', coalesce(url, '')), 'B')
+    setweight(to_tsvector('english', coalesce(alphnum_name, '')), 'A')
+    || setweight(to_tsvector('english', coalesce(name, '')), 'B')
+    || setweight(to_tsvector('english', coalesce(url, '')), 'C')
   ) STORED
 );
 
@@ -175,7 +178,18 @@ CREATE TABLE IF NOT EXISTS member_dues (
   dues_id BIGINT NOT NULL REFERENCES dues(id),
   status duesstatus DEFAULT 'unpaid' NOT NULL,
   prove_file_url TEXT DEFAULT '' NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL, 
+  pay_date TIMESTAMP DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  deleted_at TIMESTAMP DEFAULT NULL
+);
+
+CREATE TABLE IF NOT EXISTS images (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(200) DEFAULT '' NOT NULL,
+  alphnum_name VARCHAR(200) DEFAULT '' NOT NULL,
+  url TEXT DEFAULT '' NOT NULL,
+  description TEXT DEFAULT '' NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
   deleted_at TIMESTAMP DEFAULT NULL
 );

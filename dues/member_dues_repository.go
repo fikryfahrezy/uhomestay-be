@@ -28,25 +28,45 @@ type (
 	MemberDuesQuerier          func(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
 )
 
-func (r *MemberDuesRepository) QueryMDVByUid(ctx context.Context, uid string, id, limit int64) ([]MemberDuesViewModel, error) {
+func (r *MemberDuesRepository) QueryMDVByUid(ctx context.Context, uid string, id, limit int64) ([]MemberDuesViewModel, int64, error) {
+	from := `
+		FROM member_dues md
+			LEFT JOIN dues d ON d.id = md.dues_id
+		WHERE d.deleted_at IS NULL
+			AND md.deleted_at IS NULL
+			AND md.member_id = $1
+	`
+
+	countSqlQuery := `
+		SELECT COUNT(md.id) AS n
+		` + from + `
+	`
+
+	var n int64
+	err := r.PostgreDb.QueryRow(
+		context.Background(),
+		countSqlQuery,
+		uid,
+	).Scan(&n)
+	if err != nil {
+		return []MemberDuesViewModel{}, 0, err
+	}
+
 	fromId := "md.id > $2"
 	if id != 0 {
 		fromId = "md.id < $2"
 	}
 
-	sqlQuery := `
+	selectSqlQuery := `
 		SELECT 
 			md.id,
 			md.dues_id,
 			d.date,
 			md.status,
 			d.idr_amount,
-			md.prove_file_url
-		FROM member_dues md
-			LEFT JOIN dues d ON d.id = md.dues_id
-		WHERE d.deleted_at IS NULL
-			AND md.deleted_at IS NULL
-			AND md.member_id = $1
+			md.prove_file_url,
+			md.pay_date
+		` + from + `
 			AND ` + fromId + `
 		ORDER BY md.id DESC
 		LIMIT $3
@@ -54,7 +74,7 @@ func (r *MemberDuesRepository) QueryMDVByUid(ctx context.Context, uid string, id
 
 	rows, _ := r.PostgreDb.Query(
 		context.Background(),
-		sqlQuery,
+		selectSqlQuery,
 		uid,
 		id,
 		limit,
@@ -63,7 +83,7 @@ func (r *MemberDuesRepository) QueryMDVByUid(ctx context.Context, uid string, id
 
 	var mps []*MemberDuesViewModel
 	if err := pgxscan.ScanAll(&mps, rows); err != nil {
-		return []MemberDuesViewModel{}, err
+		return []MemberDuesViewModel{}, 0, err
 	}
 
 	ms := make([]MemberDuesViewModel, len(mps))
@@ -71,21 +91,39 @@ func (r *MemberDuesRepository) QueryMDVByUid(ctx context.Context, uid string, id
 		ms[i] = *m
 	}
 
-	return ms, nil
+	return ms, n, nil
 }
 
-func (r *MemberDuesRepository) QueryDMVByDuesId(ctx context.Context, duesId uint64, id, limit int64) ([]DuesMemberViewModel, error) {
+func (r *MemberDuesRepository) QueryDMVByDuesId(ctx context.Context, duesId uint64, id, limit int64, startDate, endDate time.Time) ([]DuesMemberViewModel, error) {
+	dateFilter := ""
+	selectQueryParams := []interface{}{duesId, id, limit}
+
+	if !startDate.IsZero() {
+		dateFilter = dateFilter + `
+			AND md.pay_date >= $4::timestamp
+		`
+		selectQueryParams = append(selectQueryParams, startDate.Format(time.RFC3339))
+	}
+
+	if !endDate.IsZero() {
+		dateFilter = dateFilter + `
+		AND md.pay_date <= $5::timestamp
+		`
+		selectQueryParams = append(selectQueryParams, endDate.Format(time.RFC3339))
+	}
+
 	fromUid := "md.id > $2"
 	if id != 0 {
 		fromUid = "md.id < $2"
 	}
 
-	sqlQuery := `
+	sqlSelectQuery := `
 		SELECT
 			md.id,
 			md.member_id,
 			md.status,
 			md.created_at,
+			md.pay_date,
 			m.name,
 			m.profile_pic_url
 		FROM member_dues md
@@ -94,16 +132,15 @@ func (r *MemberDuesRepository) QueryDMVByDuesId(ctx context.Context, duesId uint
 			AND md.dues_id = $1
 			AND m.deleted_at IS NULL
 			AND ` + fromUid + `
+			` + dateFilter + `
 		ORDER BY md.id DESC
 		LIMIT $3
 	`
 
 	rows, _ := r.PostgreDb.Query(
 		context.Background(),
-		sqlQuery,
-		duesId,
-		id,
-		limit,
+		sqlSelectQuery,
+		selectQueryParams...,
 	)
 	defer rows.Close()
 
@@ -262,9 +299,10 @@ func (r *MemberDuesRepository) UpdateById(ctx context.Context, id uint64, m Memb
 		UPDATE member_dues SET (
 			prove_file_url,
 			status,
+			pay_date,
 			updated_at
-		) = ($1, $2, $3)
-		WHERE id = $4
+		) = ($1, $2, $3, $4)
+		WHERE id = $5
 	`
 
 	var exec MemberDuesExecutor
@@ -283,6 +321,7 @@ func (r *MemberDuesRepository) UpdateById(ctx context.Context, id uint64, m Memb
 		sqlQuery,
 		m.ProveFileUrl,
 		m.Status,
+		m.PayDate,
 		t,
 		id,
 	)
@@ -410,23 +449,34 @@ func (r *MemberDuesRepository) DeleteByDuesId(ctx context.Context, duesId uint64
 	return nil
 }
 
-func (r *MemberDuesRepository) QueryAmtByDuesId(ctx context.Context, duesId uint64) ([]MemberDuesAmtViewModel, error) {
+func (r *MemberDuesRepository) QueryAmtByDuesId(ctx context.Context, duesId uint64, startDate, endDate time.Time) ([]MemberDuesAmtViewModel, error) {
 	sqlQuery := `
-		SELECT
-			d.idr_amount,
-			md.status
-		FROM dues d
-			LEFT JOIN member_dues md ON md.dues_id = d.id
-		WHERE d.deleted_at IS NULL
-			AND md.deleted_at IS NULL
-			AND d.id = $1
+	SELECT
+		d.idr_amount,
+		md.status
+	FROM dues d
+		LEFT JOIN member_dues md ON md.dues_id = d.id
+	WHERE d.deleted_at IS NULL
+		AND md.deleted_at IS NULL
+		AND d.id = $1
 	`
 
-	rows, _ := r.PostgreDb.Query(
-		context.Background(),
-		sqlQuery,
-		duesId,
-	)
+	queryParams := []interface{}{duesId}
+	if !startDate.IsZero() {
+		sqlQuery = sqlQuery + `
+			AND md.pay_date >= $2::timestamp
+		`
+		queryParams = append(queryParams, startDate.Format(time.RFC3339))
+	}
+
+	if !endDate.IsZero() {
+		sqlQuery = sqlQuery + `
+		AND md.pay_date <= $3::timestamp
+		`
+		queryParams = append(queryParams, endDate.Format(time.RFC3339))
+	}
+
+	rows, _ := r.PostgreDb.Query(context.Background(), sqlQuery, queryParams...)
 	defer rows.Close()
 
 	var mps []*MemberDuesAmtViewModel
@@ -440,4 +490,42 @@ func (r *MemberDuesRepository) QueryAmtByDuesId(ctx context.Context, duesId uint
 	}
 
 	return ms, nil
+}
+
+func (r *MemberDuesRepository) CountDMVByDuesId(ctx context.Context, duesId uint64, startDate, endDate time.Time) (int64, error) {
+	sqlCountQuery := `
+	SELECT COUNT(md.id) AS n
+	FROM member_dues md
+			LEFT JOIN members m ON m.id = md.member_id
+		WHERE md.deleted_at IS NULL
+			AND md.dues_id = $1
+			AND m.deleted_at IS NULL
+	`
+	countQueryParams := []interface{}{duesId}
+
+	if !startDate.IsZero() {
+		sqlCountQuery = sqlCountQuery + `
+		AND md.pay_date >= $2::timestamp
+		`
+		countQueryParams = append(countQueryParams, startDate.Format(time.RFC3339))
+	}
+
+	if !endDate.IsZero() {
+		sqlCountQuery = sqlCountQuery + `
+		AND md.pay_date <= $3::timestamp
+		`
+		countQueryParams = append(countQueryParams, endDate.Format(time.RFC3339))
+	}
+
+	var n int64
+	err := r.PostgreDb.QueryRow(
+		context.Background(),
+		sqlCountQuery,
+		countQueryParams...,
+	).Scan(&n)
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
 }

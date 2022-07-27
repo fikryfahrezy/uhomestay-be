@@ -225,12 +225,7 @@ func (r *DuesRepository) DeleteById(ctx context.Context, id uint64) error {
 	return nil
 }
 
-func (r *DuesRepository) Query(ctx context.Context, id, limit int64) ([]DuesModel, error) {
-	fromId := "id > $1"
-	if id != 0 {
-		fromId = "id < $1"
-	}
-
+func (r *DuesRepository) Query(ctx context.Context) ([]DuesModel, error) {
 	sqlQuery := `
 		SELECT 
 			id,
@@ -241,16 +236,12 @@ func (r *DuesRepository) Query(ctx context.Context, id, limit int64) ([]DuesMode
 			deleted_at
 		FROM dues 
 		WHERE deleted_at IS NULL
-			AND ` + fromId + `
 		ORDER BY id DESC
-		LIMIT $2
 	`
 
 	rows, _ := r.PostgreDb.Query(
 		context.Background(),
 		sqlQuery,
-		id,
-		limit,
 	)
 	defer rows.Close()
 

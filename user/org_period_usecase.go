@@ -231,6 +231,7 @@ type (
 	}
 	QueryPeriodRes struct {
 		Cursor  int64       `json:"cursor"`
+		Total   int64       `json:"total"`
 		Periods []PeriodRes `json:"periods"`
 	}
 	QueryPeriodOut struct {
@@ -242,6 +243,12 @@ type (
 func (d *UserDeps) QueryPeriod(ctx context.Context, cursor string) (out QueryPeriodOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
+
+	periodNumber, err := d.OrgPeriodRepository.CountPeriod(ctx)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count period"))
+		return
+	}
 
 	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
 	periods, err := d.OrgPeriodRepository.Query(ctx, fromCursor, 25)
@@ -268,6 +275,7 @@ func (d *UserDeps) QueryPeriod(ctx context.Context, cursor string) (out QueryPer
 	}
 
 	out.Res = QueryPeriodRes{
+		Total:   periodNumber,
 		Cursor:  nextCursor,
 		Periods: outPeriods,
 	}
@@ -465,14 +473,14 @@ func (d *UserDeps) RemovePeriod(ctx context.Context, pid string) (out RemovePeri
 	var otherPeriod OrgPeriodModel
 	otherPeriod, err = d.OrgPeriodRepository.FindOtherLastTx(ctx)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count other last period"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find other last period"))
 		return
 	}
 
 	if otherPeriod.Id != 0 {
 		orgStructs, err := d.OrgStructureRepository.FindByPeriodId(ctx, otherPeriod.Id)
 		if err != nil {
-			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count other last period"))
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find period by id"))
 			return
 		}
 
@@ -553,7 +561,7 @@ func (d *UserDeps) SwitchPeriodStatus(ctx context.Context, pid string, in Switch
 	if !isActiveBefore {
 		otherPeriod, err = d.OrgPeriodRepository.FindOtherLastTx(ctx)
 		if err != nil && !errors.Is(err, pgx.ErrNoRows) {
-			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count other last period"))
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find other last period"))
 			return
 		}
 	}
@@ -666,7 +674,7 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 			Id:        0,
 			StartDate: "",
 			EndDate:   "",
-			Positions: make([]StructurePositionOut, 0, 0),
+			Positions: make([]StructurePositionOut, 0),
 			Vision:    "",
 			Mission:   "",
 		}
@@ -794,7 +802,7 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 	marshal := func(title string, content map[string]interface{}, mc chan []byte, res chan resp.Response) {
 		var r resp.Response
 		var m []byte
-		if content != nil && len(content) != 0 {
+		if len(content) != 0 {
 			m, err = json.Marshal(content)
 			if err != nil {
 				r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, title+" json marshal"))
@@ -830,8 +838,8 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 
 	res := StructureRes{
 		Id:        period.Id,
-		StartDate: period.StartDate.Format("2006-01"),
-		EndDate:   period.EndDate.Format("2006-01"),
+		StartDate: period.StartDate.Format("2006-01-02"),
+		EndDate:   period.EndDate.Format("2006-01-02"),
 		Positions: outPos,
 		Vision:    string(vV),
 		Mission:   string(mV),

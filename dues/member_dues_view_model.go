@@ -1,6 +1,7 @@
 package dues
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -11,6 +12,7 @@ type MemberDuesViewModel struct {
 	ProveFileUrl string
 	Status       DuesStatus
 	Date         time.Time
+	PayDate      sql.NullTime
 }
 
 type DuesMemberViewModel struct {
@@ -20,6 +22,7 @@ type DuesMemberViewModel struct {
 	ProfilePicUrl string
 	Status        DuesStatus
 	CreatedAt     time.Time
+	PayDate       sql.NullTime
 }
 
 type MemberDuesAmtViewModel struct {

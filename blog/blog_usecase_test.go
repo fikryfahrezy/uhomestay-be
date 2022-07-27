@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/blog"
@@ -134,6 +135,90 @@ func TestAddBlog(t *testing.T) {
 				ContentText: "",
 			},
 		},
+		{
+			Name:               "Add Blog with Title 200 chars Success",
+			ExpectedStatusCode: http.StatusCreated,
+			init: func() {
+			},
+			In: blog.AddBlogIn{
+				Title:        strings.Repeat("a", 200),
+				ShortDesc:    "Short Desc",
+				Slug:         "slug",
+				ThumbnailUrl: "",
+				Content:      `{"test": "test"}`,
+				ContentText:  "test",
+			},
+		},
+		{
+			Name:               "Add Blog with Title over 200 chars Failed",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			init: func() {
+			},
+			In: blog.AddBlogIn{
+				Title:        strings.Repeat("a", 201),
+				ShortDesc:    "Short Desc",
+				Slug:         "slug",
+				ThumbnailUrl: "",
+				Content:      `{"test": "test"}`,
+				ContentText:  "test",
+			},
+		},
+		{
+			Name:               "Add Blog with Short Desc 200 chars Success",
+			ExpectedStatusCode: http.StatusCreated,
+			init: func() {
+			},
+			In: blog.AddBlogIn{
+				Title:        "Title",
+				ShortDesc:    strings.Repeat("a", 200),
+				Slug:         "slug",
+				ThumbnailUrl: "",
+				Content:      `{"test": "test"}`,
+				ContentText:  "test",
+			},
+		},
+		{
+			Name:               "Add Blog with Short Desc over 200 chars Failed",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			init: func() {
+			},
+			In: blog.AddBlogIn{
+				Title:        "Title",
+				ShortDesc:    strings.Repeat("a", 201),
+				Slug:         "slug",
+				ThumbnailUrl: "",
+				Content:      `{"test": "test"}`,
+				ContentText:  "test",
+			},
+		},
+		{
+			Name:               "Add Blog with Slug 200 chars Success",
+			ExpectedStatusCode: http.StatusCreated,
+			init: func() {
+			},
+			In: blog.AddBlogIn{
+				Title:        "Title",
+				ShortDesc:    "Shor Desc",
+				Slug:         strings.Repeat("a", 200),
+				ThumbnailUrl: "",
+				Content:      `{"test": "test"}`,
+				ContentText:  "test",
+			},
+		},
+		{
+			Name:               "Add Blog with Slug over 200 chars Failed",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			init: func() {
+			},
+			In: blog.AddBlogIn{
+				Title:        "Title",
+				ShortDesc:    "Shor Desc",
+				Slug:         strings.Repeat("a", 201),
+				ThumbnailUrl: "",
+				Content:      `{"test": "test"}`,
+				ContentText:  "test",
+			},
+		},
 	}
 
 	for _, c := range testCases {
@@ -150,7 +235,7 @@ func TestAddBlog(t *testing.T) {
 	}
 }
 
-func TestQueryHistory(t *testing.T) {
+func TestQueryBlog(t *testing.T) {
 	err := ClearTables(postgrePool)
 	if err != nil {
 		t.Fatal(err)
@@ -369,6 +454,61 @@ func TestEditBlog(t *testing.T) {
 				ThumbnailUrl: "",
 				Content:      `{"test": "hi"}`,
 				ContentText:  "hi",
+			},
+		},
+		{
+			Name:               "Add Blog with Title 200 chars Success",
+			Id:                 pid,
+			ExpectedStatusCode: http.StatusOK,
+			init:               func() {},
+			In: blog.EditBlogIn{
+				Title:        strings.Repeat("a", 200),
+				ShortDesc:    "Short Desc",
+				ThumbnailUrl: "",
+				Content:      `{"test": "test"}`,
+				ContentText:  "test",
+			},
+		},
+		{
+			Name:               "Add Blog with Title over 200 chars Failed",
+			Id:                 pid,
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			init: func() {
+			},
+			In: blog.EditBlogIn{
+				Title:        strings.Repeat("a", 201),
+				ShortDesc:    "Short Desc",
+				ThumbnailUrl: "",
+				Content:      `{"test": "test"}`,
+				ContentText:  "test",
+			},
+		},
+		{
+			Name:               "Add Blog with Short Desc 200 chars Success",
+			Id:                 pid,
+			ExpectedStatusCode: http.StatusOK,
+			init: func() {
+			},
+			In: blog.EditBlogIn{
+				Title:        "Title",
+				ShortDesc:    strings.Repeat("a", 200),
+				ThumbnailUrl: "",
+				Content:      `{"test": "test"}`,
+				ContentText:  "test",
+			},
+		},
+		{
+			Name:               "Add Blog with Short Desc over 200 chars Failed",
+			Id:                 pid,
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			init: func() {
+			},
+			In: blog.EditBlogIn{
+				Title:        "Title",
+				ShortDesc:    strings.Repeat("a", 201),
+				ThumbnailUrl: "",
+				Content:      `{"test": "test"}`,
+				ContentText:  "test",
 			},
 		},
 	}

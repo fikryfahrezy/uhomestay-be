@@ -3,6 +3,7 @@ package document
 import (
 	"context"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -66,11 +67,14 @@ func (d *DocumentDeps) AddDirDocument(ctx context.Context, in AddDirDocumentIn) 
 		}
 	}
 
+	re := regexp.MustCompile(`[^a-zA-Z0-9]`)
+
 	document := DocumentModel{
-		Name:      in.Name,
-		Type:      Dir,
-		DirId:     uint64(in.DirId.Int64),
-		IsPrivate: isPrivate,
+		Name:        in.Name,
+		AlphnumName: string(re.ReplaceAll([]byte(in.Name), []byte(" "))),
+		Type:        Dir,
+		DirId:       uint64(in.DirId.Int64),
+		IsPrivate:   isPrivate,
 	}
 
 	if document, err = d.DocumentRepository.Save(ctx, document); err != nil {
@@ -148,12 +152,15 @@ func (d *DocumentDeps) AddFileDocument(ctx context.Context, in AddFileDocumentIn
 		}
 	}
 
+	re := regexp.MustCompile(`[^a-zA-Z0-9]`)
+
 	document := DocumentModel{
-		Name:      in.File.Filename,
-		Type:      Filetype,
-		Url:       fileUrl,
-		DirId:     uint64(in.DirId.Int64),
-		IsPrivate: isPrivate,
+		Name:        in.File.Filename,
+		AlphnumName: string(re.ReplaceAll([]byte(in.File.Filename), []byte(" "))),
+		Type:        Filetype,
+		Url:         fileUrl,
+		DirId:       uint64(in.DirId.Int64),
+		IsPrivate:   isPrivate,
 	}
 
 	if document, err = d.DocumentRepository.Save(ctx, document); err != nil {
@@ -177,6 +184,7 @@ type (
 	}
 	QueryDocumentRes struct {
 		Cursor    int64         `json:"cursor"`
+		Total     int64         `json:"total"`
 		Documents []DocumentOut `json:"documents"`
 	}
 	QueryDocumentOut struct {
@@ -193,6 +201,12 @@ func (d *DocumentDeps) QueryDocument(ctx context.Context, q, cursor, limit strin
 	nlimit, _ := strconv.ParseInt(limit, 10, 64)
 	if nlimit == 0 {
 		nlimit = 25
+	}
+
+	documentNumber, err := d.DocumentRepository.CountFile(ctx)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count file"))
+		return
 	}
 
 	documents, err := d.DocumentRepository.Query(ctx, q, fromCursor, nlimit)
@@ -222,6 +236,7 @@ func (d *DocumentDeps) QueryDocument(ctx context.Context, q, cursor, limit strin
 
 	out.Res = QueryDocumentRes{
 		Cursor:    nextCursor,
+		Total:     documentNumber,
 		Documents: outDocuments,
 	}
 
@@ -290,6 +305,9 @@ func (d *DocumentDeps) EditDirDocument(ctx context.Context, pid string, in EditD
 
 	document.Name = in.Name
 	document.IsPrivate = isPrivate
+
+	re := regexp.MustCompile(`[^a-zA-Z0-9]`)
+	document.AlphnumName = string(re.ReplaceAll([]byte(in.Name), []byte(" ")))
 
 	if err = d.DocumentRepository.UpdateById(ctx, id, document); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "update document by id"))
@@ -384,6 +402,9 @@ func (d *DocumentDeps) EditFileDocument(ctx context.Context, pid string, in Edit
 	document.Name = in.File.Filename
 	document.Url = fileUrl
 	document.IsPrivate = isPrivate
+
+	re := regexp.MustCompile(`[^a-zA-Z0-9]`)
+	document.AlphnumName = string(re.ReplaceAll([]byte(in.File.Filename), []byte(" ")))
 
 	if err = d.DocumentRepository.UpdateById(ctx, id, document); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "update document by id"))
@@ -481,6 +502,12 @@ func (d *DocumentDeps) FindDocumentChildren(ctx context.Context, pid, q, cursor 
 		return
 	}
 
+	documentNumber, err := d.DocumentRepository.CountFileChildren(ctx, id)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count file children"))
+		return
+	}
+
 	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
 	documents, err := d.DocumentRepository.FindChildren(ctx, id, q, fromCursor, 25)
 	if err != nil {
@@ -508,6 +535,7 @@ func (d *DocumentDeps) FindDocumentChildren(ctx context.Context, pid, q, cursor 
 	}
 
 	out.Res = QueryDocumentRes{
+		Total:     documentNumber,
 		Cursor:    nextCursor,
 		Documents: outDocuments,
 	}

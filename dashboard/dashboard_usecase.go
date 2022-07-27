@@ -2,24 +2,31 @@ package dashboard
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/dues"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/resp"
 )
 
 type (
 	PrivateRes struct {
-		Documents     []DocumentOut        `json:"documents"`
-		Members       []MemberOut          `json:"members"`
-		Cashflows     CashflowRes          `json:"cashflow"`
-		Dues          DuesOut              `json:"dues"`
-		Blogs         []BlogOut            `json:"blogs"`
-		Positions     []PositionOut        `json:"positions"`
-		LatestHistory LatestHistoryRes     `json:"latest_history"`
-		MemberDues    []MembersDuesOut     `json:"member_dues"`
-		OrgPeriodGoal FindOrgPeriodGoalRes `json:"org_period_goal"`
-		ActivePeriod  PeriodRes            `json:"active_period"`
+		MemberTotal     int64                `json:"member_total"`
+		DocumentTotal   int64                `json:"document_total"`
+		BlogTotal       int64                `json:"blog_total"`
+		PositionTotal   int64                `json:"position_total"`
+		MemberDuesTotal int64                `json:"member_dues_total"`
+		ImageTotal      int64                `json:"image_total"`
+		Documents       []DocumentOut        `json:"documents"`
+		Members         []MemberOut          `json:"members"`
+		Cashflows       CashflowRes          `json:"cashflow"`
+		Dues            DuesOut              `json:"dues"`
+		Blogs           []BlogOut            `json:"blogs"`
+		Positions       []PositionOut        `json:"positions"`
+		LatestHistory   LatestHistoryRes     `json:"latest_history"`
+		MemberDues      []MembersDuesOut     `json:"member_dues"`
+		OrgPeriodGoal   FindOrgPeriodGoalRes `json:"org_period_goal"`
+		ActivePeriod    PeriodRes            `json:"active_period"`
+		Images          []ImageOut           `json:"images"`
 	}
 	PrivateOut struct {
 		resp.Response
@@ -33,23 +40,12 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	c := make(chan CashflowRes)
 	cr := make(chan resp.Response)
 	go func(ctx context.Context, c chan CashflowRes, res chan resp.Response) {
-		out := d.QueryCashflow(ctx, "", "5")
-
-		l := len(out.Res.Cashflows)
-		if l > 5 {
-			l = 5
-		}
-
-		cs := make([]CashflowOut, l)
-		for i := range cs {
-			cs[i] = CashflowOut(out.Res.Cashflows[i])
-		}
+		cashflowStatsOut := d.CalculateCashflow(ctx)
 
 		cc := CashflowRes{
-			TotalCash:   out.Res.TotalCash,
-			IncomeCash:  out.Res.IncomeCash,
-			OutcomeCash: out.Res.OutcomeCash,
-			Cashflows:   cs,
+			TotalCash:   cashflowStatsOut.Res.TotalCash,
+			IncomeCash:  cashflowStatsOut.Res.IncomeCash,
+			OutcomeCash: cashflowStatsOut.Res.OutcomeCash,
 		}
 
 		c <- cc
@@ -57,8 +53,9 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	}(ctx, c, cr)
 
 	m := make(chan []MemberOut)
+	mt := make(chan int64)
 	mr := make(chan resp.Response)
-	go func(ctx context.Context, m chan []MemberOut, res chan resp.Response) {
+	go func(ctx context.Context, m chan []MemberOut, mt chan int64, res chan resp.Response) {
 		out := d.QueryMember(ctx, "", "", "5")
 
 		l := len(out.Res.Members)
@@ -72,15 +69,17 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 		}
 
 		m <- ms
+		mt <- out.Res.Total
 		res <- out.Response
-	}(ctx, m, mr)
+	}(ctx, m, mt, mr)
 
 	do := make(chan []DocumentOut)
+	dt := make(chan int64)
 	dr := make(chan resp.Response)
-	go func(ctx context.Context, do chan []DocumentOut, res chan resp.Response) {
+	go func(ctx context.Context, do chan []DocumentOut, dt chan int64, res chan resp.Response) {
 		out := d.QueryDocument(ctx, "", "", "999")
 
-		dc := make([]DocumentOut, 0, 0)
+		dc := make([]DocumentOut, 0)
 		for _, v := range out.Res.Documents {
 			if v.Type == Filetype.String {
 				dc = append(dc, DocumentOut(v))
@@ -92,26 +91,23 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 		}
 
 		do <- dc
+		dt <- out.Res.Total
 		res <- out.Response
-	}(ctx, do, dr)
+	}(ctx, do, dt, dr)
 
 	ds := make(chan DuesOut)
 	dsr := make(chan resp.Response)
 	go func(ctx context.Context, ds chan DuesOut, res chan resp.Response) {
-		out := d.QueryDues(ctx, "", "1")
+		out := d.FindLatestDues(ctx)
 
-		var do DuesOut
-		if len(out.Res.Dues) != 0 {
-			do = DuesOut(out.Res.Dues[0])
-		}
-
-		ds <- do
+		ds <- DuesOut(out.Res)
 		res <- out.Response
 	}(ctx, ds, dsr)
 
 	b := make(chan []BlogOut)
+	bt := make(chan int64)
 	br := make(chan resp.Response)
-	go func(ctx context.Context, b chan []BlogOut, res chan resp.Response) {
+	go func(ctx context.Context, b chan []BlogOut, bt chan int64, res chan resp.Response) {
 		out := d.QueryBlog(ctx, "", "")
 
 		l := len(out.Res.Blogs)
@@ -125,12 +121,14 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 		}
 
 		b <- bs
+		bt <- out.Res.Total
 		res <- out.Response
-	}(ctx, b, br)
+	}(ctx, b, bt, br)
 
 	p := make(chan []PositionOut)
+	pt := make(chan int64)
 	pr := make(chan resp.Response)
-	go func(ctx context.Context, p chan []PositionOut, res chan resp.Response) {
+	go func(ctx context.Context, p chan []PositionOut, pt chan int64, res chan resp.Response) {
 		out := d.QueryPosition(ctx, "", "5")
 
 		l := len(out.Res.Positions)
@@ -144,8 +142,9 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 		}
 
 		p <- ps
+		pt <- out.Res.Total
 		res <- out.Response
-	}(ctx, p, pr)
+	}(ctx, p, pt, pr)
 
 	h := make(chan LatestHistoryRes)
 	hr := make(chan resp.Response)
@@ -157,13 +156,16 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	}(ctx, h, hr)
 
 	md := make(chan []MembersDuesOut)
+	mdT := make(chan int64)
 	mdr := make(chan resp.Response)
-	go func(ctx context.Context, md chan []MembersDuesOut, res chan resp.Response) {
-		out := d.QueryMembersDues(ctx, "0", "", "5")
+	go func(ctx context.Context, md chan []MembersDuesOut, mdT chan int64, res chan resp.Response) {
+		out := d.QueryMembersDues(ctx, "0", dues.QueryMembersDuesQIn{
+			Limit: "3",
+		})
 
 		l := len(out.Res.MemberDues)
-		if l > 5 {
-			l = 5
+		if l > 3 {
+			l = 3
 		}
 
 		mds := make([]MembersDuesOut, l)
@@ -172,8 +174,9 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 		}
 
 		md <- mds
+		mdT <- out.Res.Total
 		res <- out.Response
-	}(ctx, md, mdr)
+	}(ctx, md, mdT, mdr)
 
 	op := make(chan FindOrgPeriodGoalRes)
 	opr := make(chan resp.Response)
@@ -203,98 +206,69 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 		res <- out.Response
 	}(ctx, pe, per)
 
+	imgs, imgT, _ := func(ctx context.Context) (imgs []ImageOut, imgT int64, res resp.Response) {
+		out := d.QueryImage(ctx, "", "5")
+
+		l := len(out.Res.Images)
+		if l > 5 {
+			l = 5
+		}
+
+		ps := make([]ImageOut, l)
+		for i := range ps {
+			ps[i] = ImageOut(out.Res.Images[i])
+		}
+
+		imgs = ps
+		imgT = out.Res.Total
+		res = out.Response
+		return
+	}(ctx)
+
 	cV := <-c
-	// crV := <-cr
-	_ = <-cr
+	<-cr
 	mV := <-m
-	// mrV := <-mr
-	_ = <-mr
+	mtV := <-mt
+	<-mr
 	doV := <-do
-	// drV := <-dr
-	_ = <-dr
+	dtV := <-dt
+	<-dr
 	dsV := <-ds
-	// dsrV := <-dsr
-	_ = <-dsr
+	<-dsr
 	bV := <-b
-	// brV := <-br
-	_ = <-br
+	btV := <-bt
+	<-br
 	pV := <-p
-	// prV := <-pr
-	_ = <-pr
+	ptV := <-pt
+	<-pr
 	hV := <-h
-	// hrV := <-hr
-	_ = <-hr
+	<-hr
 	mdV := <-md
-	// mdrV := <-mdr
-	_ = <-mdr
+	mdtV := <-mdT
+	<-mdr
 	opV := <-op
-	// oprV := <-opr
-	_ = <-opr
+	<-opr
 	peV := <-pe
-	// perV := <-per
-	_ = <-per
-
-	// if crV.Error != nil {
-	// 	out.Response = crV
-	// 	return
-	// }
-
-	// if mrV.Error != nil {
-	// 	out.Response = mrV
-	// 	return
-	// }
-
-	// if drV.Error != nil {
-	// 	out.Response = drV
-	// 	return
-	// }
-
-	// if dsrV.Error != nil {
-	// 	out.Response = dsrV
-	// 	return
-	// }
-
-	// if brV.Error != nil {
-	// 	out.Response = brV
-	// 	return
-	// }
-
-	// if prV.Error != nil {
-	// 	out.Response = prV
-	// 	return
-	// }
-
-	// if hrV.Error != nil {
-	// 	out.Response = hrV
-	// 	return
-	// }
-
-	// if mdrV.Error != nil {
-	// 	out.Response = mdrV
-	// 	return
-	// }
-
-	// if oprV.Error != nil {
-	// 	out.Response = oprV
-	// 	return
-	// }
-
-	// if perV.Error != nil {
-	// 	out.Response = perV
-	// 	return
-	// }
+	<-per
 
 	out.Res = PrivateRes{
-		Documents:     doV,
-		Members:       mV,
-		Cashflows:     cV,
-		Dues:          dsV,
-		Blogs:         bV,
-		Positions:     pV,
-		LatestHistory: hV,
-		MemberDues:    mdV,
-		OrgPeriodGoal: opV,
-		ActivePeriod:  peV,
+		MemberTotal:     mtV,
+		DocumentTotal:   dtV,
+		BlogTotal:       btV,
+		PositionTotal:   ptV,
+		MemberDuesTotal: mdtV,
+		ImageTotal:      imgT,
+		Documents:       doV,
+		Members:         mV,
+		Cashflows:       cV,
+		Dues:            dsV,
+		Blogs:           bV,
+		Positions:       pV,
+		LatestHistory:   hV,
+		MemberDues:      mdV,
+		OrgPeriodGoal:   opV,
+		ActivePeriod:    peV,
+		Images:          imgs,
 	}
 
 	return
@@ -306,6 +280,7 @@ type (
 		Blogs         []BlogOut        `json:"blogs"`
 		LatestHistory LatestHistoryRes `json:"latest_history"`
 		Structure     StructureRes     `json:"org_period_structures"`
+		Images        []ImageOut       `json:"images"`
 	}
 	PublicOut struct {
 		resp.Response
@@ -321,9 +296,9 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 	go func(ctx context.Context, do chan []DocumentOut, res chan resp.Response) {
 		out := d.QueryDocument(ctx, "", "", "999")
 
-		dc := make([]DocumentOut, 0, 0)
+		dc := make([]DocumentOut, 0)
 		for _, v := range out.Res.Documents {
-			if v.IsPrivate == false && v.Type == Filetype.String {
+			if !v.IsPrivate && v.Type == Filetype.String {
 				dc = append(dc, DocumentOut(v))
 			}
 
@@ -373,7 +348,7 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 			Id:        out.Res.Id,
 			StartDate: out.Res.StartDate,
 			EndDate:   out.Res.EndDate,
-			Positions: make([]StructurePositionOut, 0, 0),
+			Positions: make([]StructurePositionOut, 0),
 			Vision:    out.Res.Vision,
 			Mission:   out.Res.Mission,
 		}
@@ -397,51 +372,46 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 			o.Positions = ps
 		}
 
-		fmt.Println(out.Res.StartDate, out.Res.EndDate)
 		op <- o
 		res <- out.Response
 	}(ctx, op, ops)
 
+	imgs := make(chan []ImageOut)
+	imgR := make(chan resp.Response)
+	go func(ctx context.Context, imgs chan []ImageOut, res chan resp.Response) {
+		out := d.QueryImage(ctx, "", "5")
+
+		l := len(out.Res.Images)
+		if l > 5 {
+			l = 5
+		}
+
+		ps := make([]ImageOut, l)
+		for i := range ps {
+			ps[i] = ImageOut(out.Res.Images[i])
+		}
+
+		imgs <- ps
+		res <- out.Response
+	}(ctx, imgs, imgR)
+
 	doV := <-do
-	// drV := <-dr
-	_ = <-dr
+	<-dr
 	bV := <-b
-	// brV := <-br
-	_ = <-br
+	<-br
 	hV := <-h
-	// hrV := <-hr
-	_ = <-hr
+	<-hr
 	opV := <-op
-	// opsV := <-ops
-	_ = <-ops
-
-	fmt.Println(opV.StartDate, opV.EndDate)
-
-	// if drV.Error != nil {
-	// 	out.Response = drV
-	// 	return
-	// }
-
-	// if brV.Error != nil {
-	// 	out.Response = brV
-	// 	return
-	// }
-
-	// if hrV.Error != nil {
-	// 	out.Response = hrV
-	// 	return
-	// }
-
-	// if opsV.Error != nil {
-	// 	out.Response = opsV
-	// 	return
-	// }
+	<-ops
+	imgsV := <-imgs
+	<-imgR
 
 	out.Res = PublicRes{
 		Documents:     doV,
 		Blogs:         bV,
 		LatestHistory: hV,
 		Structure:     opV,
+		Images:        imgsV,
 	}
 
 	return

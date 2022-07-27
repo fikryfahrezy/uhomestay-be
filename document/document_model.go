@@ -57,13 +57,14 @@ func (u DocType) Value() (driver.Value, error) {
 }
 
 type DocumentModel struct {
-	IsPrivate bool
-	Id        uint64
-	DirId     uint64
-	Name      string
-	Url       string
-	Type      DocType
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt sql.NullTime
+	IsPrivate   bool
+	Id          uint64
+	DirId       uint64
+	Name        string
+	AlphnumName string
+	Url         string
+	Type        DocType
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   sql.NullTime
 }

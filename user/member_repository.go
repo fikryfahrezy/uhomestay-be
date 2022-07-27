@@ -516,3 +516,30 @@ func (r *MemberRepository) Query(ctx context.Context, uid pgtypeuuid.UUID, q str
 
 	return ms, nil
 }
+
+func (r *MemberRepository) CountMember(ctx context.Context) (n int64, err error) {
+	sqlQuery := `
+		SELECT COUNT(id) AS n
+		FROM members
+		WHERE deleted_at IS NULL
+	`
+
+	var queryRow MemberQuerierRow
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		queryRow = tx.QueryRow
+	} else {
+		queryRow = r.PostgreDb.QueryRow
+	}
+
+	err = queryRow(
+		context.Background(),
+		sqlQuery,
+	).Scan(&n)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
+}

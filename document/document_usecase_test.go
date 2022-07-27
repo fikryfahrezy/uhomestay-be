@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"strconv"
+	"strings"
 	"testing"
 
 	arbitary "github.com/PA-D3RPLA/d3if43-htt-uhomestay/arbitrary"
@@ -70,6 +71,24 @@ func TestAddDirDocument(t *testing.T) {
 			In: document.AddDirDocumentIn{
 				Name:  "Dir A",
 				DirId: null.IntFrom(int64(nd.Id)),
+			},
+		},
+		{
+			Name:               "Add Dir Document with name 200 chars Success",
+			ExpectedStatusCode: http.StatusCreated,
+			In: document.AddDirDocumentIn{
+				Name:      strings.Repeat("a", 200),
+				DirId:     null.IntFrom(0),
+				IsPrivate: null.BoolFrom(false),
+			},
+		},
+		{
+			Name:               "Add Dir Document with name over 200 chars fail",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			In: document.AddDirDocumentIn{
+				Name:      strings.Repeat("a", 201),
+				DirId:     null.IntFrom(0),
+				IsPrivate: null.BoolFrom(false),
 			},
 		},
 	}
@@ -168,6 +187,30 @@ func TestAddFileDocument(t *testing.T) {
 					File:     f,
 				},
 				DirId: null.IntFrom(int64(nd.Id)),
+			},
+		},
+		{
+			Name:               "Add File Document with filename 200 chars success",
+			ExpectedStatusCode: http.StatusCreated,
+			In: document.AddFileDocumentIn{
+				DirId: null.IntFrom(0),
+				File: httpdecode.FileHeader{
+					Filename: strings.Repeat("a", 200),
+					File:     f,
+				},
+				IsPrivate: null.BoolFrom(false),
+			},
+		},
+		{
+			Name:               "Add File Document with filename over 200 chars fail",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			In: document.AddFileDocumentIn{
+				DirId: null.IntFrom(0),
+				File: httpdecode.FileHeader{
+					Filename: strings.Repeat("a", 201),
+					File:     f,
+				},
+				IsPrivate: null.BoolFrom(false),
 			},
 		},
 	}

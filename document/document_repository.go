@@ -32,6 +32,7 @@ func (r *DocumentRepository) Save(ctx context.Context, m DocumentModel) (nm Docu
 	sqlQuery := `
 		INSERT INTO documents (
 			name,
+			alphnum_name,
 			url,
 			type,
 			dir_id,
@@ -40,7 +41,7 @@ func (r *DocumentRepository) Save(ctx context.Context, m DocumentModel) (nm Docu
 			updated_at,
 			deleted_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
 		RETURNING id
 	`
 
@@ -59,6 +60,7 @@ func (r *DocumentRepository) Save(ctx context.Context, m DocumentModel) (nm Docu
 		context.Background(),
 		sqlQuery,
 		m.Name,
+		m.AlphnumName,
 		m.Url,
 		m.Type,
 		m.DirId,
@@ -83,11 +85,12 @@ func (r *DocumentRepository) UpdateById(ctx context.Context, id uint64, m Docume
 	sqlQuery := `
 		UPDATE documents SET (
 			name,
+			alphnum_name,
 			url,
 			is_private,
 			updated_at
-		) = ($1, $2, $3, $4)
-		WHERE id = $5
+		) = ($1, $2, $3, $4, $5)
+		WHERE id = $6
 	`
 
 	var exec DocumentExecutor
@@ -105,6 +108,7 @@ func (r *DocumentRepository) UpdateById(ctx context.Context, id uint64, m Docume
 		context.Background(),
 		sqlQuery,
 		m.Name,
+		m.AlphnumName,
 		m.Url,
 		m.IsPrivate,
 		t,
@@ -122,6 +126,7 @@ func (r *DocumentRepository) FindById(ctx context.Context, id uint64) (m Documen
 		SELECT
 			id,
 			name,
+			alphnum_name,
 			url,
 			type,
 			dir_id,
@@ -165,6 +170,7 @@ func (r *DocumentRepository) FindDirById(ctx context.Context, id uint64) (m Docu
 		SELECT
 			id,
 			name,
+			alphnum_name,
 			url,
 			type,
 			dir_id,
@@ -258,6 +264,7 @@ func (r *DocumentRepository) Query(ctx context.Context, q string, id, limit int6
 		SELECT 
 			id,
 			name,
+			alphnum_name,
 			url,
 			type,
 			dir_id,
@@ -317,6 +324,7 @@ func (r *DocumentRepository) FindChildren(ctx context.Context, dirId uint64, q s
 		SELECT 
 			id,
 			name,
+			alphnum_name,
 			url,
 			type,
 			dir_id,
@@ -361,6 +369,7 @@ func (r *DocumentRepository) FindAllChildren(ctx context.Context, dirId uint64) 
 		SELECT 
 			id,
 			name,
+			alphnum_name,
 			url,
 			type,
 			dir_id,
@@ -392,4 +401,62 @@ func (r *DocumentRepository) FindAllChildren(ctx context.Context, dirId uint64) 
 	}
 
 	return ms, nil
+}
+
+func (r *DocumentRepository) CountFile(ctx context.Context) (n int64, err error) {
+	sqlQuery := `
+		SELECT COUNT(id) AS n
+		FROM documents
+		WHERE deleted_at IS NULL
+			AND type = 'file'
+	`
+
+	var queryRow DocumentQuerierRow
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		queryRow = tx.QueryRow
+	} else {
+		queryRow = r.PostgreDb.QueryRow
+	}
+
+	err = queryRow(
+		context.Background(),
+		sqlQuery,
+	).Scan(&n)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
+}
+
+func (r *DocumentRepository) CountFileChildren(ctx context.Context, dirId uint64) (n int64, err error) {
+	sqlQuery := `
+		SELECT COUNT(id) AS n
+		FROM documents
+		WHERE deleted_at IS NULL
+			AND type = 'file'
+			AND dir_id = $1
+	`
+
+	var queryRow DocumentQuerierRow
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		queryRow = tx.QueryRow
+	} else {
+		queryRow = r.PostgreDb.QueryRow
+	}
+
+	err = queryRow(
+		context.Background(),
+		sqlQuery,
+		dirId,
+	).Scan(&n)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
 }

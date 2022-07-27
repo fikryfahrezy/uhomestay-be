@@ -22,10 +22,13 @@ func (d *DuesDeps) GetMemberDues(w http.ResponseWriter, r *http.Request) {
 }
 
 func (d *DuesDeps) GetMembersDues(w http.ResponseWriter, r *http.Request) {
-	cursor := r.URL.Query().Get("cursor")
 	id := chi.URLParam(r, "id")
-	limit := r.URL.Query().Get("limit")
-	out := d.QueryMembersDues(r.Context(), id, cursor, limit)
+	out := d.QueryMembersDues(r.Context(), id, QueryMembersDuesQIn{
+		Cursor:    r.URL.Query().Get("cursor"),
+		Limit:     r.URL.Query().Get("limit"),
+		StartDate: r.URL.Query().Get("start_date"),
+		EndDate:   r.URL.Query().Get("end_date"),
+	})
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
 	}

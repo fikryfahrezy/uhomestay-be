@@ -17,6 +17,7 @@ tags:
   - name: dues
   - name: member dues
   - name: dashboard
+  - name: images
 paths:
   /register:
     post:
@@ -1017,6 +1018,33 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorRes"
+  /cashflows/stats:
+    get:
+      tags:
+        - cashflows
+      security: []
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CashflowStatsRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
   /cashlows/{id}:
     put:
       tags:
@@ -1095,11 +1123,6 @@ paths:
       tags:
         - dues
       security: []
-      parameters:
-        - in: query
-          name: cursor
-          schema:
-            type: string
       responses:
         "200":
           description: Description
@@ -1237,6 +1260,14 @@ paths:
             type: string
         - in: query
           name: limit
+          schema:
+            type: string
+        - in: query
+          name: start_date
+          schema:
+            type: string
+        - in: query
+          name: end_date
           schema:
             type: string
       responses:
@@ -1379,6 +1410,78 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorRes"
+  /images:
+    post:
+      tags:
+        - images
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AddImageBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    get:
+      tags:
+        - images
+      security: []
+      parameters:
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryImageRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /images/{id}:
+    delete:
+      tags:
+        - images
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ImageIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
 components:
   securitySchemes:
     BearerAuth:
@@ -1502,6 +1605,8 @@ components:
         data:
           type: object
           properties:
+            total:
+              type: integer
             cursor:
               type: string
             members:
@@ -1687,6 +1792,8 @@ components:
         data:
           type: object
           properties:
+            total:
+              type: integer
             cursor:
               type: integer
             positions:
@@ -1785,6 +1892,8 @@ components:
           type: object
           properties:
             cursor:
+              type: integer
+            total:
               type: integer
             periods:
               type: array
@@ -1932,6 +2041,8 @@ components:
           properties:
             cursor:
               type: integer
+            total:
+              type: integer
             documents:
               type: array
               items:
@@ -2039,6 +2150,8 @@ components:
         data:
           type: object
           properties:
+            total:
+              type: integer
             cursor:
               type: integer
             blogs:
@@ -2149,12 +2262,6 @@ components:
         data:
           type: object
           properties:
-            total_cash:
-              type: string
-            income_cash:
-              type: string
-            outcome_cash:
-              type: string
             cursor:
               type: integer
             cashflows:
@@ -2174,6 +2281,22 @@ components:
                     enum: [income, outcome]
                   idr_amount:
                     type: string
+    CashflowStatsRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            income_total:
+              type: integer
+            outcome_total:
+              type: integer
+            total_cash:
+              type: string
+            income_cash:
+              type: string
+            outcome_cash:
+              type: string
     EditCashflowBodyIn:
       $ref: "#/components/schemas/CashflowBodyIn"
     DuesIdRes:
@@ -2202,8 +2325,6 @@ components:
         data:
           type: object
           properties:
-            cursor:
-              type: integer
             dues:
               type: array
               items:
@@ -2240,6 +2361,8 @@ components:
               type: string
             cursor:
               type: integer
+            total:
+              type: integer
             dues:
               type: array
               items:
@@ -2259,6 +2382,9 @@ components:
                     type: string
                   prove_file_url:
                     type: string
+                  pay_date:
+                    type: string
+                    format: date
     QueryMembersDuesRes:
       type: object
       properties:
@@ -2268,6 +2394,8 @@ components:
             dues_id:
               type: integer
             cursor:
+              type: integer
+            total:
               type: integer
             dues_date:
               type: string
@@ -2294,6 +2422,9 @@ components:
                     type: string
                   profile_pic_url:
                     type: string
+                  pay_date:
+                    type: string
+                    format: date
     MemberDuesIdRes:
       type: object
       properties:
@@ -2359,6 +2490,18 @@ components:
           type: string
         content:
           type: string
+    DashboardImagesRes:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        url:
+          type: string
+          format: uri
+        description:
+          type: string
     PublicDashboardRes:
       type: object
       properties:
@@ -2410,12 +2553,28 @@ components:
                             profile_pic_url:
                               type: string
                               format: uri
+            images:
+              type: array
+              items:
+                $ref: "#/components/schemas/DashboardImagesRes"
     PrivateDashboardRes:
       type: object
       properties:
         data:
           type: object
           properties:
+            member_total:
+              type: integer
+            document_total:
+              type: integer
+            blog_total:
+              type: integer
+            position_total:
+              type: integer
+            member_dues_total:
+              type: integer
+            image_total:
+              type: integer
             documents:
               type: array
               items:
@@ -2460,23 +2619,6 @@ components:
                   type: string
                 outcome_cash:
                   type: string
-                cashflows:
-                  type: array
-                  items:
-                    type: object
-                    properties:
-                      id:
-                        type: integer
-                      date:
-                        type: string
-                        format: date
-                      note:
-                        type: string
-                      type:
-                        type: string
-                        enum: [income, outcome]
-                      idr_amount:
-                        type: string
             dues:
               type: object
               properties:
@@ -2520,6 +2662,9 @@ components:
                     type: string
                   profile_pic_url:
                     type: string
+                  dues_date:
+                    type: string
+                    format: date
             org_period_goal:
               type: object
               properties:
@@ -2542,5 +2687,52 @@ components:
                   format: date-time
                 is_active:
                   type: boolean
+            images:
+              type: array
+              items:
+                $ref: "#/components/schemas/DashboardImagesRes"
+    ImageIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+    AddImageBodyIn:
+      type: object
+      properties:
+        description:
+          type: string
+        file:
+          type: string
+          format: binary
+      required:
+        - description
+        - file
+    QueryImageRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            cursor:
+              type: integer
+            total:
+              type: integer
+            images:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  url:
+                    type: string
+                    format: uri
+                  description:
+                    type: string
 security:
   - BearerAuth: []

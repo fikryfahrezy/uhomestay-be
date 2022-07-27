@@ -18,6 +18,7 @@ import (
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/dues"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/handler"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/history"
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/image"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/user"
 
 	"github.com/cloudinary/cloudinary-go"
@@ -102,12 +103,17 @@ func main() {
 		log.Fatalf("LogDNA.NewLogger: %s", err)
 	}
 
+	sentrySampleRate := 0.7
+	if conf.Env == "dev" {
+		sentrySampleRate = 0
+	}
+
 	err = sentry.Init(sentry.ClientOptions{
 		Dsn:              conf.SentryDsn,
 		Environment:      "all",
 		Release:          "uhomestay@1.0.0",
 		Debug:            true,
-		TracesSampleRate: 0.7,
+		TracesSampleRate: sentrySampleRate,
 	})
 	if err != nil {
 		log.Fatalf("sentry.Init: %s", err)
@@ -125,6 +131,7 @@ func main() {
 	cashflowRepository := cashflow.NewRepository(posgrePool)
 	duesRepository := dues.NewDeusRepository(posgrePool)
 	memberDuesRepository := dues.NewMemberDeusRepository(posgrePool)
+	imageRepository := image.NewRepository(posgrePool)
 
 	historyRepository := history.NewRepository(
 		posgrePool,
@@ -213,10 +220,22 @@ func main() {
 		cashflowRepository,
 	)
 
+	imageDeps := image.NewDeps(
+		image.CaptureMessage(sentry.CaptureMessage),
+		image.CaptureExeption(sentry.CaptureException),
+		image.FileUpload(uploader.UploadParams{
+			Tags:         []string{"image"},
+			Folder:       "uhomestay/images-gallery",
+			ResourceType: "raw",
+		}, cld.Upload.Upload),
+		imageRepository,
+	)
+
 	dashboardDeps := dashboard.NewDeps(
 		dashboard.CaptureMessage(sentry.CaptureMessage),
 		dashboard.CaptureExeption(sentry.CaptureException),
 		historyDeps,
+		imageDeps,
 		documentDeps,
 		blogDeps,
 		cashflowDeps,

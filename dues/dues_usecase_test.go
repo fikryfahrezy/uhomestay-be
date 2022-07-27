@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 	"strconv"
+	"strings"
 	"testing"
 	"time"
 
@@ -66,6 +67,22 @@ func TestAddDues(t *testing.T) {
 				Date: time.Now().Format("2006-01-02"),
 			},
 		},
+		{
+			Name:               "Add Dues with Idr Amount 200 chars Success",
+			ExpectedStatusCode: http.StatusCreated,
+			In: dues.AddDuesIn{
+				Date:      time.Now().Add(time.Hour * 24 * 100).Format("2006-01-02"),
+				IdrAmount: strings.Repeat("1", 200),
+			},
+		},
+		{
+			Name:               "Add Dues with Idr Amount over 200 chars fail",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			In: dues.AddDuesIn{
+				Date:      time.Now().Add(time.Hour * 24 * 200).Format("2006-01-02"),
+				IdrAmount: strings.Repeat("1", 201),
+			},
+		},
 	}
 
 	for _, c := range testCases {
@@ -118,7 +135,7 @@ func TestQueryDues(t *testing.T) {
 			}
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
-			res := duesDeps.QueryDues(ctx, "", "")
+			res := duesDeps.QueryDues(ctx)
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 
@@ -215,6 +232,24 @@ func TestEditDues(t *testing.T) {
 			In: dues.EditDuesIn{
 				Date:      time.Now().Format("2006-01-02"),
 				IdrAmount: "100000",
+			},
+		},
+		{
+			Name:               "Edit Dues with Idr Amount 200 chars Success",
+			ExpectedStatusCode: http.StatusOK,
+			Id:                 pid,
+			In: dues.EditDuesIn{
+				Date:      time.Now().Format("2006-01-02"),
+				IdrAmount: strings.Repeat("1", 200),
+			},
+		},
+		{
+			Name:               "Edit Dues with Idr Amount over 200 chars fail",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			Id:                 pid,
+			In: dues.EditDuesIn{
+				Date:      time.Now().Format("2006-01-02"),
+				IdrAmount: strings.Repeat("1", 201),
 			},
 		},
 	}
@@ -353,6 +388,48 @@ func TestCheckPaidDues(t *testing.T) {
 
 			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
 			res := duesDeps.CheckPaidDues(ctx, c.Id)
+			tx.Commit(context.Background())
+			tx.Rollback(context.Background())
+
+			if res.StatusCode != c.ExpectedStatusCode {
+				t.Logf("%#v", res)
+				t.Log(err)
+				t.Fatalf("Expected response code %d. Got %d\n", c.ExpectedStatusCode, res.StatusCode)
+			}
+		})
+	}
+}
+
+func TestLatestDues(t *testing.T) {
+	err := ClearTables(db)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	_, err = duesRepository.Save(context.Background(), duesSeed)
+	if err != nil {
+		t.Fatal(err)
+	}
+
+	testCases := []struct {
+		Name               string
+		ExpectedStatusCode int
+	}{
+		{
+			Name:               "Find Latest Dues Success",
+			ExpectedStatusCode: http.StatusOK,
+		},
+	}
+
+	for _, c := range testCases {
+		t.Run(c.Name, func(t *testing.T) {
+			tx, err := db.Begin(context.Background())
+			if err != nil {
+				t.Fatal(err)
+			}
+
+			ctx := context.WithValue(context.Background(), arbitary.TrxX{}, tx)
+			res := duesDeps.FindLatestDues(ctx)
 			tx.Commit(context.Background())
 			tx.Rollback(context.Background())
 

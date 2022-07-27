@@ -270,23 +270,6 @@ func (d *UserDeps) MemberRegister(ctx context.Context, in RegisterIn) (out Regis
 		return
 	}
 
-	// jwtToken, err := jwt.Sign(
-	// 	"",
-	// 	"token",
-	// 	d.JwtIssuerUrl,
-	// 	d.JwtKey,
-	// 	d.JwtAudiences,
-	// 	time.Date(2016, 1, 1, 0, 0, 0, 0, time.UTC),
-	// 	time.Time{},
-	// 	time.Time{},
-	// 	jwt.JwtPrivateClaim{
-	// 		Uid: saverOut.Res.Id,
-	// 	})
-	// if err != nil {
-	// 	out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "jwt signer"))
-	// 	return
-	// }
-
 	jwtToken := ""
 
 	out.Res.Token = jwtToken
@@ -666,6 +649,7 @@ type (
 		IsApproved        bool   `json:"is_approved"`
 	}
 	QueryMemberRes struct {
+		Total   int64       `json:"total"`
 		Cursor  string      `json:"cursor"`
 		Members []MemberOut `json:"members"`
 	}
@@ -691,6 +675,12 @@ func (d *UserDeps) QueryMember(ctx context.Context, q, cursor, limit string) (ou
 	nlimit, _ := strconv.ParseInt(limit, 10, 64)
 	if nlimit == 0 {
 		nlimit = 25
+	}
+
+	memberNumber, err := d.MemberRepository.CountMember(ctx)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count member"))
+		return
 	}
 
 	members, err := d.MemberRepository.Query(ctx, uid, q, t, nlimit)
@@ -726,6 +716,7 @@ func (d *UserDeps) QueryMember(ctx context.Context, q, cursor, limit string) (ou
 	}
 
 	out.Res = QueryMemberRes{
+		Total:   memberNumber,
 		Cursor:  nextCursor,
 		Members: outMembers,
 	}

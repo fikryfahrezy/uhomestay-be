@@ -473,3 +473,30 @@ func (r *OrgPeriodRepository) FindById(ctx context.Context, id uint64) (m OrgPer
 
 	return m, nil
 }
+
+func (r *OrgPeriodRepository) CountPeriod(ctx context.Context) (n int64, err error) {
+	sqlQuery := `
+		SELECT COUNT(id) AS n
+		FROM org_periods
+		WHERE deleted_at IS NULL
+	`
+
+	var queryRow MemberQuerierRow
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		queryRow = tx.QueryRow
+	} else {
+		queryRow = r.PostgreDb.QueryRow
+	}
+
+	err = queryRow(
+		context.Background(),
+		sqlQuery,
+	).Scan(&n)
+
+	if err != nil {
+		return 0, err
+	}
+
+	return n, nil
+}

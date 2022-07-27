@@ -100,11 +100,8 @@ type (
 		ProveFileUrl string `json:"prove_file_url"`
 	}
 	CashflowRes struct {
-		TotalCash   string        `json:"total_cash"`
-		IncomeCash  string        `json:"income_cash"`
-		OutcomeCash string        `json:"outcome_cash"`
-		Cursor      int64         `json:"cursor"`
-		Cashflows   []CashflowOut `json:"cashflows"`
+		Cursor    int64         `json:"cursor"`
+		Cashflows []CashflowOut `json:"cashflows"`
 	}
 	QueryCashflowOut struct {
 		resp.Response
@@ -115,100 +112,38 @@ type (
 func (d *CashflowDeps) QueryCashflow(ctx context.Context, cursor, limit string) (out QueryCashflowOut) {
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
-	duefFlow := func(ctx context.Context, status CashflowType, flow chan float64, res chan resp.Response) {
-		var r resp.Response
-		amts, err := d.CashflowRepository.QueryAmtByStatus(ctx, status)
-		if err != nil {
-			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query "+status.String+" flow"))
-		}
-
-		var namts float64
-		for _, u := range amts {
-			cash, _ := strconv.ParseFloat(u, 64)
-			namts += cash
-		}
-
-		flow <- namts
-		res <- r
+	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
+	nlimit, _ := strconv.ParseInt(limit, 10, 64)
+	if nlimit == 0 {
+		nlimit = 25
 	}
 
-	inFlow := make(chan float64)
-	inRes := make(chan resp.Response)
-	go duefFlow(ctx, Income, inFlow, inRes)
+	cashflows, err := d.CashflowRepository.Query(ctx, fromCursor, nlimit)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query cashflows"))
+	}
+	cLen := len(cashflows)
 
-	outFlow := make(chan float64)
-	outRes := make(chan resp.Response)
-	go duefFlow(ctx, Outcome, outFlow, outRes)
-
-	outCashflows := make(chan []CashflowOut)
-	nextCursor := make(chan int64)
-	cRes := make(chan resp.Response)
-
-	go func(ctx context.Context, cursor, limit string, oc chan []CashflowOut, nc chan int64, res chan resp.Response) {
-		var r resp.Response
-		fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
-		nlimit, _ := strconv.ParseInt(limit, 10, 64)
-		if nlimit == 0 {
-			nlimit = 25
-		}
-
-		cashflows, err := d.CashflowRepository.Query(ctx, fromCursor, nlimit)
-		if err != nil {
-			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query cashflows"))
-		}
-		cLen := len(cashflows)
-
-		var nextCursor int64
-		if cLen != 0 {
-			nextCursor = int64(cashflows[cLen-1].Id)
-		}
-
-		outCashflows := make([]CashflowOut, cLen)
-		for i, c := range cashflows {
-			outCashflows[i] = CashflowOut{
-				Id:           int64(c.Id),
-				Date:         c.Date.Format("2006-01-02"),
-				Note:         c.Note,
-				Type:         c.Type.String,
-				IdrAmout:     c.IdrAmount,
-				ProveFileUrl: c.ProveFileUrl,
-			}
-		}
-
-		oc <- outCashflows
-		nc <- nextCursor
-		res <- r
-	}(ctx, cursor, limit, outCashflows, nextCursor, cRes)
-
-	inFV := <-inFlow
-	inRV := <-inRes
-	oFV := <-outFlow
-	oRV := <-outRes
-	ocV := <-outCashflows
-	ncV := <-nextCursor
-	cRV := <-cRes
-
-	if inRV.Error != nil {
-		out.Response = inRV
-		return
+	var nextCursor int64
+	if cLen != 0 {
+		nextCursor = int64(cashflows[cLen-1].Id)
 	}
 
-	if oRV.Error != nil || cRV.Error != nil {
-		out.Response = oRV
-		return
-	}
-
-	if cRV.Error != nil {
-		out.Response = cRV
-		return
+	outCashflows := make([]CashflowOut, cLen)
+	for i, c := range cashflows {
+		outCashflows[i] = CashflowOut{
+			Id:           int64(c.Id),
+			Date:         c.Date.Format("2006-01-02"),
+			Note:         c.Note,
+			Type:         c.Type.String,
+			IdrAmout:     c.IdrAmount,
+			ProveFileUrl: c.ProveFileUrl,
+		}
 	}
 
 	out.Res = CashflowRes{
-		TotalCash:   strconv.FormatFloat(inFV-oFV, 'f', -1, 64),
-		IncomeCash:  strconv.FormatFloat(inFV, 'f', -1, 64),
-		OutcomeCash: strconv.FormatFloat(oFV, 'f', -1, 64),
-		Cursor:      ncV,
-		Cashflows:   ocV,
+		Cursor:    nextCursor,
+		Cashflows: outCashflows,
 	}
 
 	return
@@ -339,6 +274,84 @@ func (d *CashflowDeps) RemoveCashflow(ctx context.Context, pid string) (out Remo
 	}
 
 	out.Res.Id = int64(id)
+
+	return
+}
+
+type (
+	CashflowStatsRes struct {
+		IncomeTotal  int64  `json:"income_total"`
+		OutcomeTotal int64  `json:"outcome_total"`
+		TotalCash    string `json:"total_cash"`
+		IncomeCash   string `json:"income_cash"`
+		OutcomeCash  string `json:"outcome_cash"`
+	}
+	CashflowStatsOut struct {
+		resp.Response
+		Res CashflowStatsRes
+	}
+)
+
+func (d *CashflowDeps) CalculateCashflow(ctx context.Context) (out CashflowStatsOut) {
+	out.Response = resp.NewResponse(http.StatusOK, "", nil)
+
+	duefFlow := func(ctx context.Context, status CashflowType, flow chan float64, res chan resp.Response) {
+		var r resp.Response
+		amts, err := d.CashflowRepository.QueryAmtByStatus(ctx, status)
+		if err != nil {
+			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query "+status.String+" flow"))
+		}
+
+		var namts float64
+		for _, u := range amts {
+			cash, _ := strconv.ParseFloat(u, 64)
+			namts += cash
+		}
+
+		flow <- namts
+		res <- r
+	}
+
+	inFlow := make(chan float64)
+	inRes := make(chan resp.Response)
+	go duefFlow(ctx, Income, inFlow, inRes)
+
+	outFlow := make(chan float64)
+	outRes := make(chan resp.Response)
+	go duefFlow(ctx, Outcome, outFlow, outRes)
+
+	incomeNumber, err := d.CashflowRepository.CountCashflowByType(ctx, Income.String)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count cashflow by income"))
+	}
+
+	outcomeNumber, err := d.CashflowRepository.CountCashflowByType(ctx, Outcome.String)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count cashflow by outcome"))
+	}
+
+	inFV := <-inFlow
+	inRV := <-inRes
+	oFV := <-outFlow
+	oRV := <-outRes
+
+	if inRV.Error != nil {
+		out.Response = inRV
+		return
+	}
+
+	if oRV.Error != nil {
+		out.Response = oRV
+		return
+	}
+
+	out.Res = CashflowStatsRes{
+		IncomeTotal:  incomeNumber,
+		OutcomeTotal: outcomeNumber,
+		TotalCash:    strconv.FormatFloat(inFV-oFV, 'f', -1, 64),
+		IncomeCash:   strconv.FormatFloat(inFV, 'f', -1, 64),
+		OutcomeCash:  strconv.FormatFloat(oFV, 'f', -1, 64),
+	}
 
 	return
 }

@@ -56,6 +56,7 @@ type (
 		Name  string `json:"name"`
 	}
 	QueryPositionRes struct {
+		Total     int64         `json:"total"`
 		Cursor    int64         `json:"cursor"`
 		Positions []PositionOut `json:"positions"`
 	}
@@ -68,6 +69,12 @@ type (
 func (d *UserDeps) QueryPosition(ctx context.Context, cursor, limit string) (out QueryPositionOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
+
+	positionNumber, err := d.PositionRepository.CountPosition(ctx)
+	if err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count position"))
+		return
+	}
 
 	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
 	nlimit, _ := strconv.ParseInt(limit, 10, 64)
@@ -98,6 +105,7 @@ func (d *UserDeps) QueryPosition(ctx context.Context, cursor, limit string) (out
 	}
 
 	out.Res = QueryPositionRes{
+		Total:     positionNumber,
 		Cursor:    nextCursor,
 		Positions: outPoisitons,
 	}
