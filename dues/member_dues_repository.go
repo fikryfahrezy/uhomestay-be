@@ -167,6 +167,7 @@ func (r *MemberDuesRepository) FindUnpaidById(ctx context.Context, id uint64) (m
 			prove_file_url,
 			created_at,
 			updated_at,
+			pay_date,
 			deleted_at
 		FROM member_dues 
 		WHERE deleted_at IS NULL
@@ -210,6 +211,7 @@ func (r *MemberDuesRepository) FindUnpaidByIdAndMemberId(ctx context.Context, id
 			prove_file_url,
 			created_at,
 			updated_at,
+			pay_date,
 			deleted_at
 		FROM member_dues 
 		WHERE deleted_at IS NULL
@@ -254,9 +256,10 @@ func (r *MemberDuesRepository) Save(ctx context.Context, m MemberDuesModel) (nm 
 			prove_file_url,
 			created_at,
 			updated_at,
+			pay_date,
 			deleted_at
 		)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		RETURNING id
 	`
 
@@ -280,6 +283,7 @@ func (r *MemberDuesRepository) Save(ctx context.Context, m MemberDuesModel) (nm 
 		m.ProveFileUrl,
 		t,
 		t,
+		nil,
 		nil,
 	).Scan(&lastInsertId)
 
@@ -342,6 +346,7 @@ func (r *MemberDuesRepository) GenerateDues(ctx context.Context, duesId uint64) 
 			member_id,
 			created_at,
 			updated_at,
+			pay_date,
 			deleted_at
 		) 
 		SELECT
@@ -350,7 +355,8 @@ func (r *MemberDuesRepository) GenerateDues(ctx context.Context, duesId uint64) 
 			id,
 			$2,
 			$3,
-			$4
+			$4,
+			$5
 		FROM members 
 		WHERE deleted_at IS NULL 
 			AND is_approved = true
@@ -373,6 +379,7 @@ func (r *MemberDuesRepository) GenerateDues(ctx context.Context, duesId uint64) 
 		t,
 		t,
 		nil,
+		nil,
 	)
 
 	if err != nil {
@@ -390,6 +397,7 @@ func (r *MemberDuesRepository) CheckSomeonePaid(ctx context.Context, duesId uint
 			member_id,
 			created_at,
 			updated_at,
+			pay_date,
 			deleted_at
 		FROM member_dues
 		WHERE deleted_at IS NULL 

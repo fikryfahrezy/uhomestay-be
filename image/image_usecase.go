@@ -1,21 +1,26 @@
 package image
 
 import (
+	"bytes"
 	"context"
-	"fmt"
+	"io"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/filetype"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/httpdecode"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/resp"
 	"github.com/jackc/pgx/v4"
 	"github.com/pkg/errors"
 )
 
-var ErrImageNotFound = errors.New("gambar tidak ditemukan")
+var (
+	ErrImageNotFound = errors.New("foto atau gambar tidak ditemukan")
+	ErrNotValidImage = errors.New("file bukan bukan bertipe foto atau gambar")
+)
 
 type (
 	AddImageIn struct {
@@ -53,8 +58,20 @@ func (d *ImageDeps) AddImage(ctx context.Context, in AddImageIn) (out AddImageOu
 
 	var fileUrl string
 	if file != nil {
+		buff := bytes.NewBuffer(nil)
+		if _, err = io.Copy(buff, file); err != nil {
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "read file buffer"))
+			return
+		}
+
+		fileCt := http.DetectContentType(buff.Bytes())
+		if !filetype.IsTypeAllowed(fileCt) {
+			out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrNotValidImage)
+			return
+		}
+
 		filename := strconv.FormatInt(time.Now().Unix(), 10) + "-" + strings.Trim(in.File.Filename, " ")
-		if fileUrl, err = d.Upload(filename, file); err != nil {
+		if fileUrl, err = d.Upload(filename, buff); err != nil {
 			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "upload file"))
 			return
 		}
@@ -68,7 +85,6 @@ func (d *ImageDeps) AddImage(ctx context.Context, in AddImageIn) (out AddImageOu
 		Description: in.Description,
 	}
 
-	fmt.Println("fdskfjkdsfjdsk")
 	if image, err = d.ImageRepository.Save(ctx, image); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "save image"))
 		return

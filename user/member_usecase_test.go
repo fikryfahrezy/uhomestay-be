@@ -572,6 +572,36 @@ func TestAddMember(t *testing.T) {
 				IsAdmin:           null.BoolFrom(false),
 			},
 		},
+		{
+			Name:               "Add Member Fail, Avatar not an image",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			Assert:             func(t *testing.T, r *user.MemberRepository, u user.AddMemberIn) {},
+			In: user.AddMemberIn{
+				Name:              "Name",
+				HomestayName:      "Homestay Name",
+				Username:          "username66",
+				PositionIds:       []int64{int64(ps.Id)},
+				PeriodId:          int64(pr.Id),
+				WaPhone:           "+62 821-1111-0066",
+				OtherPhone:        "+62 821-1111-0066",
+				HomestayAddress:   "Homestay Address",
+				HomestayLatitude:  "120.12312312",
+				HomestayLongitude: "90.1212321",
+				Password:          "password",
+				IsAdmin:           null.BoolFrom(true),
+				File: (func() httpdecode.FileHeader {
+					f, err := os.OpenFile("./fixture/pdf.pdf", os.O_RDONLY, 0o444)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					return httpdecode.FileHeader{
+						Filename: fileName,
+						File:     f,
+					}
+				})(),
+			},
+		},
 	}
 
 	for _, c := range cases {

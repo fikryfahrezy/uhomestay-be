@@ -19,11 +19,6 @@ func TestAddImage(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	f, err := os.OpenFile(fileDir, os.O_RDONLY, 0o444)
-	if err != nil {
-		t.Fatal(err)
-	}
-
 	testCases := []struct {
 		Name               string
 		ExpectedStatusCode int
@@ -34,10 +29,17 @@ func TestAddImage(t *testing.T) {
 			ExpectedStatusCode: http.StatusCreated,
 			In: image.AddImageIn{
 				Description: "Bla Bla Bla",
-				File: httpdecode.FileHeader{
-					Filename: fileName,
-					File:     f,
-				},
+				File: (func() httpdecode.FileHeader {
+					f, err := os.OpenFile(fileDir, os.O_RDONLY, 0o444)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					return httpdecode.FileHeader{
+						Filename: fileName,
+						File:     f,
+					}
+				})(),
 			},
 		},
 		{
@@ -46,14 +48,39 @@ func TestAddImage(t *testing.T) {
 			In:                 image.AddImageIn{},
 		},
 		{
+			Name:               "Add Image with filename over 200 chars fail",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			In: image.AddImageIn{
+				Description: "Bla Bla Bla",
+				File: (func() httpdecode.FileHeader {
+					f, err := os.OpenFile(fileDir, os.O_RDONLY, 0o444)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					return httpdecode.FileHeader{
+						Filename: strings.Repeat("a", 201),
+						File:     f,
+					}
+				})(),
+			},
+		},
+		{
 			Name:               "Add Image with filename 200 chars Success",
 			ExpectedStatusCode: http.StatusCreated,
 			In: image.AddImageIn{
 				Description: "Bla Bla Bla",
-				File: httpdecode.FileHeader{
-					Filename: strings.Repeat("a", 200),
-					File:     f,
-				},
+				File: (func() httpdecode.FileHeader {
+					f, err := os.OpenFile(fileDir, os.O_RDONLY, 0o444)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					return httpdecode.FileHeader{
+						Filename: strings.Repeat("a", 200),
+						File:     f,
+					}
+				})(),
 			},
 		},
 		{
@@ -61,10 +88,17 @@ func TestAddImage(t *testing.T) {
 			ExpectedStatusCode: http.StatusUnprocessableEntity,
 			In: image.AddImageIn{
 				Description: "Bla Bla Bla",
-				File: httpdecode.FileHeader{
-					Filename: strings.Repeat("a", 201),
-					File:     f,
-				},
+				File: (func() httpdecode.FileHeader {
+					f, err := os.OpenFile(fileDir, os.O_RDONLY, 0o444)
+					if err != nil {
+						t.Fatal(err)
+					}
+
+					return httpdecode.FileHeader{
+						Filename: strings.Repeat("a", 201),
+						File:     f,
+					}
+				})(),
 			},
 		},
 	}

@@ -8,8 +8,8 @@ import (
 )
 
 var (
-	ErrImageRequired = errors.New("gambar tidak boleh kosong")
-	ErrMaxImagename  = errors.New("nama gambar tidak dapat lebih dari 200 karakter")
+	ErrImageRequired = errors.New("foto atau gambar tidak boleh kosong")
+	ErrMaxImagename  = errors.New("nama foto atau gambar tidak dapat lebih dari 200 karakter")
 )
 
 func ValidateAddImageIn(i AddImageIn) error {

@@ -1,13 +1,16 @@
 package user
 
 import (
+	"bytes"
 	"context"
+	"io"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
 	arbitary "github.com/PA-D3RPLA/d3if43-htt-uhomestay/arbitrary"
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/filetype"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/pagination"
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/httpdecode"
@@ -28,6 +31,7 @@ var (
 	ErrMemberNotFound          = errors.New("anggota tidak ditemukan")
 	ErrNotApprovedMember       = errors.New("akun anggota belum disetujui pengelola")
 	ErrPasswordNotMatch        = errors.New("password tidak sesuai")
+	ErrNotValidAvatar          = errors.New("avatar bukan bukan bertipe foto atau gambar")
 )
 
 type (
@@ -164,8 +168,20 @@ func (d *UserDeps) MemberSaver(ctx context.Context, in AddMemberIn, isApproved b
 
 	var fileUrl string
 	if file != nil {
+		buff := bytes.NewBuffer(nil)
+		if _, err = io.Copy(buff, file); err != nil {
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "read file buffer"))
+			return
+		}
+
+		fileCt := http.DetectContentType(buff.Bytes())
+		if !filetype.IsTypeAllowed(fileCt) {
+			out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrNotValidAvatar)
+			return
+		}
+
 		filename := strconv.FormatInt(time.Now().Unix(), 10) + "-" + strings.Trim(in.File.Filename, " ")
-		if fileUrl, err = d.Upload(filename, file); err != nil {
+		if fileUrl, err = d.Upload(filename, buff); err != nil {
 			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "upload file"))
 			return
 		}
@@ -548,8 +564,20 @@ func (d *UserDeps) EditMember(ctx context.Context, uid string, in EditMemberIn) 
 
 	var fileUrl string
 	if file != nil {
+		buff := bytes.NewBuffer(nil)
+		if _, err = io.Copy(buff, file); err != nil {
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "read file buffer"))
+			return
+		}
+
+		fileCt := http.DetectContentType(buff.Bytes())
+		if !filetype.IsTypeAllowed(fileCt) {
+			out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrNotValidAvatar)
+			return
+		}
+
 		filename := strconv.FormatInt(time.Now().Unix(), 10) + "-" + strings.Trim(in.File.Filename, " ")
-		if fileUrl, err = d.Upload(filename, file); err != nil {
+		if fileUrl, err = d.Upload(filename, buff); err != nil {
 			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "upload file"))
 			return
 		}
@@ -1030,8 +1058,20 @@ func (d *UserDeps) UpdatProfile(ctx context.Context, uid string, in UpdateProfil
 
 	var fileUrl string
 	if file != nil {
+		buff := bytes.NewBuffer(nil)
+		if _, err = io.Copy(buff, file); err != nil {
+			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "read file buffer"))
+			return
+		}
+
+		fileCt := http.DetectContentType(buff.Bytes())
+		if !filetype.IsTypeAllowed(fileCt) {
+			out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrNotValidAvatar)
+			return
+		}
+
 		filename := strconv.FormatInt(time.Now().Unix(), 10) + "-" + strings.Trim(in.File.Filename, " ")
-		if fileUrl, err = d.Upload(filename, file); err != nil {
+		if fileUrl, err = d.Upload(filename, buff); err != nil {
 			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "upload file"))
 			return
 		}
