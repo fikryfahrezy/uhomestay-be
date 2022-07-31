@@ -740,9 +740,9 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 	// make map of object org strcuture
 	// by use position id as key and org structure as value
 	// Used array of position object for in org structure
-	outPostMap := make(map[uint64]StructurePositionOut)
+	outPostMap := make(map[string]StructurePositionOut)
 	for _, p := range newStruct {
-		outPostMap[p.PositionId] = StructurePositionOut{
+		outPostMap[p.PositionName] = StructurePositionOut{
 			Id:      p.PositionId,
 			Name:    p.PositionName,
 			Level:   p.PositionLevel,
@@ -776,7 +776,7 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 	// Append the member objects to each position
 	// based on what that member position
 	for _, s := range newStruct {
-		p := outPostMap[s.PositionId]
+		p := outPostMap[s.PositionName]
 		for _, m := range memChc[s.PositionId] {
 			memMap, ok := outMemMap[m]
 			if !ok {
@@ -786,7 +786,7 @@ func (d *UserDeps) QueryPeriodStructure(ctx context.Context, pid string) (out St
 			p.Members = append(p.Members, memMap)
 		}
 
-		outPostMap[s.PositionId] = p
+		outPostMap[s.PositionName] = p
 	}
 
 	// Assemble all the datas

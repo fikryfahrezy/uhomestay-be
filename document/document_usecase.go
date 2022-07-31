@@ -399,12 +399,14 @@ func (d *DocumentDeps) EditFileDocument(ctx context.Context, pid string, in Edit
 		}
 	}
 
-	document.Name = in.File.Filename
-	document.Url = fileUrl
 	document.IsPrivate = isPrivate
+	if fileUrl != "" {
+		document.Name = in.File.Filename
+		document.Url = fileUrl
 
-	re := regexp.MustCompile(`[^a-zA-Z0-9]`)
-	document.AlphnumName = string(re.ReplaceAll([]byte(in.File.Filename), []byte(" ")))
+		re := regexp.MustCompile(`[^a-zA-Z0-9]`)
+		document.AlphnumName = string(re.ReplaceAll([]byte(in.File.Filename), []byte(" ")))
+	}
 
 	if err = d.DocumentRepository.UpdateById(ctx, id, document); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "update document by id"))

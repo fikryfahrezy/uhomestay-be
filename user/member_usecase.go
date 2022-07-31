@@ -887,7 +887,7 @@ func (d *UserDeps) FindMemberDetail(ctx context.Context, uid string) (out FindMe
 	for _, pos := range positions {
 		var isExist bool
 		for _, existPost := range positionRes {
-			if isExist = existPost.Id == pos.PositionId; isExist {
+			if isExist = existPost.Name == pos.PositionName; isExist {
 				break
 			}
 		}

@@ -119,13 +119,6 @@ func ValidateEditFileDocumentIn(i EditFileDocumentIn) error {
 	g := new(errgroup.Group)
 
 	g.Go(func() error {
-		if i.File.File == nil || i.File.Filename == "" {
-			return ErrFileRequired
-		}
-		return nil
-	})
-
-	g.Go(func() error {
 		if !i.IsPrivate.Valid {
 			return ErrStatusPrivateRequired
 		}

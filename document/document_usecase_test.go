@@ -436,14 +436,6 @@ func TestEditFileDocument(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Edit File Document Fail, File Validation Fail",
-			ExpectedStatusCode: http.StatusUnprocessableEntity,
-			Id:                 fid,
-			In: document.EditFileDocumentIn{
-				IsPrivate: null.BoolFrom(false),
-			},
-		},
-		{
 			Name:               "Edit File Document Fail, Private Status Validation Fail",
 			ExpectedStatusCode: http.StatusUnprocessableEntity,
 			Id:                 fid,

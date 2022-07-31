@@ -287,9 +287,8 @@ func (r *OrgStructureRepository) FindByOrgIdAndMemberId(ctx context.Context, org
 
 func (r *OrgStructureRepository) DeleteByOrgIdAndMemberId(ctx context.Context, orgId uint64, uid string) error {
 	sqlQuery := `
-	UPDATE org_structures 
-	SET (updated_at, deleted_at) = ($1, $2)
-	WHERE org_period_id = $3 AND member_id = $4
+	DELETE FROM org_structures
+	WHERE org_period_id = $1 AND member_id = $2
 `
 
 	var exec OrgStructureExecutor
@@ -301,13 +300,9 @@ func (r *OrgStructureRepository) DeleteByOrgIdAndMemberId(ctx context.Context, o
 	}
 
 	var err error
-	t := time.Now()
-
 	_, err = exec(
 		context.Background(),
 		sqlQuery,
-		t,
-		t,
 		orgId,
 		uid,
 	)
