@@ -31,24 +31,55 @@ var (
 	ErrMemberNotFound          = errors.New("anggota tidak ditemukan")
 	ErrNotApprovedMember       = errors.New("akun anggota belum disetujui pengelola")
 	ErrPasswordNotMatch        = errors.New("password tidak sesuai")
-	ErrNotValidAvatar          = errors.New("avatar bukan bukan bertipe foto atau gambar")
+	ErrNotValidProfile         = errors.New("profile bukan bertipe foto atau gambar")
 )
+
+func UploadFile(fileName string, file httpdecode.File, upload FileUploader, newFileUrl chan string, res chan resp.Response) {
+	fileUrl, r := (func(fileName string, file httpdecode.File, upload FileUploader) (fileUrl string, r resp.Response) {
+		r = resp.NewResponse(http.StatusOK, "", nil)
+
+		if file == nil {
+			return
+		}
+
+		var err error
+		buff := bytes.NewBuffer(nil)
+		if _, err := io.Copy(buff, file); err != nil {
+			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "read file buffer"))
+			return
+		}
+
+		fileCt := http.DetectContentType(buff.Bytes())
+		if !filetype.IsTypeAllowed(fileCt) {
+			r = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrNotValidProfile)
+			return
+		}
+
+		newFilename := strconv.FormatInt(time.Now().Unix(), 10) + "-" + strings.Trim(fileName, " ")
+		if fileUrl, err = upload(newFilename, buff); err != nil {
+			r = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "upload file"))
+			return
+		}
+
+		return fileUrl, r
+	})(fileName, file, upload)
+
+	newFileUrl <- fileUrl
+	res <- r
+}
 
 type (
 	AddMemberIn struct {
-		PeriodId          int64                 `mapstructure:"period_id"`
-		Name              string                `mapstructure:"name"`
-		Username          string                `mapstructure:"username"`
-		Password          string                `mapstructure:"password"`
-		WaPhone           string                `mapstructure:"wa_phone"`
-		OtherPhone        string                `mapstructure:"other_phone"`
-		HomestayName      string                `mapstructure:"homestay_name"`
-		HomestayAddress   string                `mapstructure:"homestay_address"`
-		HomestayLatitude  string                `mapstructure:"homestay_latitude"`
-		HomestayLongitude string                `mapstructure:"homestay_longitude"`
-		PositionIds       []int64               `mapstructure:"position_ids"`
-		IsAdmin           null.Bool             `mapstructure:"is_admin"`
-		File              httpdecode.FileHeader `mapstructure:"profile"`
+		PeriodId    int64                 `mapstructure:"period_id"`
+		Name        string                `mapstructure:"name"`
+		Username    string                `mapstructure:"username"`
+		Password    string                `mapstructure:"password"`
+		WaPhone     string                `mapstructure:"wa_phone"`
+		OtherPhone  string                `mapstructure:"other_phone"`
+		PositionIds []int64               `mapstructure:"position_ids"`
+		IsAdmin     null.Bool             `mapstructure:"is_admin"`
+		Profile     httpdecode.FileHeader `mapstructure:"profile"`
+		IdCard      httpdecode.FileHeader `mapstructure:"id_card"`
 	}
 	AddMemberRes struct {
 		Id string `json:"id"`
@@ -116,16 +147,12 @@ func (d *UserDeps) MemberSaver(ctx context.Context, in AddMemberIn, isApproved b
 	}
 
 	member := MemberModel{
-		Name:              in.Name,
-		OtherPhone:        in.OtherPhone,
-		WaPhone:           in.WaPhone,
-		HomestayName:      in.HomestayName,
-		HomestayAddress:   in.HomestayAddress,
-		HomestayLatitude:  in.HomestayLatitude,
-		HomestayLongitude: in.HomestayLongitude,
-		Username:          in.Username,
-		IsAdmin:           in.IsAdmin.Bool,
-		IsApproved:        isApproved,
+		Name:       in.Name,
+		OtherPhone: in.OtherPhone,
+		WaPhone:    in.WaPhone,
+		Username:   in.Username,
+		IsAdmin:    in.IsAdmin.Bool,
+		IsApproved: isApproved,
 	}
 	existingMember, err := d.MemberRepository.CheckUniqueField(ctx, member)
 	if err != nil && !errors.Is(err, pgx.ErrNoRows) {
@@ -158,36 +185,39 @@ func (d *UserDeps) MemberSaver(ctx context.Context, in AddMemberIn, isApproved b
 
 	member.Password = hash
 
-	file := in.File.File
-
+	profile := in.Profile.File
 	defer func() {
-		if file != nil {
-			file.Close()
+		if profile != nil {
+			profile.Close()
 		}
 	}()
 
-	var fileUrl string
-	if file != nil {
-		buff := bytes.NewBuffer(nil)
-		if _, err = io.Copy(buff, file); err != nil {
-			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "read file buffer"))
-			return
-		}
+	profileFileUrlCh := make(chan string)
+	profileUploadResCh := make(chan resp.Response)
+	go UploadFile(in.Profile.Filename, profile, d.Upload, profileFileUrlCh, profileUploadResCh)
 
-		fileCt := http.DetectContentType(buff.Bytes())
-		if !filetype.IsTypeAllowed(fileCt) {
-			out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrNotValidAvatar)
-			return
-		}
-
-		filename := strconv.FormatInt(time.Now().Unix(), 10) + "-" + strings.Trim(in.File.Filename, " ")
-		if fileUrl, err = d.Upload(filename, buff); err != nil {
-			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "upload file"))
-			return
-		}
+	member.ProfilePicUrl = <-profileFileUrlCh
+	if res := <-profileUploadResCh; res.Error != nil {
+		out.Response = res
+		return
 	}
 
-	member.ProfilePicUrl = fileUrl
+	idCard := in.IdCard.File
+	defer func() {
+		if idCard != nil {
+			idCard.Close()
+		}
+	}()
+
+	idCardFileUrlCh := make(chan string)
+	idCardUploadResCh := make(chan resp.Response)
+	go UploadFile(in.IdCard.Filename, idCard, d.Upload, idCardFileUrlCh, idCardUploadResCh)
+
+	member.IdCardUrl = <-idCardFileUrlCh
+	if res := <-idCardUploadResCh; res.Error != nil {
+		out.Response = res
+		return
+	}
 
 	if err = d.MemberRepository.Save(ctx, member); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "save member"))
@@ -239,15 +269,18 @@ func (d *UserDeps) AddMember(ctx context.Context, in AddMemberIn) (out AddMember
 
 type (
 	RegisterIn struct {
-		Name              string `json:"name"`
-		Username          string `json:"username"`
-		Password          string `json:"password"`
-		WaPhone           string `json:"wa_phone"`
-		OtherPhone        string `json:"other_phone"`
-		HomestayName      string `json:"homestay_name"`
-		HomestayAddress   string `json:"homestay_address"`
-		HomestayLatitude  string `json:"homestay_latitude"`
-		HomestayLongitude string `json:"homestay_longitude"`
+		Name              string                `mapstructure:"name"`
+		Username          string                `mapstructure:"username"`
+		Password          string                `mapstructure:"password"`
+		WaPhone           string                `mapstructure:"wa_phone"`
+		OtherPhone        string                `mapstructure:"other_phone"`
+		HomestayName      string                `mapstructure:"homestay_name"`
+		HomestayAddress   string                `mapstructure:"homestay_address"`
+		HomestayLatitude  string                `mapstructure:"homestay_latitude"`
+		HomestayLongitude string                `mapstructure:"homestay_longitude"`
+		HomestayPhoto     httpdecode.FileHeader `mapstructure:"homestay_photo"`
+		Profile           httpdecode.FileHeader `mapstructure:"profile"`
+		IdCard            httpdecode.FileHeader `mapstructure:"id_card"`
 	}
 	RegisterRes struct {
 		Token string `json:"token"`
@@ -259,25 +292,20 @@ type (
 )
 
 func (d *UserDeps) MemberRegister(ctx context.Context, in RegisterIn) (out RegisterOut) {
-	var err error
-	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
-
-	if err = ValidateRegisterIn(in); err != nil {
+	if err := ValidateRegisterIn(in); err != nil {
 		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	saverIn := AddMemberIn{
-		Name:              in.Name,
-		HomestayName:      in.HomestayName,
-		HomestayAddress:   in.HomestayAddress,
-		HomestayLatitude:  in.HomestayLatitude,
-		HomestayLongitude: in.HomestayLongitude,
-		WaPhone:           in.WaPhone,
-		OtherPhone:        in.OtherPhone,
-		Username:          in.Username,
-		Password:          in.Password,
-		IsAdmin:           null.BoolFrom(false),
+		Name:       in.Name,
+		WaPhone:    in.WaPhone,
+		OtherPhone: in.OtherPhone,
+		Username:   in.Username,
+		Password:   in.Password,
+		IsAdmin:    null.BoolFrom(false),
+		Profile:    in.Profile,
+		IdCard:     in.IdCard,
 	}
 
 	saverOut := d.MemberSaver(ctx, saverIn, false)
@@ -286,8 +314,26 @@ func (d *UserDeps) MemberRegister(ctx context.Context, in RegisterIn) (out Regis
 		return
 	}
 
+	homestayPhoto := in.HomestayPhoto.File
+	defer func() {
+		if homestayPhoto != nil {
+			homestayPhoto.Close()
+		}
+	}()
+
+	homestayPhotoUrlCh := make(chan string)
+	homestayPhotoUploadResCh := make(chan resp.Response)
+	go UploadFile(in.HomestayPhoto.Filename, homestayPhoto, d.Upload, homestayPhotoUrlCh, homestayPhotoUploadResCh)
+
+	_ = <-homestayPhotoUrlCh
+	if res := <-homestayPhotoUploadResCh; res.Error != nil {
+		out.Response = res
+		return
+	}
+
 	jwtToken := ""
 
+	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 	out.Res.Token = jwtToken
 
 	return
@@ -419,19 +465,16 @@ func (d *UserDeps) AdminLogin(ctx context.Context, in LoginIn) (out LoginOut) {
 
 type (
 	EditMemberIn struct {
-		Name              string                `mapstructure:"name"`
-		Username          string                `mapstructure:"username"`
-		Password          string                `mapstructure:"password"`
-		WaPhone           string                `mapstructure:"wa_phone"`
-		OtherPhone        string                `mapstructure:"other_phone"`
-		HomestayName      string                `mapstructure:"homestay_name"`
-		HomestayAddress   string                `mapstructure:"homestay_address"`
-		HomestayLatitude  string                `mapstructure:"homestay_latitude"`
-		HomestayLongitude string                `mapstructure:"homestay_longitude"`
-		IsAdmin           null.Bool             `mapstructure:"is_admin"`
-		PeriodId          int64                 `mapstructure:"period_id"`
-		PositionIds       []int64               `mapstructure:"position_ids"`
-		File              httpdecode.FileHeader `mapstructure:"profile"`
+		Name        string                `mapstructure:"name"`
+		Username    string                `mapstructure:"username"`
+		Password    string                `mapstructure:"password"`
+		WaPhone     string                `mapstructure:"wa_phone"`
+		OtherPhone  string                `mapstructure:"other_phone"`
+		IsAdmin     null.Bool             `mapstructure:"is_admin"`
+		PeriodId    int64                 `mapstructure:"period_id"`
+		PositionIds []int64               `mapstructure:"position_ids"`
+		Profile     httpdecode.FileHeader `mapstructure:"profile"`
+		IdCard      httpdecode.FileHeader `mapstructure:"id_card"`
 	}
 	EditMemberRes struct {
 		Id string `json:"id"`
@@ -526,10 +569,6 @@ func (d *UserDeps) EditMember(ctx context.Context, uid string, in EditMemberIn) 
 	member.Name = in.Name
 	member.OtherPhone = in.OtherPhone
 	member.WaPhone = in.WaPhone
-	member.HomestayName = in.HomestayName
-	member.HomestayAddress = in.HomestayAddress
-	member.HomestayLatitude = in.HomestayLatitude
-	member.HomestayLongitude = in.HomestayLongitude
 	member.Username = in.Username
 	member.IsAdmin = in.IsAdmin.Bool
 
@@ -554,37 +593,46 @@ func (d *UserDeps) EditMember(ctx context.Context, uid string, in EditMemberIn) 
 		member.Password = hash
 	}
 
-	file := in.File.File
-
+	profile := in.Profile.File
 	defer func() {
-		if file != nil {
-			file.Close()
+		if profile != nil {
+			profile.Close()
 		}
 	}()
 
-	var fileUrl string
-	if file != nil {
-		buff := bytes.NewBuffer(nil)
-		if _, err = io.Copy(buff, file); err != nil {
-			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "read file buffer"))
-			return
-		}
+	profileFileUrlCh := make(chan string)
+	profileUploadResCh := make(chan resp.Response)
+	go UploadFile(in.Profile.Filename, profile, d.Upload, profileFileUrlCh, profileUploadResCh)
 
-		fileCt := http.DetectContentType(buff.Bytes())
-		if !filetype.IsTypeAllowed(fileCt) {
-			out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrNotValidAvatar)
-			return
-		}
-
-		filename := strconv.FormatInt(time.Now().Unix(), 10) + "-" + strings.Trim(in.File.Filename, " ")
-		if fileUrl, err = d.Upload(filename, buff); err != nil {
-			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "upload file"))
-			return
-		}
+	fileUrl := <-profileFileUrlCh
+	if res := <-profileUploadResCh; res.Error != nil {
+		out.Response = res
+		return
 	}
 
 	if fileUrl != "" {
 		member.ProfilePicUrl = fileUrl
+	}
+
+	idCard := in.IdCard.File
+	defer func() {
+		if idCard != nil {
+			idCard.Close()
+		}
+	}()
+
+	idCardFileUrlCh := make(chan string)
+	idCardUploadResCh := make(chan resp.Response)
+	go UploadFile(in.IdCard.Filename, idCard, d.Upload, idCardFileUrlCh, idCardUploadResCh)
+
+	newIdCardUrl := <-idCardFileUrlCh
+	if res := <-idCardUploadResCh; res.Error != nil {
+		out.Response = res
+		return
+	}
+
+	if newIdCardUrl != "" {
+		member.IdCardUrl = newIdCardUrl
 	}
 
 	if err = d.MemberRepository.Update(ctx, uid, member); err != nil {
@@ -663,18 +711,14 @@ func (d *UserDeps) RemoveMember(ctx context.Context, uid string) (out RemoveMemb
 
 type (
 	MemberOut struct {
-		Id                string `json:"id"`
-		Username          string `json:"username"`
-		Name              string `json:"name"`
-		WaPhone           string `json:"wa_phone"`
-		OtherPhone        string `json:"other_phone"`
-		HomestayName      string `json:"homestay_name"`
-		HomestayAddress   string `json:"homestay_address"`
-		HomestayLatitude  string `json:"homestay_latitude"`
-		HomestayLongitude string `json:"homestay_longitude"`
-		ProfilePicUrl     string `json:"profile_pic_url"`
-		IsAdmin           bool   `json:"is_admin"`
-		IsApproved        bool   `json:"is_approved"`
+		Id            string `json:"id"`
+		Username      string `json:"username"`
+		Name          string `json:"name"`
+		WaPhone       string `json:"wa_phone"`
+		OtherPhone    string `json:"other_phone"`
+		ProfilePicUrl string `json:"profile_pic_url"`
+		IsAdmin       bool   `json:"is_admin"`
+		IsApproved    bool   `json:"is_approved"`
 	}
 	QueryMemberRes struct {
 		Total   int64       `json:"total"`
@@ -728,18 +772,14 @@ func (d *UserDeps) QueryMember(ctx context.Context, q, cursor, limit string) (ou
 	outMembers := make([]MemberOut, mLen)
 	for i, m := range members {
 		outMembers[i] = MemberOut{
-			Id:                m.Id.UUID.String(),
-			Name:              m.Name,
-			WaPhone:           m.WaPhone,
-			OtherPhone:        m.OtherPhone,
-			HomestayName:      m.HomestayName,
-			HomestayAddress:   m.HomestayAddress,
-			HomestayLatitude:  m.HomestayLatitude,
-			HomestayLongitude: m.HomestayLongitude,
-			ProfilePicUrl:     m.ProfilePicUrl,
-			Username:          m.Username,
-			IsAdmin:           m.IsAdmin,
-			IsApproved:        m.IsApproved,
+			Id:            m.Id.UUID.String(),
+			Name:          m.Name,
+			WaPhone:       m.WaPhone,
+			OtherPhone:    m.OtherPhone,
+			ProfilePicUrl: m.ProfilePicUrl,
+			Username:      m.Username,
+			IsAdmin:       m.IsAdmin,
+			IsApproved:    m.IsApproved,
 		}
 	}
 
@@ -759,21 +799,18 @@ type (
 		Name  string `json:"name"`
 	}
 	MemberDetailRes struct {
-		Id                string           `json:"id"`
-		Name              string           `json:"name"`
-		Username          string           `json:"username"`
-		WaPhone           string           `json:"wa_phone"`
-		OtherPhone        string           `json:"other_phone"`
-		HomestayName      string           `json:"homestay_name"`
-		HomestayAddress   string           `json:"homestay_address"`
-		HomestayLatitude  string           `json:"homestay_latitude"`
-		HomestayLongitude string           `json:"homestay_longitude"`
-		ProfilePicUrl     string           `json:"profile_pic_url"`
-		IsAdmin           bool             `json:"is_admin"`
-		IsApproved        bool             `json:"is_approved"`
-		PeriodId          uint64           `json:"period_id"`
-		Period            string           `json:"period"`
-		Positions         []MemberPosition `json:"positions"`
+		Id            string           `json:"id"`
+		Name          string           `json:"name"`
+		Username      string           `json:"username"`
+		WaPhone       string           `json:"wa_phone"`
+		OtherPhone    string           `json:"other_phone"`
+		ProfilePicUrl string           `json:"profile_pic_url"`
+		IdCardUrl     string           `json:"id_card_url"`
+		IsAdmin       bool             `json:"is_admin"`
+		IsApproved    bool             `json:"is_approved"`
+		PeriodId      uint64           `json:"period_id"`
+		Period        string           `json:"period"`
+		Positions     []MemberPosition `json:"positions"`
 	}
 	FindMemberDetailOut struct {
 		resp.Response
@@ -903,21 +940,18 @@ func (d *UserDeps) FindMemberDetail(ctx context.Context, uid string) (out FindMe
 	}
 
 	out.Res = MemberDetailRes{
-		Id:                member.Id.UUID.String(),
-		Name:              member.Name,
-		WaPhone:           member.WaPhone,
-		OtherPhone:        member.OtherPhone,
-		HomestayName:      member.HomestayName,
-		HomestayAddress:   member.HomestayAddress,
-		HomestayLatitude:  member.HomestayLatitude,
-		HomestayLongitude: member.HomestayLongitude,
-		ProfilePicUrl:     member.ProfilePicUrl,
-		Username:          member.Username,
-		IsAdmin:           member.IsAdmin,
-		IsApproved:        member.IsApproved,
-		PeriodId:          period.Id,
-		Period:            periodStart + periodEnd,
-		Positions:         positionRes,
+		Id:            member.Id.UUID.String(),
+		Name:          member.Name,
+		WaPhone:       member.WaPhone,
+		OtherPhone:    member.OtherPhone,
+		ProfilePicUrl: member.ProfilePicUrl,
+		IdCardUrl:     member.IdCardUrl,
+		Username:      member.Username,
+		IsAdmin:       member.IsAdmin,
+		IsApproved:    member.IsApproved,
+		PeriodId:      period.Id,
+		Period:        periodStart + periodEnd,
+		Positions:     positionRes,
 	}
 
 	return
@@ -972,16 +1006,13 @@ func (d *UserDeps) ApproveMember(ctx context.Context, uid string) (out MemberApp
 
 type (
 	UpdateProfileIn struct {
-		Name              string                `mapstructure:"name"`
-		Username          string                `mapstructure:"username"`
-		Password          string                `mapstructure:"password"`
-		WaPhone           string                `mapstructure:"wa_phone"`
-		OtherPhone        string                `mapstructure:"other_phone"`
-		HomestayName      string                `mapstructure:"homestay_name"`
-		HomestayAddress   string                `mapstructure:"homestay_address"`
-		HomestayLatitude  string                `mapstructure:"homestay_latitude"`
-		HomestayLongitude string                `mapstructure:"homestay_longitude"`
-		File              httpdecode.FileHeader `mapstructure:"profile"`
+		Name       string                `mapstructure:"name"`
+		Username   string                `mapstructure:"username"`
+		Password   string                `mapstructure:"password"`
+		WaPhone    string                `mapstructure:"wa_phone"`
+		OtherPhone string                `mapstructure:"other_phone"`
+		Profile    httpdecode.FileHeader `mapstructure:"profile"`
+		IdCard     httpdecode.FileHeader `mapstructure:"id_card"`
 	}
 	UpdateProfileRes struct {
 		Id string `json:"id"`
@@ -992,7 +1023,7 @@ type (
 	}
 )
 
-func (d *UserDeps) UpdatProfile(ctx context.Context, uid string, in UpdateProfileIn) (out UpdateProfileOut) {
+func (d *UserDeps) UpdateProfile(ctx context.Context, uid string, in UpdateProfileIn) (out UpdateProfileOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
@@ -1021,10 +1052,6 @@ func (d *UserDeps) UpdatProfile(ctx context.Context, uid string, in UpdateProfil
 	member.Name = in.Name
 	member.OtherPhone = in.OtherPhone
 	member.WaPhone = in.WaPhone
-	member.HomestayName = in.HomestayName
-	member.HomestayAddress = in.HomestayAddress
-	member.HomestayLatitude = in.HomestayLatitude
-	member.HomestayLongitude = in.HomestayLongitude
 	member.Username = in.Username
 
 	existingMember, err := d.MemberRepository.CheckOtherUniqueField(ctx, uid, member)
@@ -1048,37 +1075,46 @@ func (d *UserDeps) UpdatProfile(ctx context.Context, uid string, in UpdateProfil
 		member.Password = hash
 	}
 
-	file := in.File.File
-
+	profile := in.Profile.File
 	defer func() {
-		if file != nil {
-			file.Close()
+		if profile != nil {
+			profile.Close()
 		}
 	}()
 
-	var fileUrl string
-	if file != nil {
-		buff := bytes.NewBuffer(nil)
-		if _, err = io.Copy(buff, file); err != nil {
-			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "read file buffer"))
-			return
-		}
+	profileFileUrlCh := make(chan string)
+	profileUploadResCh := make(chan resp.Response)
+	go UploadFile(in.Profile.Filename, profile, d.Upload, profileFileUrlCh, profileUploadResCh)
 
-		fileCt := http.DetectContentType(buff.Bytes())
-		if !filetype.IsTypeAllowed(fileCt) {
-			out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", ErrNotValidAvatar)
-			return
-		}
-
-		filename := strconv.FormatInt(time.Now().Unix(), 10) + "-" + strings.Trim(in.File.Filename, " ")
-		if fileUrl, err = d.Upload(filename, buff); err != nil {
-			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "upload file"))
-			return
-		}
+	fileUrl := <-profileFileUrlCh
+	if res := <-profileUploadResCh; res.Error != nil {
+		out.Response = res
+		return
 	}
 
 	if fileUrl != "" {
 		member.ProfilePicUrl = fileUrl
+	}
+
+	idCard := in.IdCard.File
+	defer func() {
+		if idCard != nil {
+			idCard.Close()
+		}
+	}()
+
+	idCardFileUrlCh := make(chan string)
+	idCardUploadResCh := make(chan resp.Response)
+	go UploadFile(in.IdCard.Filename, idCard, d.Upload, idCardFileUrlCh, idCardUploadResCh)
+
+	newIdCardUrl := <-idCardFileUrlCh
+	if res := <-idCardUploadResCh; res.Error != nil {
+		out.Response = res
+		return
+	}
+
+	if newIdCardUrl != "" {
+		member.IdCardUrl = newIdCardUrl
 	}
 
 	if err = d.MemberRepository.Update(ctx, uid, member); err != nil {

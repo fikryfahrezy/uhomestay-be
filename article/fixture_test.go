@@ -1,4 +1,4 @@
-package blog_test
+package article_test
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/blog"
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/article"
 	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/ory/dockertest/v3"
@@ -17,15 +17,15 @@ import (
 )
 
 var (
-	postgrePool    *pgxpool.Pool
-	redisClient    *redis.Client
-	blogRepository *blog.BlogRepository
-	blogDeps       *blog.BlogDeps
-	fileName       = "images.jpeg"
-	fileDir        = "./fixture/" + fileName
-	imgTmpFolder   = "blabla"
-	imgFolder      = "blublu"
-	blogSeed       = blog.BlogModel{
+	postgrePool       *pgxpool.Pool
+	redisClient       *redis.Client
+	articleRepository *article.ArticleRepository
+	articleDeps       *article.ArticleDeps
+	fileName          = "images.jpeg"
+	fileDir           = "./fixture/" + fileName
+	imgTmpFolder      = "blabla"
+	imgFolder         = "blublu"
+	articleSeed       = article.ArticleModel{
 		Title:        "title",
 		ShortDesc:    "Short desc",
 		Slug:         "slug",
@@ -40,16 +40,14 @@ var (
 )
 
 var (
-	upload blog.FileUploader = func(filename string, file io.Reader) (string, string, error) {
-		return "", "", nil
+	upload article.FileUploader = func(filename string, file io.Reader) (string, string, error) {
+		return filename, filename, nil
 	}
-	moveFile blog.FileMover = func(from, to string) (string, error) {
+	moveFile article.FileMover = func(from, to string) (string, error) {
 		return "", nil
 	}
-	captureException blog.ExceptionCapturer = func(exception error) {
-	}
-	captureMessage blog.MessageCapturer = func(message string) {
-	}
+	captureException article.ExceptionCapturer = func(exception error) {}
+	captureMessage   article.MessageCapturer   = func(message string) {}
 )
 
 func LoadTables(conn *pgxpool.Pool) error {
@@ -90,7 +88,7 @@ func ClearTables(conn *pgxpool.Pool) error {
 
 	// This should be in order of which table truncate first before the other
 	queries := []string{
-		`TRUNCATE blogs CASCADE`,
+		`TRUNCATE articles CASCADE`,
 	}
 
 	for _, v := range queries {
@@ -188,15 +186,15 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could not connect to docker: %s", err)
 	}
 
-	blogRepository = blog.NewRepository("imgchc", redisClient, postgrePool)
-	blogDeps = blog.NewDeps(
+	articleRepository = article.NewRepository("imgchc", redisClient, postgrePool)
+	articleDeps = article.NewDeps(
 		imgFolder,
 		imgTmpFolder,
 		captureMessage,
 		captureException,
 		moveFile,
 		upload,
-		blogRepository,
+		articleRepository,
 	)
 
 	LoadTables(postgrePool)

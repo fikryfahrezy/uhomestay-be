@@ -3,11 +3,8 @@ CREATE TABLE IF NOT EXISTS members (
   name VARCHAR(100) DEFAULT '' NOT NULL,
   other_phone VARCHAR(50) DEFAULT '' NOT NULL UNIQUE,
   wa_phone VARCHAR(50) DEFAULT '' NOT NULL UNIQUE,
-  homestay_name VARCHAR(100) DEFAULT '' NOT NULL,
-  homestay_address VARCHAR(200) DEFAULT '' NOT NULL,
-  homestay_latitude VARCHAR(50) DEFAULT '' NOT NULL,
-  homestay_longitude VARCHAR(50) DEFAULT '' NOT NULL,
   profile_pic_url TEXT DEFAULT '' NOT NULL,
+  id_card_url TEXT DEFAULT '' NOT NULL,
   username VARCHAR(50) DEFAULT '' NOT NULL UNIQUE,
   password VARCHAR(200) DEFAULT '' NOT NULL,
   is_admin BOOLEAN DEFAULT false NOT NULL,
@@ -20,16 +17,13 @@ CREATE TABLE IF NOT EXISTS members (
       coalesce(name, '') 
       || ' ' || coalesce(other_phone, '')
       || ' ' || coalesce(wa_phone, '')
-      || ' ' || coalesce(homestay_name, '')
-      || ' ' || coalesce(homestay_address, '')
       || ' ' || coalesce(username, '')
     )
   ) STORED,
   textrank_index_col tsvector GENERATED ALWAYS AS (
     setweight(to_tsvector('english', coalesce(name, '')), 'A')
     || setweight(to_tsvector('english', coalesce(wa_phone, '')), 'B')
-    || setweight(to_tsvector('english', coalesce(homestay_name, '')), 'C')
-    || setweight(to_tsvector('english', coalesce(homestay_address, '')), 'D')
+    || setweight(to_tsvector('english', coalesce(other_phone, '')), 'C')
   ) STORED
 );
 
@@ -99,7 +93,7 @@ CREATE INDEX documents_textsearch_idx ON documents USING GIN (textsearchable_ind
 
 CREATE INDEX documents_textrank_idx ON documents USING GIN (textrank_index_col);
 
-CREATE TABLE IF NOT EXISTS blogs (
+CREATE TABLE IF NOT EXISTS articles (
   id BIGSERIAL PRIMARY KEY,
   title VARCHAR(200) DEFAULT '' NOT NULL,
   short_desc VARCHAR(200) DEFAULT '' NOT NULL,
@@ -126,9 +120,9 @@ CREATE TABLE IF NOT EXISTS blogs (
   ) STORED
 );
 
-CREATE INDEX blogs_textsearch_idx ON blogs USING GIN (textsearchable_index_col);
+CREATE INDEX articles_textsearch_idx ON articles USING GIN (textsearchable_index_col);
 
-CREATE INDEX blogs_textrank_idx ON blogs USING GIN (textrank_index_col);
+CREATE INDEX articles_textrank_idx ON articles USING GIN (textrank_index_col);
 
 CREATE TABLE IF NOT EXISTS histories (
   id BIGSERIAL PRIMARY KEY,
@@ -190,6 +184,30 @@ CREATE TABLE IF NOT EXISTS images (
   alphnum_name VARCHAR(200) DEFAULT '' NOT NULL,
   url TEXT DEFAULT '' NOT NULL,
   description TEXT DEFAULT '' NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  deleted_at TIMESTAMP DEFAULT NULL
+);
+
+
+CREATE TABLE IF NOT EXISTS member_homestays (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(200) DEFAULT '' NOT NULL,
+  address VARCHAR(200) DEFAULT '' NOT NULL,
+  latitude VARCHAR(50) DEFAULT '' NOT NULL,
+  longitude VARCHAR(50) DEFAULT '' NOT NULL,
+  thumbnail_url TEXT DEFAULT '' NOT NULL,
+  member_id UUID NOT NULL REFERENCES members(id),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
+  deleted_at TIMESTAMP DEFAULT NULL
+);
+
+CREATE TABLE IF NOT EXISTS homestay_images (
+  id BIGSERIAL PRIMARY KEY,
+  name VARCHAR(200) DEFAULT '' NOT NULL,
+  alphnum_name VARCHAR(200) DEFAULT '' NOT NULL,
+  url TEXT DEFAULT '' NOT NULL,
+  member_homestay_id BIGINT DEFAULT NULL REFERENCES member_homestays(id),
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
   deleted_at TIMESTAMP DEFAULT NULL
 );

@@ -1,4 +1,4 @@
-package blog
+package article
 
 import (
 	"unicode/utf8"
@@ -13,7 +13,7 @@ var (
 	ErrMaxSlug      = errors.New("slug tidak dapat lebih dari 200 karakter")
 )
 
-func ValidateAddBlogIn(i AddBlogIn) error {
+func ValidateAddArticleIn(i AddArticleIn) error {
 	g := new(errgroup.Group)
 	g.Go(func() error {
 		if utf8.RuneCountInString(i.Title) > 200 {
@@ -39,7 +39,7 @@ func ValidateAddBlogIn(i AddBlogIn) error {
 	return nil
 }
 
-func ValidateEditBlogIn(i EditBlogIn) error {
+func ValidateEditArticleIn(i EditArticleIn) error {
 	g := new(errgroup.Group)
 	g.Go(func() error {
 		if utf8.RuneCountInString(i.Title) > 200 {

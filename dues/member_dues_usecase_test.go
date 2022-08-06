@@ -309,12 +309,6 @@ func TestEditMemberDues(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Edit Member Dues Fail, File Validation Fail",
-			ExpectedStatusCode: http.StatusUnprocessableEntity,
-			Id:                 pid1,
-			In:                 dues.EditMemberDuesIn{},
-		},
-		{
 			Name:               "Edit Member Dues Fail, Not Found",
 			ExpectedStatusCode: http.StatusNotFound,
 			Id:                 "999",

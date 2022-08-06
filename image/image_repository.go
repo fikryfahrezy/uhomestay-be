@@ -74,46 +74,6 @@ func (r *ImageRepository) Save(ctx context.Context, m ImageModel) (nm ImageModel
 	return m, nil
 }
 
-func (r *ImageRepository) UpdateById(ctx context.Context, id uint64, m ImageModel) error {
-	sqlQuery := `
-		UPDATE images SET (
-			name,
-			alphnum_name,
-			url,
-			description,
-			updated_at
-		) = ($1, $2, $3, $4, $5)
-		WHERE id = $6
-	`
-
-	var exec ImageExecutor
-	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
-	if ok {
-		exec = tx.Exec
-	} else {
-		exec = r.PostgreDb.Exec
-	}
-
-	var err error
-	t := time.Now()
-
-	_, err = exec(
-		context.Background(),
-		sqlQuery,
-		m.Name,
-		m.AlphnumName,
-		m.Url,
-		m.Description,
-		t,
-		id,
-	)
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
 func (r *ImageRepository) FindById(ctx context.Context, id uint64) (m ImageModel, err error) {
 	querystr := `
 		SELECT

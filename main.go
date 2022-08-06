@@ -10,7 +10,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 	"go.mongodb.org/mongo-driver/mongo/readpref"
 
-	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/blog"
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/article"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/cashflow"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/config"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/dashboard"
@@ -18,6 +18,7 @@ import (
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/dues"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/handler"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/history"
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/homestay"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/image"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/user"
 
@@ -136,9 +137,16 @@ func main() {
 	historyRepository := history.NewRepository(
 		posgrePool,
 	)
-	blogRepository := blog.NewRepository(
+	articleRepository := article.NewRepository(
 		"imgchc",
 		redisClient,
+		posgrePool,
+	)
+
+	memberHomestayRepository := homestay.NewMemberHomestayRepository(
+		posgrePool,
+	)
+	homestayImageRepository := homestay.NewHomestayImageRepository(
 		posgrePool,
 	)
 
@@ -180,19 +188,19 @@ func main() {
 		historyRepository,
 	)
 
-	blogImgFolder := "uhomestay/blog-images-tmp"
-	blogDeps := blog.NewDeps(
+	articleImgFolder := "uhomestay/blog-images-tmp"
+	articleDeps := article.NewDeps(
 		"uhomestay/blog-images",
-		blogImgFolder,
-		blog.CaptureMessage(sentry.CaptureMessage),
-		blog.CaptureExeption(sentry.CaptureException),
-		blog.FileMove(cld.Upload.Rename),
-		blog.FileUpload(uploader.UploadParams{
+		articleImgFolder,
+		article.CaptureMessage(sentry.CaptureMessage),
+		article.CaptureExeption(sentry.CaptureException),
+		article.FileMove(cld.Upload.Rename),
+		article.FileUpload(uploader.UploadParams{
 			Tags:         []string{"blogs"},
-			Folder:       blogImgFolder,
+			Folder:       articleImgFolder,
 			ResourceType: "raw",
 		}, cld.Upload.Upload),
-		blogRepository,
+		articleRepository,
 	)
 
 	cashflowDeps := cashflow.NewDeps(
@@ -231,13 +239,27 @@ func main() {
 		imageRepository,
 	)
 
+	homestayDeps := homestay.NewDeps(
+		homestay.CaptureMessage(sentry.CaptureMessage),
+		homestay.CaptureExeption(sentry.CaptureException),
+		homestay.FileUpload(uploader.UploadParams{
+			Tags:         []string{"homestay"},
+			Folder:       "uhomestay/homestay",
+			ResourceType: "raw",
+		}, cld.Upload.Upload),
+		homestayImageRepository,
+		memberHomestayRepository,
+		memberRepository,
+	)
+
 	dashboardDeps := dashboard.NewDeps(
 		dashboard.CaptureMessage(sentry.CaptureMessage),
 		dashboard.CaptureExeption(sentry.CaptureException),
 		historyDeps,
 		imageDeps,
+		homestayDeps,
 		documentDeps,
-		blogDeps,
+		articleDeps,
 		cashflowDeps,
 		duesDeps,
 		userDeps,

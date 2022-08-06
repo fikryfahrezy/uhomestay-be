@@ -533,7 +533,9 @@ func (d *DuesDeps) EditMemberDues(ctx context.Context, pid string, in EditMember
 		}
 	}
 
-	memberDues.ProveFileUrl = fileUrl
+	if fileUrl != "" {
+		memberDues.ProveFileUrl = fileUrl
+	}
 
 	if err = d.MemberDuesRepository.UpdateById(ctx, id, memberDues); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "update member dues by id"))

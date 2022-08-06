@@ -148,7 +148,9 @@ func TestMain(m *testing.M) {
 		historyRepository,
 	)
 
-	LoadTables(db)
+	if err := LoadTables(db); err != nil {
+		log.Fatal(err)
+	}
 
 	// Run tests
 	code := m.Run()

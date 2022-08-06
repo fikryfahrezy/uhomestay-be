@@ -1,4 +1,4 @@
-package dues_test
+package homestay_test
 
 import (
 	"context"
@@ -9,25 +9,37 @@ import (
 	"testing"
 	"time"
 
-	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/cashflow"
-	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/dues"
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/homestay"
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/httpdecode"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/user"
+	"github.com/fikryfahrezy/crypt/agron2"
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
+	"golang.org/x/crypto/argon2"
 )
 
 var (
-	db                   *pgxpool.Pool
-	duesRepository       *dues.DuesRepository
-	memberDuesRepository *dues.MemberDuesRepository
-	memberRepository     *user.MemberRepository
-	cashflowRepository   *cashflow.CashflowRepository
-	duesDeps             *dues.DuesDeps
-	fileName             = "images.jpeg"
-	fileDir              = "./fixture/" + fileName
-	memberSeed           = user.MemberModel{
+	db                       *pgxpool.Pool
+	memberRepository         *user.MemberRepository
+	homestayImageRepository  *homestay.HomestayImageRepository
+	memberHomestayRepository *homestay.MemberHomestayRepository
+	homestayDeps             *homestay.HomestayDeps
+	fileName                 = "images.jpeg"
+	fileDir                  = "./fixture/" + fileName
+	fileSeed                 = homestay.HomestayImageModel{
+		Name: "file.jpg",
+		Url:  "http://localhost:5000/file.jpg",
+	}
+	homestaySeed = homestay.MemberHomestayModel{
+		Name:         "Name",
+		Address:      "Address",
+		Latitude:     "120",
+		Longitude:    "90",
+		ThumbnailUrl: "http://localhost:5000/file.jpg",
+	}
+	memberSeed = user.MemberModel{
 		Name:       "Name",
 		Username:   "existusername",
 		WaPhone:    "+62 821-1111-0000",
@@ -36,45 +48,14 @@ var (
 		IsAdmin:    true,
 		IsApproved: true,
 	}
-	memberSeed2 = user.MemberModel{
-		Name:       "Name Two",
-		Username:   "existusernametwo",
-		WaPhone:    "+62 821-1111-0001",
-		OtherPhone: "+62 821-1111-0001",
-		Password:   "password",
-		IsAdmin:    true,
-		IsApproved: true,
-	}
-	duesSeed = dues.DuesModel{
-		Date:      time.Now().Add(time.Hour * 750),
-		IdrAmount: "20000",
-	}
-	duesSeed2 = dues.DuesModel{
-		Date:      time.Now().Add(time.Hour * 750 * 2),
-		IdrAmount: "20000",
-	}
-	duesSeed3 = dues.DuesModel{
-		Date:      time.Now().Add(time.Hour * 750 * 3),
-		IdrAmount: "20000",
-	}
-	pastDuesSeed = dues.DuesModel{
-		Date:      time.Now().Add(-1 * (time.Hour * 750)),
-		IdrAmount: "20000",
-	}
-	paidMemDSeed = dues.MemberDuesModel{
-		Status: dues.Paid,
-	}
-	unpaidMemDSeed = dues.MemberDuesModel{
-		Status: dues.Unpaid,
-	}
 )
 
 var (
-	upload dues.FileUploader = func(filename string, file io.Reader) (string, error) {
+	upload homestay.FileUploader = func(filename string, file io.Reader) (string, error) {
 		return filename, nil
 	}
-	captureException dues.ExceptionCapturer = func(exception error) {}
-	captureMessage   dues.MessageCapturer   = func(message string) {}
+	captureException homestay.ExceptionCapturer = func(exception error) {}
+	captureMessage   homestay.MessageCapturer   = func(message string) {}
 )
 
 func LoadTables(conn *pgxpool.Pool) error {
@@ -115,8 +96,8 @@ func ClearTables(conn *pgxpool.Pool) error {
 
 	// This should be in order of which table truncate first before the other
 	queries := []string{
-		`TRUNCATE member_dues CASCADE`,
-		`TRUNCATE dues CASCADE`,
+		`TRUNCATE homestay_images CASCADE`,
+		`TRUNCATE member_homestays CASCADE`,
 		`TRUNCATE members CASCADE`,
 	}
 
@@ -137,53 +118,52 @@ func ClearTables(conn *pgxpool.Pool) error {
 	return nil
 }
 
-func createMemberNDues(d *dues.DuesDeps, member user.MemberModel, duesm dues.DuesModel) (muid string, duesId uint64, err error) {
+func createUser(r *user.MemberRepository, member user.MemberModel) (muid string, err error) {
 	memberCp := user.MemberModel(member)
+
+	hash, err := agron2.Argon2Hash(memberCp.Password, "blablabla", 1, 64*1024, 4, 32, argon2.Version, agron2.Argon2Id)
+	if err != nil {
+		return "", err
+	}
+
+	memberCp.Password = hash
 
 	uid, _ := uuid.NewV6()
 	memberCp.Id.Scan(uid.String())
-	if err := d.MemberRepository.Save(context.Background(), memberCp); err != nil {
-		return "", 0, err
-	}
-	if err != nil {
-		return "", 0, err
+	if err := r.Save(context.Background(), memberCp); err != nil {
+		return "", err
 	}
 
-	nd2, err := d.DuesRepository.Save(context.Background(), duesm)
-	if err != nil {
-		return "", 0, err
-	}
-
-	return uid.String(), nd2.Id, nil
+	return uid.String(), nil
 }
 
-func createMemberDues(d *dues.DuesDeps, member user.MemberModel, duesm dues.DuesModel, memberDues dues.MemberDuesModel) (muid string, duesId, memberDuesId uint64, err error) {
-	memberCp := user.MemberModel(member)
-
-	uid, _ := uuid.NewV6()
-	memberCp.Id.Scan(uid.String())
-	if err := d.MemberRepository.Save(context.Background(), memberCp); err != nil {
-		return "", 0, 0, err
+func createHomestayImage(r *homestay.HomestayImageRepository, image homestay.HomestayImageModel) (id int64, err error) {
+	if image, err = r.Save(context.Background(), image); err != nil {
+		return 0, err
 	}
+
+	return int64(image.Id), nil
+}
+
+func createMemberHomestay(r *homestay.MemberHomestayRepository, memberId string, homestay homestay.MemberHomestayModel) (id int64, err error) {
+	homestay.MemberId = memberId
+	if homestay, err = r.Save(context.Background(), homestay); err != nil {
+		return 0, err
+	}
+
+	return int64(homestay.Id), nil
+}
+
+func generateFile(fileDir, fileName string) httpdecode.FileHeader {
+	f, err := os.OpenFile(fileDir, os.O_RDONLY, 0o444)
 	if err != nil {
-		return "", 0, 0, err
+		log.Fatal(err)
 	}
 
-	nd2, err := d.DuesRepository.Save(context.Background(), duesm)
-	if err != nil {
-		return "", 0, 0, err
+	return httpdecode.FileHeader{
+		Filename: fileName,
+		File:     f,
 	}
-
-	memberDuesCp := dues.MemberDuesModel(memberDues)
-	memberDuesCp.MemberId = uid.String()
-	memberDuesCp.DuesId = nd2.Id
-
-	nd3, err := d.MemberDuesRepository.Save(context.Background(), memberDuesCp)
-	if err != nil {
-		return "", 0, 0, err
-	}
-
-	return uid.String(), nd2.Id, nd3.Id, nil
 }
 
 func TestMain(m *testing.M) {
@@ -237,19 +217,16 @@ func TestMain(m *testing.M) {
 		log.Fatalf("Could not connect to docker: %s", err)
 	}
 
-	duesRepository = dues.NewDeusRepository(db)
-	memberDuesRepository = dues.NewMemberDeusRepository(db)
 	memberRepository = user.NewMemberRepository(db)
-	cashflowRepository = cashflow.NewRepository(db)
-
-	duesDeps = dues.NewDeps(
+	homestayImageRepository = homestay.NewHomestayImageRepository(db)
+	memberHomestayRepository = homestay.NewMemberHomestayRepository(db)
+	homestayDeps = homestay.NewDeps(
 		captureMessage,
 		captureException,
 		upload,
-		duesRepository,
-		memberDuesRepository,
+		homestayImageRepository,
+		memberHomestayRepository,
 		memberRepository,
-		cashflowRepository,
 	)
 
 	if err := LoadTables(db); err != nil {

@@ -3,13 +3,11 @@ package image_test
 import (
 	"context"
 	"net/http"
-	"os"
 	"strconv"
 	"strings"
 	"testing"
 
 	arbitary "github.com/PA-D3RPLA/d3if43-htt-uhomestay/arbitrary"
-	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/httpdecode"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/image"
 )
 
@@ -29,58 +27,27 @@ func TestAddImage(t *testing.T) {
 			ExpectedStatusCode: http.StatusCreated,
 			In: image.AddImageIn{
 				Description: "Bla Bla Bla",
-				File: (func() httpdecode.FileHeader {
-					f, err := os.OpenFile(fileDir, os.O_RDONLY, 0o444)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					return httpdecode.FileHeader{
-						Filename: fileName,
-						File:     f,
-					}
-				})(),
+				File:        generateFile(fileDir, fileName),
 			},
 		},
 		{
-			Name:               "Add File Document Fail, File Validation Fail",
-			ExpectedStatusCode: http.StatusUnprocessableEntity,
-			In:                 image.AddImageIn{},
-		},
-		{
-			Name:               "Add Image with filename over 200 chars fail",
+			Name:               "Add Image Fail, File not image",
 			ExpectedStatusCode: http.StatusUnprocessableEntity,
 			In: image.AddImageIn{
-				Description: "Bla Bla Bla",
-				File: (func() httpdecode.FileHeader {
-					f, err := os.OpenFile(fileDir, os.O_RDONLY, 0o444)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					return httpdecode.FileHeader{
-						Filename: strings.Repeat("a", 201),
-						File:     f,
-					}
-				})(),
+				File: generateFile("./fixture/pdf.pdf", strings.Repeat("a", 200)),
 			},
+		},
+		{
+			Name:               "Add Image Fail, File Validation Fail",
+			ExpectedStatusCode: http.StatusUnprocessableEntity,
+			In:                 image.AddImageIn{},
 		},
 		{
 			Name:               "Add Image with filename 200 chars Success",
 			ExpectedStatusCode: http.StatusCreated,
 			In: image.AddImageIn{
 				Description: "Bla Bla Bla",
-				File: (func() httpdecode.FileHeader {
-					f, err := os.OpenFile(fileDir, os.O_RDONLY, 0o444)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					return httpdecode.FileHeader{
-						Filename: strings.Repeat("a", 200),
-						File:     f,
-					}
-				})(),
+				File:        generateFile(fileDir, strings.Repeat("a", 200)),
 			},
 		},
 		{
@@ -88,17 +55,7 @@ func TestAddImage(t *testing.T) {
 			ExpectedStatusCode: http.StatusUnprocessableEntity,
 			In: image.AddImageIn{
 				Description: "Bla Bla Bla",
-				File: (func() httpdecode.FileHeader {
-					f, err := os.OpenFile(fileDir, os.O_RDONLY, 0o444)
-					if err != nil {
-						t.Fatal(err)
-					}
-
-					return httpdecode.FileHeader{
-						Filename: strings.Repeat("a", 201),
-						File:     f,
-					}
-				})(),
+				File:        generateFile(fileDir, strings.Repeat("a", 201)),
 			},
 		},
 	}
@@ -166,7 +123,7 @@ func TestQueryDocument(t *testing.T) {
 	}
 }
 
-func TestRemoveDocument(t *testing.T) {
+func TestRemoveImage(t *testing.T) {
 	err := ClearTables(db)
 	if err != nil {
 		t.Fatal(err)

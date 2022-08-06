@@ -35,25 +35,21 @@ type (
 		Url       string `json:"url"`
 	}
 	MemberOut struct {
-		Id                string `json:"id"`
-		Username          string `json:"username"`
-		Name              string `json:"name"`
-		WaPhone           string `json:"wa_phone"`
-		OtherPhone        string `json:"other_phone"`
-		HomestayName      string `json:"homestay_name"`
-		HomestayAddress   string `json:"homestay_address"`
-		HomestayLatitude  string `json:"homestay_latitude"`
-		HomestayLongitude string `json:"homestay_longitude"`
-		ProfilePicUrl     string `json:"profile_pic_url"`
-		IsAdmin           bool   `json:"is_admin"`
-		IsApproved        bool   `json:"is_approved"`
+		Id            string `json:"id"`
+		Username      string `json:"username"`
+		Name          string `json:"name"`
+		WaPhone       string `json:"wa_phone"`
+		OtherPhone    string `json:"other_phone"`
+		ProfilePicUrl string `json:"profile_pic_url"`
+		IsAdmin       bool   `json:"is_admin"`
+		IsApproved    bool   `json:"is_approved"`
 	}
 	DuesOut struct {
 		Id        int64  `json:"id"`
 		Date      string `json:"date"`
 		IdrAmount string `json:"idr_amount"`
 	}
-	BlogOut struct {
+	ArticleOut struct {
 		Id           int64  `json:"id"`
 		Title        string `json:"title"`
 		ShortDesc    string `json:"short_desc"`

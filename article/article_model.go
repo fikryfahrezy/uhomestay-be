@@ -1,11 +1,11 @@
-package blog
+package article
 
 import (
 	"database/sql"
 	"time"
 )
 
-type BlogModel struct {
+type ArticleModel struct {
 	Id           uint64
 	Title        string
 	ShortDesc    string

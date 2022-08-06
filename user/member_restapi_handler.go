@@ -16,8 +16,7 @@ import (
 
 func (d *UserDeps) PostRegisterMember(w http.ResponseWriter, r *http.Request) {
 	var in RegisterIn
-	err := json.NewDecoder(r.Body).Decode(&in)
-	if err != nil {
+	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.BoolToNullBoolHookFunc, httpdecode.MultipartToFileHookFunc); err != nil {
 		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
@@ -150,7 +149,7 @@ func (d *UserDeps) PutMemberProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out := d.UpdatProfile(r.Context(), jwtPayload.Uid, in)
+	out := d.UpdateProfile(r.Context(), jwtPayload.Uid, in)
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
 	}

@@ -165,12 +165,12 @@ func (p *RestApiConf) RestApiHandler() {
 	r.With(adminJwtMidd).Post("/api/v1/histories", p.DashboardDeps.PostHistory)
 	r.Get("/api/v1/histories", p.DashboardDeps.GetHistory)
 
-	r.Get("/api/v1/blogs", p.DashboardDeps.GetBlogs)
-	r.Get("/api/v1/blogs/{id}", p.DashboardDeps.GetBlog)
-	r.With(adminJwtMidd).Post("/api/v1/blogs", p.DashboardDeps.PostBlog)
-	r.With(adminJwtMidd).Put("/api/v1/blogs/{id}", p.DashboardDeps.PutBlogs)
-	r.With(adminJwtMidd).Delete("/api/v1/blogs/{id}", p.DashboardDeps.DeleteBlog)
-	r.With(adminJwtMidd).Post("/api/v1/blogs/image", p.DashboardDeps.PostImage)
+	r.Get("/api/v1/articles", p.DashboardDeps.GetArticles)
+	r.Get("/api/v1/articles/{id}", p.DashboardDeps.GetArticle)
+	r.With(adminJwtMidd).Post("/api/v1/articles", p.DashboardDeps.PostArticle)
+	r.With(adminJwtMidd).Put("/api/v1/articles/{id}", p.DashboardDeps.PutArticle)
+	r.With(adminJwtMidd).Delete("/api/v1/articles/{id}", p.DashboardDeps.DeleteArticle)
+	r.With(adminJwtMidd).Post("/api/v1/articles/image", p.DashboardDeps.PostImage)
 
 	r.Get("/api/v1/cashflows", p.DashboardDeps.GetCashflows)
 	r.Get("/api/v1/cashflows/stats", p.DashboardDeps.GetCashflowsStats)
@@ -196,6 +196,15 @@ func (p *RestApiConf) RestApiHandler() {
 	r.Get("/api/v1/images", p.DashboardDeps.GetImages)
 	r.With(adminJwtMidd).Post("/api/v1/images", p.DashboardDeps.PostGalleryImage)
 	r.With(adminJwtMidd).Delete("/api/v1/images/{id}", p.DashboardDeps.DeleteImage)
+
+	r.With(jwtMidd).Post("/api/v1/homestays/images", p.DashboardDeps.PostHomestayImage)
+	r.With(jwtMidd).Delete("/api/v1/homestays/images/{id}", p.DashboardDeps.DeleteHomestayImage)
+
+	r.Get("/api/v1/homestays/{uid}/list", p.DashboardDeps.GetMemberHomestays)
+	r.Get("/api/v1/homestays/{id}/{uid}", p.DashboardDeps.GetMemberHomestay)
+	r.With(jwtMidd).Post("/api/v1/homestays/{uid}", p.DashboardDeps.PostMemberHomestay)
+	r.With(jwtMidd).Delete("/api/v1/homestays/{id}/{uid}", p.DashboardDeps.DeleteMemberHomestay)
+	r.With(jwtMidd).Put("/api/v1/homestays/{id}/{uid}", p.DashboardDeps.PutMemberHomestay)
 
 	workDir, _ := os.Getwd()
 	filesDir := http.Dir(filepath.Join(workDir, "docs"))

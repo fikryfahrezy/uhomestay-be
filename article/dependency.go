@@ -1,4 +1,4 @@
-package blog
+package article
 
 import (
 	"context"
@@ -15,14 +15,14 @@ type (
 	MessageCapturer   func(message string)
 )
 
-type BlogDeps struct {
-	ImgCldTmpFolder string
-	ImgClgFolder    string
-	CaptureMessage  MessageCapturer
-	CaptureExeption ExceptionCapturer
-	MoveFile        FileMover
-	Upload          FileUploader
-	BlogRepository  *BlogRepository
+type ArticleDeps struct {
+	ImgCldTmpFolder   string
+	ImgClgFolder      string
+	CaptureMessage    MessageCapturer
+	CaptureExeption   ExceptionCapturer
+	MoveFile          FileMover
+	Upload            FileUploader
+	ArticleRepository *ArticleRepository
 }
 
 func NewDeps(
@@ -32,16 +32,16 @@ func NewDeps(
 	captureExeption ExceptionCapturer,
 	moveFile FileMover,
 	upload FileUploader,
-	blogRepository *BlogRepository,
-) *BlogDeps {
-	return &BlogDeps{
-		ImgClgFolder:    imgClgFolder,
-		ImgCldTmpFolder: imgCldTmpFolder,
-		CaptureMessage:  captureMessage,
-		CaptureExeption: captureExeption,
-		MoveFile:        moveFile,
-		Upload:          upload,
-		BlogRepository:  blogRepository,
+	articleRepository *ArticleRepository,
+) *ArticleDeps {
+	return &ArticleDeps{
+		ImgClgFolder:      imgClgFolder,
+		ImgCldTmpFolder:   imgCldTmpFolder,
+		CaptureMessage:    captureMessage,
+		CaptureExeption:   captureExeption,
+		MoveFile:          moveFile,
+		Upload:            upload,
+		ArticleRepository: articleRepository,
 	}
 }
 

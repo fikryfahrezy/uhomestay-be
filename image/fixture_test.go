@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/httpdecode"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/image"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/ory/dockertest/v3"
@@ -29,7 +30,7 @@ var (
 
 var (
 	upload image.FileUploader = func(filename string, file io.Reader) (string, error) {
-		return "", nil
+		return filename, nil
 	}
 	captureException image.ExceptionCapturer = func(exception error) {}
 	captureMessage   image.MessageCapturer   = func(message string) {}
@@ -152,7 +153,9 @@ func TestMain(m *testing.M) {
 		imageRepository,
 	)
 
-	LoadTables(db)
+	if err := LoadTables(db); err != nil {
+		log.Fatal(err)
+	}
 
 	// Run tests
 	code := m.Run()
@@ -163,4 +166,16 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(code)
+}
+
+func generateFile(fileDir, fileName string) httpdecode.FileHeader {
+	f, err := os.OpenFile(fileDir, os.O_RDONLY, 0o444)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return httpdecode.FileHeader{
+		Filename: fileName,
+		File:     f,
+	}
 }

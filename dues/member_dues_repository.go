@@ -130,7 +130,6 @@ func (r *MemberDuesRepository) QueryDMVByDuesId(ctx context.Context, duesId uint
 			LEFT JOIN members m ON m.id = md.member_id
 		WHERE md.deleted_at IS NULL
 			AND md.dues_id = $1
-			AND m.deleted_at IS NULL
 			AND ` + fromUid + `
 			` + dateFilter + `
 		ORDER BY md.id DESC
@@ -507,7 +506,6 @@ func (r *MemberDuesRepository) CountDMVByDuesId(ctx context.Context, duesId uint
 			LEFT JOIN members m ON m.id = md.member_id
 		WHERE md.deleted_at IS NULL
 			AND md.dues_id = $1
-			AND m.deleted_at IS NULL
 	`
 	countQueryParams := []interface{}{duesId}
 

@@ -1,4 +1,4 @@
-package blog
+package article
 
 import (
 	"context"
@@ -12,7 +12,7 @@ import (
 	"github.com/jackc/pgx/v4/pgxpool"
 )
 
-type BlogRepository struct {
+type ArticleRepository struct {
 	ImgCacheName string
 	RedisCl      *redis.Client
 	PostgreDb    *pgxpool.Pool
@@ -22,8 +22,8 @@ func NewRepository(
 	imgCacheName string,
 	redisCl *redis.Client,
 	postgreDb *pgxpool.Pool,
-) *BlogRepository {
-	return &BlogRepository{
+) *ArticleRepository {
+	return &ArticleRepository{
 		ImgCacheName: imgCacheName,
 		RedisCl:      redisCl,
 		PostgreDb:    postgreDb,
@@ -31,14 +31,14 @@ func NewRepository(
 }
 
 type (
-	BlogExecutor   func(ctx context.Context, sql string, arguments ...interface{}) (commandTag pgconn.CommandTag, err error)
-	BlogQuerierRow func(ctx context.Context, sql string, args ...interface{}) pgx.Row
-	BlogQuerier    func(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
+	ArticleExecutor   func(ctx context.Context, sql string, arguments ...interface{}) (commandTag pgconn.CommandTag, err error)
+	ArticleQuerierRow func(ctx context.Context, sql string, args ...interface{}) pgx.Row
+	ArticleQuerier    func(ctx context.Context, sql string, args ...interface{}) (pgx.Rows, error)
 )
 
-func (r *BlogRepository) Save(ctx context.Context, m BlogModel) (nm BlogModel, err error) {
+func (r *ArticleRepository) Save(ctx context.Context, m ArticleModel) (nm ArticleModel, err error) {
 	sqlQuery := `
-		INSERT INTO blogs (
+		INSERT INTO articles (
 			title,
 			short_desc,
 			thumbnail_url,
@@ -53,7 +53,7 @@ func (r *BlogRepository) Save(ctx context.Context, m BlogModel) (nm BlogModel, e
 		RETURNING id
 	`
 
-	var queryRow BlogQuerierRow
+	var queryRow ArticleQuerierRow
 	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
 	if ok {
 		queryRow = tx.QueryRow
@@ -79,7 +79,7 @@ func (r *BlogRepository) Save(ctx context.Context, m BlogModel) (nm BlogModel, e
 	).Scan(&lastInsertId)
 
 	if err != nil {
-		return BlogModel{}, err
+		return ArticleModel{}, err
 	}
 
 	m.Id = lastInsertId
@@ -89,7 +89,7 @@ func (r *BlogRepository) Save(ctx context.Context, m BlogModel) (nm BlogModel, e
 	return m, nil
 }
 
-func (r *BlogRepository) Query(ctx context.Context, q string, id, limit int64) ([]BlogModel, error) {
+func (r *ArticleRepository) Query(ctx context.Context, q string, id, limit int64) ([]ArticleModel, error) {
 	fromId := "id > $1"
 	if id != 0 {
 		fromId = "id < $1"
@@ -119,7 +119,7 @@ func (r *BlogRepository) Query(ctx context.Context, q string, id, limit int64) (
 			created_at,
 			updated_at,
 			deleted_at
-		FROM blogs 
+		FROM articles 
 		WHERE deleted_at IS NULL
 			AND ` + fromId + `
 			AND ` + like + `
@@ -136,12 +136,12 @@ func (r *BlogRepository) Query(ctx context.Context, q string, id, limit int64) (
 	)
 	defer rows.Close()
 
-	var mps []*BlogModel
+	var mps []*ArticleModel
 	if err := pgxscan.ScanAll(&mps, rows); err != nil {
-		return []BlogModel{}, err
+		return []ArticleModel{}, err
 	}
 
-	ms := make([]BlogModel, len(mps))
+	ms := make([]ArticleModel, len(mps))
 	for i, m := range mps {
 		ms[i] = *m
 	}
@@ -149,7 +149,7 @@ func (r *BlogRepository) Query(ctx context.Context, q string, id, limit int64) (
 	return ms, nil
 }
 
-func (r *BlogRepository) FindUndeletedById(ctx context.Context, id uint64) (m BlogModel, err error) {
+func (r *ArticleRepository) FindUndeletedById(ctx context.Context, id uint64) (m ArticleModel, err error) {
 	querystr := `
 		SELECT
 			id,
@@ -161,12 +161,12 @@ func (r *BlogRepository) FindUndeletedById(ctx context.Context, id uint64) (m Bl
 			created_at,
 			updated_at,
 			deleted_at
-		FROM blogs
+		FROM articles
 		WHERE deleted_at IS NULL
 		AND id = $1
 	`
 
-	var query BlogQuerier
+	var query ArticleQuerier
 	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
 	if ok {
 		query = tx.Query
@@ -182,19 +182,19 @@ func (r *BlogRepository) FindUndeletedById(ctx context.Context, id uint64) (m Bl
 	)
 
 	if err != nil {
-		return BlogModel{}, err
+		return ArticleModel{}, err
 	}
 
 	if err = pgxscan.ScanOne(&m, rows); err != nil {
-		return BlogModel{}, err
+		return ArticleModel{}, err
 	}
 
 	return m, nil
 }
 
-func (r *BlogRepository) UpdateById(ctx context.Context, id uint64, m BlogModel) error {
+func (r *ArticleRepository) UpdateById(ctx context.Context, id uint64, m ArticleModel) error {
 	sqlQuery := `
-		UPDATE blogs SET (
+		UPDATE articles SET (
 			title,
 			short_desc,
 			content,
@@ -205,7 +205,7 @@ func (r *BlogRepository) UpdateById(ctx context.Context, id uint64, m BlogModel)
 		WHERE id = $7
 	`
 
-	var exec BlogExecutor
+	var exec ArticleExecutor
 	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
 	if ok {
 		exec = tx.Exec
@@ -234,14 +234,14 @@ func (r *BlogRepository) UpdateById(ctx context.Context, id uint64, m BlogModel)
 	return nil
 }
 
-func (r *BlogRepository) DeleteById(ctx context.Context, id uint64) error {
+func (r *ArticleRepository) DeleteById(ctx context.Context, id uint64) error {
 	sqlQuery := `
-		UPDATE blogs
+		UPDATE articles
 		SET deleted_at = $1
 		WHERE id = $2
 	`
 
-	var exec BlogExecutor
+	var exec ArticleExecutor
 	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
 	if ok {
 		exec = tx.Exec
@@ -266,7 +266,7 @@ func (r *BlogRepository) DeleteById(ctx context.Context, id uint64) error {
 	return nil
 }
 
-func (r *BlogRepository) SetImgUrlCache(ctx context.Context, imgId, imgUrl string) (err error) {
+func (r *ArticleRepository) SetImgUrlCache(ctx context.Context, imgId, imgUrl string) (err error) {
 	_, err = r.RedisCl.HSet(ctx, r.ImgCacheName, map[string]interface{}{imgId: imgUrl}).Result()
 	if err != nil {
 		return err
@@ -275,7 +275,7 @@ func (r *BlogRepository) SetImgUrlCache(ctx context.Context, imgId, imgUrl strin
 	return nil
 }
 
-func (r *BlogRepository) GetImgUrlsCache(ctx context.Context) (res map[string]string, err error) {
+func (r *ArticleRepository) GetImgUrlsCache(ctx context.Context) (res map[string]string, err error) {
 	vals, err := r.RedisCl.HGetAll(ctx, r.ImgCacheName).Result()
 	if err != nil {
 		return nil, err
@@ -284,7 +284,7 @@ func (r *BlogRepository) GetImgUrlsCache(ctx context.Context) (res map[string]st
 	return vals, nil
 }
 
-func (r *BlogRepository) DelImgUrlCache(ctx context.Context) (err error) {
+func (r *ArticleRepository) DelImgUrlCache(ctx context.Context) (err error) {
 	_, err = r.RedisCl.Del(ctx, r.ImgCacheName).Result()
 	if err != nil {
 		return err
@@ -293,14 +293,14 @@ func (r *BlogRepository) DelImgUrlCache(ctx context.Context) (err error) {
 	return nil
 }
 
-func (r *BlogRepository) CountBlog(ctx context.Context) (n int64, err error) {
+func (r *ArticleRepository) CountArticle(ctx context.Context) (n int64, err error) {
 	sqlQuery := `
 		SELECT COUNT(id) AS n
-		FROM blogs 
+		FROM articles 
 		WHERE deleted_at IS NULL
 	`
 
-	var queryRow BlogQuerierRow
+	var queryRow ArticleQuerierRow
 	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
 	if ok {
 		queryRow = tx.QueryRow

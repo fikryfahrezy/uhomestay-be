@@ -39,12 +39,6 @@ func ValidateEditMemberDuesIn(i EditMemberDuesIn) error {
 	g := new(errgroup.Group)
 
 	g.Go(func() error {
-		if i.File.File == nil || i.File.Filename == "" {
-			return ErrFileRequired
-		}
-		return nil
-	})
-	g.Go(func() error {
 		if utf8.RuneCountInString(i.File.Filename) > 200 {
 			return ErrMaxFilename
 		}

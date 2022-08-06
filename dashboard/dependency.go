@@ -1,11 +1,12 @@
 package dashboard
 
 import (
-	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/blog"
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/article"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/cashflow"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/document"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/dues"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/history"
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/homestay"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/image"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/user"
 	"github.com/getsentry/sentry-go"
@@ -21,8 +22,9 @@ type DashboardDeps struct {
 	CaptureExeption ExceptionCapturer
 	*history.HistoryDeps
 	*image.ImageDeps
+	*homestay.HomestayDeps
 	*document.DocumentDeps
-	*blog.BlogDeps
+	*article.ArticleDeps
 	*cashflow.CashflowDeps
 	*dues.DuesDeps
 	*user.UserDeps
@@ -33,8 +35,9 @@ func NewDeps(
 	captureExeption ExceptionCapturer,
 	historyDeps *history.HistoryDeps,
 	imageDeps *image.ImageDeps,
+	homestayDeps *homestay.HomestayDeps,
 	documentDeps *document.DocumentDeps,
-	blogDeps *blog.BlogDeps,
+	articleDeps *article.ArticleDeps,
 	cashflowDeps *cashflow.CashflowDeps,
 	duesDeps *dues.DuesDeps,
 	userDeps *user.UserDeps,
@@ -44,8 +47,9 @@ func NewDeps(
 		CaptureExeption: captureExeption,
 		HistoryDeps:     historyDeps,
 		ImageDeps:       imageDeps,
+		HomestayDeps:    homestayDeps,
 		DocumentDeps:    documentDeps,
-		BlogDeps:        blogDeps,
+		ArticleDeps:     articleDeps,
 		CashflowDeps:    cashflowDeps,
 		DuesDeps:        duesDeps,
 		UserDeps:        userDeps,

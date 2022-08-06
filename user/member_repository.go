@@ -35,11 +35,8 @@ func (r *MemberRepository) Save(ctx context.Context, m MemberModel) error {
 			name,
 			other_phone,
 			wa_phone,
-			homestay_name,
-			homestay_address,
 			profile_pic_url,
-			homestay_latitude,
-			homestay_longitude,
+			id_card_url,
 			username,
 			password,
 			is_admin,
@@ -48,7 +45,7 @@ func (r *MemberRepository) Save(ctx context.Context, m MemberModel) error {
 			updated_at,
 			deleted_at
 		)
-		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
+		VALUES($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 	`
 
 	var exec MemberExecutor
@@ -69,11 +66,8 @@ func (r *MemberRepository) Save(ctx context.Context, m MemberModel) error {
 		m.Name,
 		m.OtherPhone,
 		m.WaPhone,
-		m.HomestayName,
-		m.HomestayAddress,
 		m.ProfilePicUrl,
-		m.HomestayLatitude,
-		m.HomestayLongitude,
+		m.IdCardUrl,
 		m.Username,
 		m.Password,
 		m.IsAdmin,
@@ -132,11 +126,8 @@ func (r *MemberRepository) FindByUsername(username string) (m MemberModel, err e
 			name,
 			other_phone,
 			wa_phone,
-			homestay_name,
-			homestay_address,
-			homestay_latitude,
-			homestay_longitude,
 			profile_pic_url,
+			id_card_url,
 			username,
 			password,
 			is_admin,
@@ -209,18 +200,15 @@ func (r *MemberRepository) Update(ctx context.Context, id string, m MemberModel)
 			name,
 			other_phone,
 			wa_phone,
-			homestay_name,
-			homestay_address,
 			profile_pic_url,
-			homestay_latitude,
-			homestay_longitude,
+			id_card_url,
 			username,
 			password,
 			is_admin,
 			is_approved,
 			updated_at
-		) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
-		WHERE id = $14
+		) = ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
+		WHERE id = $11
 	`
 
 	var exec MemberExecutor
@@ -240,11 +228,8 @@ func (r *MemberRepository) Update(ctx context.Context, id string, m MemberModel)
 		m.Name,
 		m.OtherPhone,
 		m.WaPhone,
-		m.HomestayName,
-		m.HomestayAddress,
 		m.ProfilePicUrl,
-		m.HomestayLatitude,
-		m.HomestayLongitude,
+		m.IdCardUrl,
 		m.Username,
 		m.Password,
 		m.IsAdmin,
@@ -267,11 +252,8 @@ func (r *MemberRepository) FindById(ctx context.Context, uid string) (m MemberMo
 			name,
 			other_phone,
 			wa_phone,
-			homestay_name,
-			homestay_address,
-			homestay_latitude,
-			homestay_longitude,
 			profile_pic_url,
+			id_card_url,
 			username,
 			password,
 			is_admin,
@@ -303,44 +285,6 @@ func (r *MemberRepository) FindById(ctx context.Context, uid string) (m MemberMo
 	if err != nil {
 		return MemberModel{}, err
 	}
-
-	if err = pgxscan.ScanOne(&m, rows); err != nil {
-		return MemberModel{}, err
-	}
-
-	return m, nil
-}
-
-func (r *MemberRepository) FindByIdx(uid string) (m MemberModel, err error) {
-	sqlQuery := `
-		SELECT
-			id,
-			name,
-			other_phone,
-			wa_phone,
-			homestay_name,
-			homestay_address,
-			homestay_latitude,
-			homestay_longitude,
-			profile_pic_url,
-			username,
-			password,
-			is_admin,
-			is_approved,
-			created_at,
-			updated_at,
-			deleted_at
-		FROM members
-		WHERE deleted_at IS NULL
-		AND id = $1
-	`
-
-	rows, _ := r.PostgreDb.Query(
-		context.Background(),
-		sqlQuery,
-		uid,
-	)
-	defer rows.Close()
 
 	if err = pgxscan.ScanOne(&m, rows); err != nil {
 		return MemberModel{}, err
@@ -396,11 +340,8 @@ func (r *MemberRepository) QueryInId(ctx context.Context, uids []string) (ms []M
 			name,
 			other_phone,
 			wa_phone,
-			homestay_name,
-			homestay_address,
-			homestay_latitude,
-			homestay_longitude,
 			profile_pic_url,
+			id_card_url,
 			username,
 			password,
 			is_admin,
@@ -473,11 +414,8 @@ func (r *MemberRepository) Query(ctx context.Context, uid pgtypeuuid.UUID, q str
 			name,
 			other_phone,
 			wa_phone,
-			homestay_name,
-			homestay_address,
-			homestay_latitude,
-			homestay_longitude,
 			profile_pic_url,
+			id_card_url,
 			username,
 			password,
 			is_admin,

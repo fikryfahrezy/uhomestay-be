@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/config"
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/httpdecode"
 	"github.com/fikryfahrezy/crypt/agron2"
 	"github.com/gofrs/uuid"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -55,69 +56,49 @@ var (
 		Level: 1,
 	}
 	member = user.MemberModel{
-		Name:              "Name",
-		HomestayName:      "Homestay Name",
-		Username:          "existusername",
-		WaPhone:           "+62 821-1111-9995",
-		OtherPhone:        "+62 821-1111-9995",
-		HomestayAddress:   "Homestay Address",
-		HomestayLatitude:  "120.12312312",
-		HomestayLongitude: "90.1212321",
-		Password:          "password",
-		IsAdmin:           true,
-		IsApproved:        true,
+		Name:       "Name",
+		Username:   "existusername",
+		WaPhone:    "+62 821-1111-9995",
+		OtherPhone: "+62 821-1111-9995",
+		Password:   "password",
+		IsAdmin:    true,
+		IsApproved: true,
 	}
 	memberAdmin = user.MemberModel{
-		Name:              "Name",
-		HomestayName:      "Homestay Name",
-		Username:          "existusernameone",
-		WaPhone:           "+62 821-1111-9996",
-		OtherPhone:        "+62 821-1111-9996",
-		HomestayAddress:   "Homestay Address",
-		HomestayLatitude:  "120.12312312",
-		HomestayLongitude: "90.1212321",
-		Password:          "password",
-		IsAdmin:           true,
-		IsApproved:        true,
+		Name:       "Name",
+		Username:   "existusernameone",
+		WaPhone:    "+62 821-1111-9996",
+		OtherPhone: "+62 821-1111-9996",
+		Password:   "password",
+		IsAdmin:    true,
+		IsApproved: true,
 	}
 	memberNormal = user.MemberModel{
-		Name:              "Name",
-		HomestayName:      "Homestay Name",
-		Username:          "existusernametwo",
-		WaPhone:           "+62 821-1111-9997",
-		OtherPhone:        "+62 821-1111-9997",
-		HomestayAddress:   "Homestay Address",
-		HomestayLatitude:  "120.12312312",
-		HomestayLongitude: "90.1212321",
-		Password:          "password",
-		IsAdmin:           false,
-		IsApproved:        true,
+		Name:       "Name",
+		Username:   "existusernametwo",
+		WaPhone:    "+62 821-1111-9997",
+		OtherPhone: "+62 821-1111-9997",
+		Password:   "password",
+		IsAdmin:    false,
+		IsApproved: true,
 	}
 	member2 = user.MemberModel{
-		Name:              "Name Two",
-		HomestayName:      "Homestay Name Two",
-		Username:          "existusernamethree",
-		WaPhone:           "+62 821-1111-9998",
-		OtherPhone:        "+62 821-1111-9998",
-		HomestayAddress:   "Homestay Address Two",
-		HomestayLatitude:  "120.12312312",
-		HomestayLongitude: "90.1212321",
-		Password:          "password",
-		IsAdmin:           true,
-		IsApproved:        true,
+		Name:       "Name Two",
+		Username:   "existusernamethree",
+		WaPhone:    "+62 821-1111-9998",
+		OtherPhone: "+62 821-1111-9998",
+		Password:   "password",
+		IsAdmin:    true,
+		IsApproved: true,
 	}
 	pendingMember = user.MemberModel{
-		Name:              "Name Two",
-		HomestayName:      "Homestay Name Two",
-		Username:          "existusernamefour",
-		WaPhone:           "+62 821-1111-9999",
-		OtherPhone:        "+62 821-1111-9999",
-		HomestayAddress:   "Homestay Address Two",
-		HomestayLatitude:  "120.12312312",
-		HomestayLongitude: "90.1212321",
-		Password:          "password",
-		IsAdmin:           true,
-		IsApproved:        false,
+		Name:       "Name Two",
+		Username:   "existusernamefour",
+		WaPhone:    "+62 821-1111-9999",
+		OtherPhone: "+62 821-1111-9999",
+		Password:   "password",
+		IsAdmin:    true,
+		IsApproved: false,
 	}
 	goalSeed = user.GoalModel{
 		Vision: map[string]interface{}{
@@ -133,7 +114,7 @@ var (
 
 var (
 	upload user.FileUploader = func(filename string, file io.Reader) (string, error) {
-		return "", nil
+		return filename, nil
 	}
 	captureException user.ExceptionCapturer = func(exception error) {}
 	captureMessage   user.MessageCapturer   = func(message string) {}
@@ -359,7 +340,9 @@ func TestMain(m *testing.M) {
 		goalRepository,
 	)
 
-	LoadTables(db)
+	if err := LoadTables(db); err != nil {
+		log.Fatal(err)
+	}
 
 	// Run tests
 	code := m.Run()
@@ -370,4 +353,16 @@ func TestMain(m *testing.M) {
 	}
 
 	os.Exit(code)
+}
+
+func generateFile(fileDir, fileName string) httpdecode.FileHeader {
+	f, err := os.OpenFile(fileDir, os.O_RDONLY, 0o444)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	return httpdecode.FileHeader{
+		Filename: fileName,
+		File:     f,
+	}
 }

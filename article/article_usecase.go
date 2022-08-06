@@ -1,4 +1,4 @@
-package blog
+package article
 
 import (
 	"context"
@@ -15,9 +15,9 @@ import (
 	"github.com/pkg/errors"
 )
 
-var ErrBlogNotFound = errors.New("blog tidak ditemukan")
+var ErrArticleNotFound = errors.New("article tidak ditemukan")
 
-type BlogIn struct {
+type ArticleIn struct {
 	Title        string
 	ShortDesc    string
 	ThumbnailUrl string
@@ -26,11 +26,11 @@ type BlogIn struct {
 	Slug         string
 }
 
-func (d *BlogDeps) BlogModelBuilder(ctx context.Context, in BlogIn) (bm BlogModel, err error) {
-	urls, err := d.BlogRepository.GetImgUrlsCache(ctx)
+func (d *ArticleDeps) ArticleModelBuilder(ctx context.Context, in ArticleIn) (bm ArticleModel, err error) {
+	urls, err := d.ArticleRepository.GetImgUrlsCache(ctx)
 	if err != nil {
 		err = errors.Wrap(err, "get img urls cache")
-		return BlogModel{}, err
+		return ArticleModel{}, err
 	}
 
 	nurls := make(map[string]string)
@@ -44,7 +44,7 @@ func (d *BlogDeps) BlogModelBuilder(ctx context.Context, in BlogIn) (bm BlogMode
 		nurl, err := d.MoveFile(i, to)
 		if err != nil {
 			err = errors.Wrap(err, "move file")
-			return BlogModel{}, err
+			return ArticleModel{}, err
 		}
 
 		if nurl != "" {
@@ -64,7 +64,7 @@ func (d *BlogDeps) BlogModelBuilder(ctx context.Context, in BlogIn) (bm BlogMode
 		nurl, err := d.MoveFile(i, to)
 		if err != nil {
 			err = errors.Wrap(err, "move file")
-			return BlogModel{}, err
+			return ArticleModel{}, err
 		}
 
 		if nurl != "" {
@@ -83,17 +83,17 @@ func (d *BlogDeps) BlogModelBuilder(ctx context.Context, in BlogIn) (bm BlogMode
 	if nic != "" {
 		if err = json.Unmarshal([]byte(nic), &nc); err != nil {
 			err = errors.Wrap(err, "unmarshal json")
-			return BlogModel{}, err
+			return ArticleModel{}, err
 		}
 	}
 
-	err = d.BlogRepository.DelImgUrlCache(ctx)
+	err = d.ArticleRepository.DelImgUrlCache(ctx)
 	if err != nil {
 		err = errors.Wrap(err, "del img urls cache")
-		return BlogModel{}, err
+		return ArticleModel{}, err
 	}
 
-	bm = BlogModel{
+	bm = ArticleModel{
 		Title:        in.Title,
 		ShortDesc:    in.ShortDesc,
 		ThumbnailUrl: thumbnailUrl,
@@ -106,7 +106,7 @@ func (d *BlogDeps) BlogModelBuilder(ctx context.Context, in BlogIn) (bm BlogMode
 }
 
 type (
-	AddBlogIn struct {
+	AddArticleIn struct {
 		Title        string `json:"title"`
 		ShortDesc    string `json:"short_desc"`
 		ThumbnailUrl string `json:"thumbnail_url"`
@@ -114,42 +114,42 @@ type (
 		ContentText  string `json:"content_text"`
 		Slug         string `json:"slug"`
 	}
-	AddBlogRes struct {
+	AddArticleRes struct {
 		Id int64 `json:"id"`
 	}
-	AddBlogOut struct {
+	AddArticleOut struct {
 		resp.Response
-		Res AddBlogRes
+		Res AddArticleRes
 	}
 )
 
-func (d *BlogDeps) AddBlog(ctx context.Context, in AddBlogIn) (out AddBlogOut) {
+func (d *ArticleDeps) AddArticle(ctx context.Context, in AddArticleIn) (out AddArticleOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 
-	if err = ValidateAddBlogIn(in); err != nil {
+	if err = ValidateAddArticleIn(in); err != nil {
 		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
-	blog, err := d.BlogModelBuilder(ctx, BlogIn(in))
+	article, err := d.ArticleModelBuilder(ctx, ArticleIn(in))
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "blog model builder"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "article model builder"))
 		return
 	}
 
-	if blog, err = d.BlogRepository.Save(ctx, blog); err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "save blog"))
+	if article, err = d.ArticleRepository.Save(ctx, article); err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "save article"))
 		return
 	}
 
-	out.Res.Id = int64(blog.Id)
+	out.Res.Id = int64(article.Id)
 
 	return
 }
 
 type (
-	BlogOut struct {
+	ArticleOut struct {
 		Id           int64  `json:"id"`
 		Title        string `json:"title"`
 		ShortDesc    string `json:"short_desc"`
@@ -157,43 +157,43 @@ type (
 		Slug         string `json:"slug"`
 		CreatedAt    string `json:"created_at"`
 	}
-	QueryBlogRes struct {
-		Total  int64     `json:"total"`
-		Cursor int64     `json:"cursor"`
-		Blogs  []BlogOut `json:"blogs"`
+	QueryArticleRes struct {
+		Total    int64        `json:"total"`
+		Cursor   int64        `json:"cursor"`
+		Articles []ArticleOut `json:"articles"`
 	}
-	QueryBlogOut struct {
+	QueryArticleOut struct {
 		resp.Response
-		Res QueryBlogRes
+		Res QueryArticleRes
 	}
 )
 
-func (d *BlogDeps) QueryBlog(ctx context.Context, q, cursor string) (out QueryBlogOut) {
+func (d *ArticleDeps) QueryArticle(ctx context.Context, q, cursor string) (out QueryArticleOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
-	blogNumber, err := d.BlogRepository.CountBlog(ctx)
+	articleNumber, err := d.ArticleRepository.CountArticle(ctx)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count blog"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "count article"))
 		return
 	}
 
 	fromCursor, _ := strconv.ParseInt(cursor, 10, 64)
-	blogs, err := d.BlogRepository.Query(ctx, q, fromCursor, 25)
+	articles, err := d.ArticleRepository.Query(ctx, q, fromCursor, 25)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query blogs"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "query articles"))
 		return
 	}
 
-	bLen := len(blogs)
+	bLen := len(articles)
 	var nextCursor int64
 	if bLen != 0 {
-		nextCursor = int64(blogs[bLen-1].Id)
+		nextCursor = int64(articles[bLen-1].Id)
 	}
 
-	outBlogs := make([]BlogOut, bLen)
-	for i, b := range blogs {
-		outBlogs[i] = BlogOut{
+	outArticles := make([]ArticleOut, bLen)
+	for i, b := range articles {
+		outArticles[i] = ArticleOut{
 			Id:           int64(b.Id),
 			Title:        b.Title,
 			ShortDesc:    b.ShortDesc,
@@ -203,17 +203,17 @@ func (d *BlogDeps) QueryBlog(ctx context.Context, q, cursor string) (out QueryBl
 		}
 	}
 
-	out.Res = QueryBlogRes{
-		Total:  blogNumber,
-		Cursor: nextCursor,
-		Blogs:  outBlogs,
+	out.Res = QueryArticleRes{
+		Total:    articleNumber,
+		Cursor:   nextCursor,
+		Articles: outArticles,
 	}
 
 	return
 }
 
 type (
-	BlogRes struct {
+	ArticleRes struct {
 		Id           int64  `json:"id"`
 		Title        string `json:"title"`
 		ShortDesc    string `json:"short_desc"`
@@ -223,98 +223,98 @@ type (
 		Slug         string `json:"slug"`
 		CreatedAt    string `json:"created_at"`
 	}
-	FindBlogOut struct {
+	FindArticleOut struct {
 		resp.Response
-		Res BlogRes
+		Res ArticleRes
 	}
 )
 
-func (d *BlogDeps) FindBlogById(ctx context.Context, pid string) (out FindBlogOut) {
+func (d *ArticleDeps) FindArticleById(ctx context.Context, pid string) (out FindArticleOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrBlogNotFound)
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrArticleNotFound)
 		return
 	}
 
-	blog, err := d.BlogRepository.FindUndeletedById(ctx, id)
+	article, err := d.ArticleRepository.FindUndeletedById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrBlogNotFound)
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrArticleNotFound)
 		return
 	}
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find blog by id"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find article by id"))
 		return
 	}
 
 	b := []byte("")
-	if blog.Content != nil && len(blog.Content) != 0 {
-		b, err = json.Marshal(blog.Content)
+	if article.Content != nil && len(article.Content) != 0 {
+		b, err = json.Marshal(article.Content)
 		if err != nil {
 			out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "json marshal"))
 			return
 		}
 	}
 
-	out.Res = BlogRes{
-		Id:           int64(blog.Id),
-		Title:        blog.Title,
-		ShortDesc:    blog.ShortDesc,
+	out.Res = ArticleRes{
+		Id:           int64(article.Id),
+		Title:        article.Title,
+		ShortDesc:    article.ShortDesc,
 		Content:      string(b),
-		ContentText:  blog.ContentText,
-		Slug:         blog.Slug,
-		ThumbnailUrl: blog.ThumbnailUrl,
-		CreatedAt:    blog.CreatedAt.Format("2006-01-02"),
+		ContentText:  article.ContentText,
+		Slug:         article.Slug,
+		ThumbnailUrl: article.ThumbnailUrl,
+		CreatedAt:    article.CreatedAt.Format("2006-01-02"),
 	}
 
 	return
 }
 
 type (
-	EditBlogIn struct {
+	EditArticleIn struct {
 		Title        string `json:"title"`
 		ShortDesc    string `json:"short_desc"`
 		ThumbnailUrl string `json:"thumbnail_url"`
 		Content      string `json:"content"`
 		ContentText  string `json:"content_text"`
 	}
-	EditBlogRes struct {
+	EditArticleRes struct {
 		Id int64 `json:"id"`
 	}
-	EditBlogOut struct {
+	EditArticleOut struct {
 		resp.Response
-		Res EditBlogRes
+		Res EditArticleRes
 	}
 )
 
-func (d *BlogDeps) EditBlog(ctx context.Context, pid string, in EditBlogIn) (out EditBlogOut) {
+func (d *ArticleDeps) EditArticle(ctx context.Context, pid string, in EditArticleIn) (out EditArticleOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
-	if err = ValidateEditBlogIn(in); err != nil {
+	if err = ValidateEditArticleIn(in); err != nil {
 		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrBlogNotFound)
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrArticleNotFound)
 		return
 	}
 
-	blog, err := d.BlogRepository.FindUndeletedById(ctx, id)
+	article, err := d.ArticleRepository.FindUndeletedById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrBlogNotFound)
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrArticleNotFound)
 		return
 	}
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find blog by id"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find article by id"))
 		return
 	}
 
-	nb, err := d.BlogModelBuilder(ctx, BlogIn{
+	nb, err := d.ArticleModelBuilder(ctx, ArticleIn{
 		Title:        in.Title,
 		ShortDesc:    in.ShortDesc,
 		ThumbnailUrl: in.ThumbnailUrl,
@@ -322,16 +322,16 @@ func (d *BlogDeps) EditBlog(ctx context.Context, pid string, in EditBlogIn) (out
 		ContentText:  in.ContentText,
 	})
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "blog model builder"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "article model builder"))
 		return
 	}
 
-	blog.Content = nb.Content
-	blog.Title = nb.Title
-	blog.ShortDesc = nb.ShortDesc
-	blog.ThumbnailUrl = nb.ThumbnailUrl
+	article.Content = nb.Content
+	article.Title = nb.Title
+	article.ShortDesc = nb.ShortDesc
+	article.ThumbnailUrl = nb.ThumbnailUrl
 
-	if err = d.BlogRepository.UpdateById(ctx, id, blog); err != nil {
+	if err = d.ArticleRepository.UpdateById(ctx, id, article); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "update position by id"))
 		return
 	}
@@ -342,37 +342,37 @@ func (d *BlogDeps) EditBlog(ctx context.Context, pid string, in EditBlogIn) (out
 }
 
 type (
-	RemoveBlogRes struct {
+	RemoveArticleRes struct {
 		Id int64 `json:"id"`
 	}
-	RemoveBlogOut struct {
+	RemoveArticleOut struct {
 		resp.Response
-		Res RemoveBlogRes
+		Res RemoveArticleRes
 	}
 )
 
-func (d *BlogDeps) RemoveBlog(ctx context.Context, pid string) (out RemoveBlogOut) {
+func (d *ArticleDeps) RemoveArticle(ctx context.Context, pid string) (out RemoveArticleOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusOK, "", nil)
 
 	id, err := strconv.ParseUint(pid, 10, 64)
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrBlogNotFound)
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrArticleNotFound)
 		return
 	}
 
-	_, err = d.BlogRepository.FindUndeletedById(ctx, id)
+	_, err = d.ArticleRepository.FindUndeletedById(ctx, id)
 	if errors.Is(err, pgx.ErrNoRows) {
-		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrBlogNotFound)
+		out.Response = resp.NewResponse(http.StatusNotFound, "", ErrArticleNotFound)
 		return
 	}
 	if err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find blog by id"))
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "find article by id"))
 		return
 	}
 
-	if err = d.BlogRepository.DeleteById(ctx, id); err != nil {
-		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "delete blog by id"))
+	if err = d.ArticleRepository.DeleteById(ctx, id); err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "delete article by id"))
 		return
 	}
 
@@ -394,7 +394,7 @@ type (
 	}
 )
 
-func (d *BlogDeps) UploadImg(ctx context.Context, in UploadImgIn) (out UploadImgOut) {
+func (d *ArticleDeps) UploadImg(ctx context.Context, in UploadImgIn) (out UploadImgOut) {
 	var err error
 	out.Response = resp.NewResponse(http.StatusCreated, "", nil)
 
@@ -419,7 +419,7 @@ func (d *BlogDeps) UploadImg(ctx context.Context, in UploadImgIn) (out UploadImg
 		}
 	}
 
-	if err = d.BlogRepository.SetImgUrlCache(ctx, fileId, fileUrl); err != nil {
+	if err = d.ArticleRepository.SetImgUrlCache(ctx, fileId, fileUrl); err != nil {
 		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "set img url cache"))
 		return
 	}

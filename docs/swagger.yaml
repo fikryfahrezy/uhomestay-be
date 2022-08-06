@@ -12,12 +12,14 @@ tags:
   - name: periods
   - name: documents
   - name: histories
-  - name: blogs
+  - name: articles
   - name: cashflows
   - name: dues
   - name: member dues
   - name: dashboard
   - name: images
+  - name: homestay images
+  - name: homestays
 paths:
   /register:
     post:
@@ -823,23 +825,23 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorRes"
-  /blogs:
+  /articles:
     post:
       tags:
-        - blogs
+        - articles
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/AddBlogBodyIn"
+              $ref: "#/components/schemas/AddArticleBodyIn"
       responses:
         "201":
           description: Description
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BlogIdRes"
+                $ref: "#/components/schemas/ArticleIdRes"
         default:
           description: Description
           content:
@@ -848,7 +850,7 @@ paths:
                 $ref: "#/components/schemas/ErrorRes"
     get:
       tags:
-        - blogs
+        - articles
       security: []
       parameters:
         - in: query
@@ -865,17 +867,17 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/QueryBlogRes"
+                $ref: "#/components/schemas/QueryArticleRes"
         default:
           description: Description
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorRes"
-  /blogs/{id}:
+  /articles/{id}:
     get:
       tags:
-        - blogs
+        - articles
       security: []
       parameters:
         - in: path
@@ -889,7 +891,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/FindBlogRes"
+                $ref: "#/components/schemas/FindArticleRes"
         default:
           description: Description
           content:
@@ -898,7 +900,7 @@ paths:
                 $ref: "#/components/schemas/ErrorRes"
     put:
       tags:
-        - blogs
+        - articles
       parameters:
         - in: path
           name: id
@@ -910,14 +912,14 @@ paths:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/EditBlogBodyIn"
+              $ref: "#/components/schemas/EditArticleBodyIn"
       responses:
         "200":
           description: Description
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BlogIdRes"
+                $ref: "#/components/schemas/ArticleIdRes"
         default:
           description: Description
           content:
@@ -926,7 +928,7 @@ paths:
                 $ref: "#/components/schemas/ErrorRes"
     delete:
       tags:
-        - blogs
+        - articles
       parameters:
         - in: path
           name: id
@@ -939,30 +941,30 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/BlogIdRes"
+                $ref: "#/components/schemas/ArticleIdRes"
         default:
           description: Description
           content:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorRes"
-  /blogs/image:
+  /artices/image:
     post:
       tags:
-        - blogs
+        - articles
       requestBody:
         required: true
         content:
           multipart/form-data:
             schema:
-              $ref: "#/components/schemas/UploadBlogImgBodyIn"
+              $ref: "#/components/schemas/UploadArticleImgBodyIn"
       responses:
         "201":
           description: Description
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/UploadBlogImgRes"
+                $ref: "#/components/schemas/UploadArticleImgRes"
         default:
           description: Description
           content:
@@ -1482,6 +1484,201 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ErrorRes"
+  /homestays/images:
+    post:
+      tags:
+        - homestay images
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AddHomestayImageBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AddImageRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /homestays/images/{id}:
+    delete:
+      tags:
+        - homestay images
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HomestayImageIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /homestays/{uid}/list:
+    get:
+      tags:
+        - homestays
+      security: []
+      parameters:
+        - in: path
+          name: uid
+          schema:
+            type: integer
+          required: true
+        - in: query
+          name: cursor
+          schema:
+            type: string
+        - in: query
+          name: limit
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/QueryMemberHomestaysRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /homestays/{id}/{uid}:
+    get:
+      tags:
+        - homestays
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: uid
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FindMemberHomestayRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    put:
+      tags:
+        - homestays
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: uid
+          schema:
+            type: string
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditMemberHomestayBodyIn"
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberHomestayIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+    delete:
+      tags:
+        - homestays
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+        - in: path
+          name: uid
+          schema:
+            type: string
+          required: true
+      responses:
+        "200":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberHomestayIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
+  /homestays/{id}:
+    post:
+      tags:
+        - homestays
+      parameters:
+        - in: path
+          name: id
+          schema:
+            type: integer
+          required: true
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddMemberHomestayBodyIn"
+      responses:
+        "201":
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MemberHomestayIdRes"
+        default:
+          description: Description
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorRes"
 components:
   securitySchemes:
     BearerAuth:
@@ -1523,6 +1720,15 @@ components:
           type: string
         homestay_longitude:
           type: string
+        homestay_photo:
+          type: string
+          format: binary
+        profile:
+          type: string
+          format: binary
+        id_card:
+          type: string
+          format: binary
       required:
         - name
         - username
@@ -1533,6 +1739,9 @@ components:
         - homestay_longitude
         - wa_phone
         - other_phone
+        - homestay_photo
+        - profile
+        - id_card
     LoginBodyIn:
       type: object
       properties:
@@ -1567,14 +1776,6 @@ components:
           type: string
         other_phone:
           type: string
-        homestay_name:
-          type: string
-        homestay_address:
-          type: string
-        homestay_latitude:
-          type: string
-        homestay_longitude:
-          type: string
         is_admin:
           type: boolean
         position_ids:
@@ -1586,19 +1787,19 @@ components:
         profile:
           type: string
           format: binary
+        id_card:
+          type: string
+          format: binary
       required:
         - name
         - username
         - password
         - wa_phone
         - other_phone
-        - homestay_name
-        - homestay_address
-        - homestay_latitude
-        - homestay_longitude
         - is_admin
         - position_ids
         - period_id
+        - id_card
     QueryMemberRes:
       type: object
       properties:
@@ -1625,14 +1826,6 @@ components:
                     type: string
                   other_phone:
                     type: string
-                  homestay_name:
-                    type: string
-                  homestay_address:
-                    type: string
-                  homestay_latitude:
-                    type: string
-                  homestay_longitude:
-                    type: string
                   profile_pic_url:
                     type: string
                     format: uri
@@ -1654,15 +1847,10 @@ components:
           type: string
         other_phone:
           type: string
-        homestay_name:
-          type: string
-        homestay_address:
-          type: string
-        homestay_latitude:
-          type: string
-        homestay_longitude:
-          type: string
         profile:
+          type: string
+          format: binary
+        id_card:
           type: string
           format: binary
       required:
@@ -1670,10 +1858,6 @@ components:
         - username
         - wa_phone
         - other_phone
-        - homestay_name
-        - homestay_address
-        - homestay_latitude
-        - homestay_longitude
     MemberDetailRes:
       type: object
       properties:
@@ -1693,15 +1877,10 @@ components:
                 type: string
               other_phone:
                 type: string
-              homestay_name:
-                type: string
-              homestay_address:
-                type: string
-              homestay_latitude:
-                type: string
-              homestay_longitude:
-                type: string
               profile_pic_url:
+                type: string
+                format: uri
+              id_card_url:
                 type: string
                 format: uri
               is_admin:
@@ -1737,14 +1916,6 @@ components:
           type: string
         other_phone:
           type: string
-        homestay_name:
-          type: string
-        homestay_address:
-          type: string
-        homestay_latitude:
-          type: string
-        homestay_longitude:
-          type: string
         is_admin:
           type: boolean
         position_ids:
@@ -1756,15 +1927,14 @@ components:
         profile:
           type: string
           format: binary
+        id_card:
+          type: string
+          format: binary
       required:
         - name
         - username
         - wa_phone
         - other_phone
-        - homestay_name
-        - homestay_address
-        - homestay_latitude
-        - homestay_longitude
         - is_admin
         - position_ids
         - period_id
@@ -2115,7 +2285,7 @@ components:
               type: string
             content_text:
               type: string
-    BlogIdRes:
+    ArticleIdRes:
       type: object
       properties:
         data:
@@ -2123,7 +2293,7 @@ components:
           properties:
             id:
               type: string
-    AddBlogBodyIn:
+    AddArticleBodyIn:
       type: object
       properties:
         title:
@@ -2144,7 +2314,7 @@ components:
         - thumbnail_url
         - content
         - slug
-    QueryBlogRes:
+    QueryArticleRes:
       type: object
       properties:
         data:
@@ -2154,7 +2324,7 @@ components:
               type: integer
             cursor:
               type: integer
-            blogs:
+            articles:
               type: array
               items:
                 type: object
@@ -2172,7 +2342,7 @@ components:
                   created_at:
                     type: string
                     format: date
-    FindBlogRes:
+    FindArticleRes:
       type: object
       properties:
         data:
@@ -2193,7 +2363,7 @@ components:
             created_at:
               type: string
               format: date
-    EditBlogBodyIn:
+    EditArticleBodyIn:
       type: object
       properties:
         title:
@@ -2211,7 +2381,7 @@ components:
         - short_desc
         - thumbnail_url
         - content
-    UploadBlogImgRes:
+    UploadArticleImgRes:
       type: object
       properties:
         data:
@@ -2219,7 +2389,7 @@ components:
           properties:
             url:
               type: string
-    UploadBlogImgBodyIn:
+    UploadArticleImgBodyIn:
       type: object
       properties:
         file:
@@ -2467,7 +2637,7 @@ components:
           format: uri
         dir_id:
           type: integer
-    DashboardBlogsRes:
+    DashboardArticlesRes:
       type: object
       properties:
         id:
@@ -2512,10 +2682,10 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/DashboardDocsRes"
-            blogs:
+            articles:
               type: array
               items:
-                $ref: "#/components/schemas/DashboardBlogsRes"
+                $ref: "#/components/schemas/DashboardArticlesRes"
             latest_history:
               $ref: "#/components/schemas/DashboardHistoryRes"
             org_period_structures:
@@ -2567,7 +2737,7 @@ components:
               type: integer
             document_total:
               type: integer
-            blog_total:
+            article_total:
               type: integer
             position_total:
               type: integer
@@ -2629,10 +2799,10 @@ components:
                   format: date
                 idr_amount:
                   type: string
-            blogs:
+            articles:
               type: array
               items:
-                $ref: "#/components/schemas/DashboardBlogsRes"
+                $ref: "#/components/schemas/DashboardArticlesRes"
             positions:
               type: array
               items:
@@ -2708,8 +2878,17 @@ components:
           type: string
           format: binary
       required:
-        - description
         - file
+    AddImageRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+            url:
+              type: string
     QueryImageRes:
       type: object
       properties:
@@ -2733,6 +2912,119 @@ components:
                     type: string
                     format: uri
                   description:
+                    type: string
+    HomestayImageIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+    AddHomestayImageBodyIn:
+      type: object
+      properties:
+        file:
+          type: string
+          format: binary
+      required:
+        - file
+    AddMemberHomestayBodyIn:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: string
+        longitude:
+          type: string
+        image_ids:
+          type: array
+          items:
+            type: integer
+      required:
+        - name
+        - address
+        - latitude
+        - longitude
+        - image_ids
+    MemberHomestayIdRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: integer
+    QueryMemberHomestaysRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            total:
+              type: integer
+            cursor:
+              type: integer
+            member_homestays:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: integer
+                  name:
+                    type: string
+                  thumbnail_url:
+                    type: string
+                    format: uri
+    EditMemberHomestayBodyIn:
+      type: object
+      properties:
+        name:
+          type: string
+        address:
+          type: string
+        latitude:
+          type: string
+        longitude:
+          type: string
+        image_ids:
+          type: array
+          items:
+            type: integer
+      required:
+        - name
+        - address
+        - latitude
+        - longitude
+        - image_ids
+    FindMemberHomestayRes:
+      type: object
+      properties:
+        data:
+          type: object
+          properties:
+            id:
+              type: number
+            name:
+              type: string
+            address:
+              type: string
+            latitude:
+              type: string
+            longitude:
+              type: string
+            homestay_images:
+              type: array
+              items:
+                type: object
+                properties:
+                  id:
+                    type: number
+                  url:
                     type: string
 security:
   - BearerAuth: []

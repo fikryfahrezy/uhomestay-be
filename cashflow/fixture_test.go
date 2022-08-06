@@ -31,7 +31,7 @@ var (
 
 var (
 	upload cashflow.FileUploader = func(filename string, file io.Reader) (string, error) {
-		return "", nil
+		return filename, nil
 	}
 	captureException cashflow.ExceptionCapturer = func(exception error) {}
 	captureMessage   cashflow.MessageCapturer   = func(message string) {}
@@ -154,7 +154,9 @@ func TestMain(m *testing.M) {
 		cashflowRepository,
 	)
 
-	LoadTables(db)
+	if err := LoadTables(db); err != nil {
+		log.Fatal(err)
+	}
 
 	// Run tests
 	code := m.Run()

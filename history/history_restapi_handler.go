@@ -19,16 +19,10 @@ func (d *HistoryDeps) PostHistory(w http.ResponseWriter, r *http.Request) {
 	}
 
 	out := d.AddHistory(r.Context(), in)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *HistoryDeps) GetHistory(w http.ResponseWriter, r *http.Request) {
 	out := d.FindLatestHistory(r.Context())
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }

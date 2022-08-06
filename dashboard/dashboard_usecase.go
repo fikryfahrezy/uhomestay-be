@@ -12,7 +12,7 @@ type (
 	PrivateRes struct {
 		MemberTotal     int64                `json:"member_total"`
 		DocumentTotal   int64                `json:"document_total"`
-		BlogTotal       int64                `json:"blog_total"`
+		ArticleTotal    int64                `json:"article_total"`
 		PositionTotal   int64                `json:"position_total"`
 		MemberDuesTotal int64                `json:"member_dues_total"`
 		ImageTotal      int64                `json:"image_total"`
@@ -20,7 +20,7 @@ type (
 		Members         []MemberOut          `json:"members"`
 		Cashflows       CashflowRes          `json:"cashflow"`
 		Dues            DuesOut              `json:"dues"`
-		Blogs           []BlogOut            `json:"blogs"`
+		Articles        []ArticleOut         `json:"articles"`
 		Positions       []PositionOut        `json:"positions"`
 		LatestHistory   LatestHistoryRes     `json:"latest_history"`
 		MemberDues      []MembersDuesOut     `json:"member_dues"`
@@ -104,20 +104,20 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 		res <- out.Response
 	}(ctx, ds, dsr)
 
-	b := make(chan []BlogOut)
+	b := make(chan []ArticleOut)
 	bt := make(chan int64)
 	br := make(chan resp.Response)
-	go func(ctx context.Context, b chan []BlogOut, bt chan int64, res chan resp.Response) {
-		out := d.QueryBlog(ctx, "", "")
+	go func(ctx context.Context, b chan []ArticleOut, bt chan int64, res chan resp.Response) {
+		out := d.QueryArticle(ctx, "", "")
 
-		l := len(out.Res.Blogs)
+		l := len(out.Res.Articles)
 		if l > 5 {
 			l = 5
 		}
 
-		bs := make([]BlogOut, l)
+		bs := make([]ArticleOut, l)
 		for i := range bs {
-			bs[i] = BlogOut(out.Res.Blogs[i])
+			bs[i] = ArticleOut(out.Res.Articles[i])
 		}
 
 		b <- bs
@@ -254,7 +254,7 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 	out.Res = PrivateRes{
 		MemberTotal:     mtV,
 		DocumentTotal:   dtV,
-		BlogTotal:       btV,
+		ArticleTotal:    btV,
 		PositionTotal:   ptV,
 		MemberDuesTotal: mdtV,
 		ImageTotal:      imgT,
@@ -262,7 +262,7 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 		Members:         mV,
 		Cashflows:       cV,
 		Dues:            dsV,
-		Blogs:           bV,
+		Articles:        bV,
 		Positions:       pV,
 		LatestHistory:   hV,
 		MemberDues:      mdV,
@@ -277,7 +277,7 @@ func (d *DashboardDeps) GetPrivate(ctx context.Context) (out PrivateOut) {
 type (
 	PublicRes struct {
 		Documents     []DocumentOut    `json:"documents"`
-		Blogs         []BlogOut        `json:"blogs"`
+		Articles      []ArticleOut     `json:"articles"`
 		LatestHistory LatestHistoryRes `json:"latest_history"`
 		Structure     StructureRes     `json:"org_period_structures"`
 		Images        []ImageOut       `json:"images"`
@@ -311,19 +311,19 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 		res <- out.Response
 	}(ctx, do, dr)
 
-	b := make(chan []BlogOut)
+	b := make(chan []ArticleOut)
 	br := make(chan resp.Response)
-	go func(ctx context.Context, b chan []BlogOut, res chan resp.Response) {
-		out := d.QueryBlog(ctx, "", "")
+	go func(ctx context.Context, b chan []ArticleOut, res chan resp.Response) {
+		out := d.QueryArticle(ctx, "", "")
 
-		l := len(out.Res.Blogs)
+		l := len(out.Res.Articles)
 		if l > 8 {
 			l = 8
 		}
 
-		bs := make([]BlogOut, l)
+		bs := make([]ArticleOut, l)
 		for i := range bs {
-			bs[i] = BlogOut(out.Res.Blogs[i])
+			bs[i] = ArticleOut(out.Res.Articles[i])
 		}
 
 		b <- bs
@@ -408,7 +408,7 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 
 	out.Res = PublicRes{
 		Documents:     doV,
-		Blogs:         bV,
+		Articles:      bV,
 		LatestHistory: hV,
 		Structure:     opV,
 		Images:        imgsV,

@@ -35,7 +35,7 @@ var (
 
 var (
 	upload document.FileUploader = func(filename string, file io.Reader) (string, error) {
-		return "", nil
+		return filename, nil
 	}
 	captureException document.ExceptionCapturer = func(exception error) {}
 	captureMessage   document.MessageCapturer   = func(message string) {}
@@ -175,7 +175,9 @@ func TestMain(m *testing.M) {
 		documentRepository,
 	)
 
-	LoadTables(db)
+	if err := LoadTables(db); err != nil {
+		log.Fatal(err)
+	}
 
 	// Run tests
 	code := m.Run()

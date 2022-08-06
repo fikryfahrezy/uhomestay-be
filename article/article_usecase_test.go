@@ -1,4 +1,4 @@
-package blog_test
+package article_test
 
 import (
 	"context"
@@ -9,11 +9,11 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/blog"
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/article"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/httpdecode"
 )
 
-func TestAddBlog(t *testing.T) {
+func TestAddArticle(t *testing.T) {
 	err := ClearTables(postgrePool)
 	if err != nil {
 		t.Fatal(err)
@@ -23,13 +23,13 @@ func TestAddBlog(t *testing.T) {
 		Name               string
 		ExpectedStatusCode int
 		init               func()
-		In                 blog.AddBlogIn
+		In                 article.AddArticleIn
 	}{
 		{
-			Name:               "Add Blog without Img Success",
+			Name:               "Add Article without Img Success",
 			ExpectedStatusCode: http.StatusCreated,
 			init:               func() {},
-			In: blog.AddBlogIn{
+			In: article.AddArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
 				Slug:         "slug",
@@ -38,14 +38,14 @@ func TestAddBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Img Success",
+			Name:               "Add Article with Img Success",
 			ExpectedStatusCode: http.StatusCreated,
 			init: func() {
 				imgId := "balbla/images.jpg"
 				imgUrl := "http://localhost/balbla/images.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
+				articleRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
 			},
-			In: blog.AddBlogIn{
+			In: article.AddArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
 				Slug:         "slug",
@@ -58,18 +58,18 @@ func TestAddBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Imgs Success",
+			Name:               "Add Article with Imgs Success",
 			ExpectedStatusCode: http.StatusCreated,
 			init: func() {
 				imgId := "balbla/images.jpg"
 				imgUrl := "http://localhost/balbla/images.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
+				articleRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
 
 				imgId2 := "blabla/images2.jpg"
 				imgUrl2 := "http://localhost/blabla/images2.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), imgId2, imgUrl2)
+				articleRepository.SetImgUrlCache(context.Background(), imgId2, imgUrl2)
 			},
-			In: blog.AddBlogIn{
+			In: article.AddArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
 				Slug:         "slug",
@@ -83,18 +83,18 @@ func TestAddBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Img and Thumbnail Success",
+			Name:               "Add Article with Img and Thumbnail Success",
 			ExpectedStatusCode: http.StatusCreated,
 			init: func() {
 				thmId := "balbla/thm.jpg"
 				thmUrl := "http://localhost/balbla/thm.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), thmId, thmUrl)
+				articleRepository.SetImgUrlCache(context.Background(), thmId, thmUrl)
 
 				imgId := "balbla/images.jpg"
 				imgUrl := "http://localhost/balbla/images.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
+				articleRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
 			},
-			In: blog.AddBlogIn{
+			In: article.AddArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
 				Slug:         "slug",
@@ -107,22 +107,22 @@ func TestAddBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Imgs and Thumbnail Success",
+			Name:               "Add Article with Imgs and Thumbnail Success",
 			ExpectedStatusCode: http.StatusCreated,
 			init: func() {
 				thmId := "balbla/thm.jpg"
 				thmUrl := "http://localhost/balbla/thm.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), thmId, thmUrl)
+				articleRepository.SetImgUrlCache(context.Background(), thmId, thmUrl)
 
 				imgId := "balbla/images.jpg"
 				imgUrl := "http://localhost/balbla/images.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
+				articleRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
 
 				imgId2 := "blabla/images2.jpg"
 				imgUrl2 := "http://localhost/blabla/images2.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), imgId2, imgUrl2)
+				articleRepository.SetImgUrlCache(context.Background(), imgId2, imgUrl2)
 			},
-			In: blog.AddBlogIn{
+			In: article.AddArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
 				Slug:         "slug",
@@ -136,11 +136,11 @@ func TestAddBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Title 200 chars Success",
+			Name:               "Add Article with Title 200 chars Success",
 			ExpectedStatusCode: http.StatusCreated,
 			init: func() {
 			},
-			In: blog.AddBlogIn{
+			In: article.AddArticleIn{
 				Title:        strings.Repeat("a", 200),
 				ShortDesc:    "Short Desc",
 				Slug:         "slug",
@@ -150,11 +150,11 @@ func TestAddBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Title over 200 chars Failed",
+			Name:               "Add Article with Title over 200 chars Failed",
 			ExpectedStatusCode: http.StatusUnprocessableEntity,
 			init: func() {
 			},
-			In: blog.AddBlogIn{
+			In: article.AddArticleIn{
 				Title:        strings.Repeat("a", 201),
 				ShortDesc:    "Short Desc",
 				Slug:         "slug",
@@ -164,11 +164,11 @@ func TestAddBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Short Desc 200 chars Success",
+			Name:               "Add Article with Short Desc 200 chars Success",
 			ExpectedStatusCode: http.StatusCreated,
 			init: func() {
 			},
-			In: blog.AddBlogIn{
+			In: article.AddArticleIn{
 				Title:        "Title",
 				ShortDesc:    strings.Repeat("a", 200),
 				Slug:         "slug",
@@ -178,11 +178,11 @@ func TestAddBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Short Desc over 200 chars Failed",
+			Name:               "Add Article with Short Desc over 200 chars Failed",
 			ExpectedStatusCode: http.StatusUnprocessableEntity,
 			init: func() {
 			},
-			In: blog.AddBlogIn{
+			In: article.AddArticleIn{
 				Title:        "Title",
 				ShortDesc:    strings.Repeat("a", 201),
 				Slug:         "slug",
@@ -192,11 +192,11 @@ func TestAddBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Slug 200 chars Success",
+			Name:               "Add Article with Slug 200 chars Success",
 			ExpectedStatusCode: http.StatusCreated,
 			init: func() {
 			},
-			In: blog.AddBlogIn{
+			In: article.AddArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Shor Desc",
 				Slug:         strings.Repeat("a", 200),
@@ -206,11 +206,11 @@ func TestAddBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Slug over 200 chars Failed",
+			Name:               "Add Article with Slug over 200 chars Failed",
 			ExpectedStatusCode: http.StatusUnprocessableEntity,
 			init: func() {
 			},
-			In: blog.AddBlogIn{
+			In: article.AddArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Shor Desc",
 				Slug:         strings.Repeat("a", 201),
@@ -224,7 +224,7 @@ func TestAddBlog(t *testing.T) {
 	for _, c := range testCases {
 		t.Run(c.Name, func(t *testing.T) {
 			c.init()
-			res := blogDeps.AddBlog(context.Background(), c.In)
+			res := articleDeps.AddArticle(context.Background(), c.In)
 
 			if res.StatusCode != c.ExpectedStatusCode {
 				t.Logf("%#v", res)
@@ -235,13 +235,13 @@ func TestAddBlog(t *testing.T) {
 	}
 }
 
-func TestQueryBlog(t *testing.T) {
+func TestQueryArticle(t *testing.T) {
 	err := ClearTables(postgrePool)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	_, err = blogRepository.Save(context.Background(), blogSeed)
+	_, err = articleRepository.Save(context.Background(), articleSeed)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -251,14 +251,14 @@ func TestQueryBlog(t *testing.T) {
 		ExpectedStatusCode int
 	}{
 		{
-			Name:               "Query Blog Success",
+			Name:               "Query Article Success",
 			ExpectedStatusCode: http.StatusOK,
 		},
 	}
 
 	for _, c := range testCases {
 		t.Run(c.Name, func(t *testing.T) {
-			res := blogDeps.QueryBlog(context.Background(), "", "")
+			res := articleDeps.QueryArticle(context.Background(), "", "")
 
 			if res.StatusCode != c.ExpectedStatusCode {
 				t.Logf("%#v", res)
@@ -269,18 +269,18 @@ func TestQueryBlog(t *testing.T) {
 	}
 }
 
-func TestFindBlogById(t *testing.T) {
+func TestFindArticleById(t *testing.T) {
 	err := ClearTables(postgrePool)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	blog, err := blogRepository.Save(context.Background(), blogSeed)
+	article, err := articleRepository.Save(context.Background(), articleSeed)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	pid := strconv.FormatUint(blog.Id, 10)
+	pid := strconv.FormatUint(article.Id, 10)
 
 	testCases := []struct {
 		Name               string
@@ -288,12 +288,12 @@ func TestFindBlogById(t *testing.T) {
 		Id                 string
 	}{
 		{
-			Name:               "Find Blog By Id Success",
+			Name:               "Find Article By Id Success",
 			ExpectedStatusCode: http.StatusOK,
 			Id:                 pid,
 		},
 		{
-			Name:               "Find Blog By Id Fail, Blog Not Found",
+			Name:               "Find Article By Id Fail, Article Not Found",
 			ExpectedStatusCode: http.StatusNotFound,
 			Id:                 "999",
 		},
@@ -301,7 +301,7 @@ func TestFindBlogById(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.Name, func(t *testing.T) {
-			res := blogDeps.FindBlogById(context.Background(), c.Id)
+			res := articleDeps.FindArticleById(context.Background(), c.Id)
 
 			if res.StatusCode != c.ExpectedStatusCode {
 				t.Logf("%#v", res)
@@ -312,13 +312,13 @@ func TestFindBlogById(t *testing.T) {
 	}
 }
 
-func TestEditBlog(t *testing.T) {
+func TestEditArticle(t *testing.T) {
 	err := ClearTables(postgrePool)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	b, err := blogRepository.Save(context.Background(), blogSeed)
+	b, err := articleRepository.Save(context.Background(), articleSeed)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -330,14 +330,14 @@ func TestEditBlog(t *testing.T) {
 		ExpectedStatusCode int
 		Id                 string
 		init               func()
-		In                 blog.EditBlogIn
+		In                 article.EditArticleIn
 	}{
 		{
-			Name:               "Edit Blog Success",
+			Name:               "Edit Article Success",
 			ExpectedStatusCode: http.StatusOK,
 			Id:                 pid,
 			init:               func() {},
-			In: blog.EditBlogIn{
+			In: article.EditArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
 				ThumbnailUrl: "",
@@ -346,15 +346,15 @@ func TestEditBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Edit Blog with Img Success",
+			Name:               "Edit Article with Img Success",
 			ExpectedStatusCode: http.StatusOK,
 			Id:                 pid,
 			init: func() {
 				imgId := "balbla/images.jpg"
 				imgUrl := "http://localhost/balbla/images.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
+				articleRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
 			},
-			In: blog.EditBlogIn{
+			In: article.EditArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
 				ThumbnailUrl: "",
@@ -366,19 +366,19 @@ func TestEditBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Edit Blog with Imgs Success",
+			Name:               "Edit Article with Imgs Success",
 			ExpectedStatusCode: http.StatusOK,
 			Id:                 pid,
 			init: func() {
 				imgId := "balbla/images.jpg"
 				imgUrl := "http://localhost/balbla/images.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
+				articleRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
 
 				imgId2 := "blabla/images2.jpg"
 				imgUrl2 := "http://localhost/blabla/images2.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), imgId2, imgUrl2)
+				articleRepository.SetImgUrlCache(context.Background(), imgId2, imgUrl2)
 			},
-			In: blog.EditBlogIn{
+			In: article.EditArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
 				ThumbnailUrl: "",
@@ -391,19 +391,19 @@ func TestEditBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Edit Blog with Img and Thumbnail Success",
+			Name:               "Edit Article with Img and Thumbnail Success",
 			ExpectedStatusCode: http.StatusOK,
 			Id:                 pid,
 			init: func() {
 				thmId := "balbla/thm.jpg"
 				thmUrl := "http://localhost/balbla/thm.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), thmId, thmUrl)
+				articleRepository.SetImgUrlCache(context.Background(), thmId, thmUrl)
 
 				imgId := "balbla/images.jpg"
 				imgUrl := "http://localhost/balbla/images.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
+				articleRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
 			},
-			In: blog.EditBlogIn{
+			In: article.EditArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
 				ThumbnailUrl: "http://localhost/balbla/thm.jpg.jpg",
@@ -415,23 +415,23 @@ func TestEditBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Edit Blog with Imgs and Thumbnail Success",
+			Name:               "Edit Article with Imgs and Thumbnail Success",
 			ExpectedStatusCode: http.StatusOK,
 			Id:                 pid,
 			init: func() {
 				thmId := "balbla/thm.jpg"
 				thmUrl := "http://localhost/balbla/thm.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), thmId, thmUrl)
+				articleRepository.SetImgUrlCache(context.Background(), thmId, thmUrl)
 
 				imgId := "balbla/images.jpg"
 				imgUrl := "http://localhost/balbla/images.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
+				articleRepository.SetImgUrlCache(context.Background(), imgId, imgUrl)
 
 				imgId2 := "blabla/images2.jpg"
 				imgUrl2 := "http://localhost/blabla/images2.jpg.jpg"
-				blogDeps.BlogRepository.SetImgUrlCache(context.Background(), imgId2, imgUrl2)
+				articleRepository.SetImgUrlCache(context.Background(), imgId2, imgUrl2)
 			},
-			In: blog.EditBlogIn{
+			In: article.EditArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
 				ThumbnailUrl: "http://localhost/balbla/thm.jpg.jpg",
@@ -444,11 +444,11 @@ func TestEditBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Edit Blog Fail, Blog Not Found",
+			Name:               "Edit Article Fail, Article Not Found",
 			ExpectedStatusCode: http.StatusNotFound,
 			Id:                 "999",
 			init:               func() {},
-			In: blog.EditBlogIn{
+			In: article.EditArticleIn{
 				Title:        "Title",
 				ShortDesc:    "Short Desc",
 				ThumbnailUrl: "",
@@ -457,11 +457,11 @@ func TestEditBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Title 200 chars Success",
+			Name:               "Add Article with Title 200 chars Success",
 			Id:                 pid,
 			ExpectedStatusCode: http.StatusOK,
 			init:               func() {},
-			In: blog.EditBlogIn{
+			In: article.EditArticleIn{
 				Title:        strings.Repeat("a", 200),
 				ShortDesc:    "Short Desc",
 				ThumbnailUrl: "",
@@ -470,12 +470,12 @@ func TestEditBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Title over 200 chars Failed",
+			Name:               "Add Article with Title over 200 chars Failed",
 			Id:                 pid,
 			ExpectedStatusCode: http.StatusUnprocessableEntity,
 			init: func() {
 			},
-			In: blog.EditBlogIn{
+			In: article.EditArticleIn{
 				Title:        strings.Repeat("a", 201),
 				ShortDesc:    "Short Desc",
 				ThumbnailUrl: "",
@@ -484,12 +484,12 @@ func TestEditBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Short Desc 200 chars Success",
+			Name:               "Add Article with Short Desc 200 chars Success",
 			Id:                 pid,
 			ExpectedStatusCode: http.StatusOK,
 			init: func() {
 			},
-			In: blog.EditBlogIn{
+			In: article.EditArticleIn{
 				Title:        "Title",
 				ShortDesc:    strings.Repeat("a", 200),
 				ThumbnailUrl: "",
@@ -498,12 +498,12 @@ func TestEditBlog(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Add Blog with Short Desc over 200 chars Failed",
+			Name:               "Add Article with Short Desc over 200 chars Failed",
 			Id:                 pid,
 			ExpectedStatusCode: http.StatusUnprocessableEntity,
 			init: func() {
 			},
-			In: blog.EditBlogIn{
+			In: article.EditArticleIn{
 				Title:        "Title",
 				ShortDesc:    strings.Repeat("a", 201),
 				ThumbnailUrl: "",
@@ -515,7 +515,7 @@ func TestEditBlog(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.Name, func(t *testing.T) {
-			res := blogDeps.EditBlog(context.Background(), c.Id, c.In)
+			res := articleDeps.EditArticle(context.Background(), c.Id, c.In)
 
 			if res.StatusCode != c.ExpectedStatusCode {
 				t.Logf("%#v", res)
@@ -526,13 +526,13 @@ func TestEditBlog(t *testing.T) {
 	}
 }
 
-func TestRemoveBlog(t *testing.T) {
+func TestRemoveArticle(t *testing.T) {
 	err := ClearTables(postgrePool)
 	if err != nil {
 		t.Fatal(err)
 	}
 
-	b, err := blogRepository.Save(context.Background(), blogSeed)
+	b, err := articleRepository.Save(context.Background(), articleSeed)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -545,12 +545,12 @@ func TestRemoveBlog(t *testing.T) {
 		Id                 string
 	}{
 		{
-			Name:               "Remove Blog By Id Success",
+			Name:               "Remove Article By Id Success",
 			ExpectedStatusCode: http.StatusOK,
 			Id:                 pid,
 		},
 		{
-			Name:               "Remove Blog By Id Fail, Blog Not Found",
+			Name:               "Remove Article By Id Fail, Article Not Found",
 			ExpectedStatusCode: http.StatusNotFound,
 			Id:                 "999",
 		},
@@ -558,7 +558,7 @@ func TestRemoveBlog(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.Name, func(t *testing.T) {
-			res := blogDeps.RemoveBlog(context.Background(), c.Id)
+			res := articleDeps.RemoveArticle(context.Background(), c.Id)
 
 			if res.StatusCode != c.ExpectedStatusCode {
 				t.Logf("%#v", res)
@@ -583,12 +583,12 @@ func TestUploadImg(t *testing.T) {
 	testCases := []struct {
 		Name               string
 		ExpectedStatusCode int
-		In                 blog.UploadImgIn
+		In                 article.UploadImgIn
 	}{
 		{
 			Name:               "Upload Image Success",
 			ExpectedStatusCode: http.StatusCreated,
-			In: blog.UploadImgIn{
+			In: article.UploadImgIn{
 				File: httpdecode.FileHeader{
 					Filename: fileName,
 					File:     f,
@@ -599,7 +599,7 @@ func TestUploadImg(t *testing.T) {
 
 	for _, c := range testCases {
 		t.Run(c.Name, func(t *testing.T) {
-			res := blogDeps.UploadImg(context.Background(), c.In)
+			res := articleDeps.UploadImg(context.Background(), c.In)
 
 			if res.StatusCode != c.ExpectedStatusCode {
 				t.Logf("%#v", res)

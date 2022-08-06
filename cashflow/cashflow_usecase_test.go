@@ -359,7 +359,7 @@ func TestEditCashflow(t *testing.T) {
 			},
 		},
 		{
-			Name:               "Edit Income Cashflow with Idr Amount over 200 chars success",
+			Name:               "Edit Income Cashflow with Idr Amount over 200 chars fail",
 			ExpectedStatusCode: http.StatusUnprocessableEntity,
 			Id:                 pid,
 			In: cashflow.EditCashflowIn{

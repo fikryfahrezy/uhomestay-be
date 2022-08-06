@@ -1,4 +1,4 @@
-package blog
+package article
 
 import (
 	"encoding/json"
@@ -9,10 +9,10 @@ import (
 	"github.com/go-chi/chi/v5"
 )
 
-func (d *BlogDeps) PostBlog(w http.ResponseWriter, r *http.Request) {
+func (d *ArticleDeps) PostArticle(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
-	var in AddBlogIn
+	var in AddArticleIn
 	err := decoder.Decode(&in)
 	if err != nil {
 		d.CaptureExeption(err)
@@ -20,36 +20,36 @@ func (d *BlogDeps) PostBlog(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	out := d.AddBlog(r.Context(), in)
+	out := d.AddArticle(r.Context(), in)
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
 	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *BlogDeps) GetBlogs(w http.ResponseWriter, r *http.Request) {
+func (d *ArticleDeps) GetArticles(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query().Get("q")
 	cursor := r.URL.Query().Get("cursor")
-	out := d.QueryBlog(r.Context(), q, cursor)
+	out := d.QueryArticle(r.Context(), q, cursor)
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
 	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *BlogDeps) GetBlog(w http.ResponseWriter, r *http.Request) {
+func (d *ArticleDeps) GetArticle(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
-	out := d.FindBlogById(r.Context(), idParam)
+	out := d.FindArticleById(r.Context(), idParam)
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
 	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *BlogDeps) PutBlogs(w http.ResponseWriter, r *http.Request) {
+func (d *ArticleDeps) PutArticle(w http.ResponseWriter, r *http.Request) {
 	decoder := json.NewDecoder(r.Body)
 
-	var in EditBlogIn
+	var in EditArticleIn
 	err := decoder.Decode(&in)
 	if err != nil {
 		d.CaptureExeption(err)
@@ -58,23 +58,23 @@ func (d *BlogDeps) PutBlogs(w http.ResponseWriter, r *http.Request) {
 	}
 
 	idParam := chi.URLParam(r, "id")
-	out := d.EditBlog(r.Context(), idParam, in)
+	out := d.EditArticle(r.Context(), idParam, in)
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
 	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *BlogDeps) DeleteBlog(w http.ResponseWriter, r *http.Request) {
+func (d *ArticleDeps) DeleteArticle(w http.ResponseWriter, r *http.Request) {
 	idParam := chi.URLParam(r, "id")
-	out := d.RemoveBlog(r.Context(), idParam)
+	out := d.RemoveArticle(r.Context(), idParam)
 	if out.Error != nil {
 		d.CaptureExeption(out.Error)
 	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
-func (d *BlogDeps) PostImage(w http.ResponseWriter, r *http.Request) {
+func (d *ArticleDeps) PostImage(w http.ResponseWriter, r *http.Request) {
 	var in UploadImgIn
 	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.MultipartToFileHookFunc); err != nil {
 		d.CaptureExeption(err)

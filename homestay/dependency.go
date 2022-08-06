@@ -1,9 +1,10 @@
-package cashflow
+package homestay
 
 import (
 	"context"
 	"io"
 
+	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/user"
 	"github.com/cloudinary/cloudinary-go/api/uploader"
 	"github.com/getsentry/sentry-go"
 )
@@ -14,24 +15,30 @@ type (
 	MessageCapturer   func(message string)
 )
 
-type CashflowDeps struct {
-	CaptureMessage     MessageCapturer
-	CaptureExeption    ExceptionCapturer
-	Upload             FileUploader
-	CashflowRepository *CashflowRepository
+type HomestayDeps struct {
+	CaptureMessage           MessageCapturer
+	CaptureExeption          ExceptionCapturer
+	Upload                   FileUploader
+	HomestayImageRepository  *HomestayImageRepository
+	MemberHomestayRepository *MemberHomestayRepository
+	MemberRepository         *user.MemberRepository
 }
 
 func NewDeps(
 	captureMessage MessageCapturer,
 	captureExeption ExceptionCapturer,
 	upload FileUploader,
-	cashflowRepository *CashflowRepository,
-) *CashflowDeps {
-	return &CashflowDeps{
-		CaptureMessage:     captureMessage,
-		CaptureExeption:    captureExeption,
-		Upload:             upload,
-		CashflowRepository: cashflowRepository,
+	homestayImageRepository *HomestayImageRepository,
+	memberHomestayRepository *MemberHomestayRepository,
+	memberRepository *user.MemberRepository,
+) *HomestayDeps {
+	return &HomestayDeps{
+		CaptureMessage:           captureMessage,
+		CaptureExeption:          captureExeption,
+		Upload:                   upload,
+		HomestayImageRepository:  homestayImageRepository,
+		MemberHomestayRepository: memberHomestayRepository,
+		MemberRepository:         memberRepository,
 	}
 }
 
