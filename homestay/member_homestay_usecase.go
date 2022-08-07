@@ -239,6 +239,7 @@ type (
 	MemberHomestaysRes struct {
 		Id           int64  `json:"id"`
 		Name         string `json:"name"`
+		Address      string `json:"address"`
 		ThumbnailUrl string `json:"thumbnail_url"`
 	}
 	QueryMemberHomestayRes struct {
@@ -287,6 +288,7 @@ func (d *HomestayDeps) QueryMemberHomestays(ctx context.Context, uid, cursor, li
 			Id:           int64(p.Id),
 			Name:         p.Name,
 			ThumbnailUrl: p.ThumbnailUrl,
+			Address:      p.Address,
 		}
 	}
 

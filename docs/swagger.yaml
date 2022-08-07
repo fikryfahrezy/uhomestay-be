@@ -2977,6 +2977,8 @@ components:
                     type: integer
                   name:
                     type: string
+                  address:
+                    type: string
                   thumbnail_url:
                     type: string
                     format: uri
