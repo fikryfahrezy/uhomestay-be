@@ -317,8 +317,8 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 		out := d.QueryArticle(ctx, "", "")
 
 		l := len(out.Res.Articles)
-		if l > 8 {
-			l = 8
+		if l > 4 {
+			l = 4
 		}
 
 		bs := make([]ArticleOut, l)
@@ -382,8 +382,8 @@ func (d *DashboardDeps) GetPublic(ctx context.Context) (out PublicOut) {
 		out := d.QueryImage(ctx, "", "5")
 
 		l := len(out.Res.Images)
-		if l > 5 {
-			l = 5
+		if l > 4 {
+			l = 4
 		}
 
 		ps := make([]ImageOut, l)
