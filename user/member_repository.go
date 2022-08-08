@@ -481,3 +481,101 @@ func (r *MemberRepository) CountMember(ctx context.Context) (n int64, err error)
 
 	return n, nil
 }
+
+func (r *MemberRepository) SaveMemberHomestay(ctx context.Context, m MemberHomestayModel) (nm MemberHomestayModel, err error) {
+	sqlQuery := `
+		INSERT INTO member_homestays (
+			name,
+			address,
+			latitude,
+			longitude,
+			thumbnail_url,
+			member_id,
+			created_at,
+			updated_at,
+			deleted_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+		RETURNING id
+	`
+
+	var queryRow MemberQuerierRow
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		queryRow = tx.QueryRow
+	} else {
+		queryRow = r.PostgreDb.QueryRow
+	}
+
+	var lastInsertId uint64
+	t := time.Now()
+
+	err = queryRow(
+		context.Background(),
+		sqlQuery,
+		m.Name,
+		m.Address,
+		m.Latitude,
+		m.Longitude,
+		m.ThumbnailUrl,
+		m.MemberId,
+		t,
+		t,
+		nil,
+	).Scan(&lastInsertId)
+
+	if err != nil {
+		return MemberHomestayModel{}, err
+	}
+
+	m.Id = lastInsertId
+	m.CreatedAt = t
+
+	return m, nil
+}
+
+func (r *MemberRepository) SaveHomestayPhoto(ctx context.Context, m HomestayImageModel) (nm HomestayImageModel, err error) {
+	sqlQuery := `
+		INSERT INTO homestay_images (
+			name,
+			alphnum_name,
+			url,
+			member_homestay_id,
+			created_at,
+			deleted_at
+		)
+		VALUES ($1, $2, $3, $4, $5, $6)
+		RETURNING id
+	`
+
+	var queryRow MemberQuerierRow
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		queryRow = tx.QueryRow
+	} else {
+		queryRow = r.PostgreDb.QueryRow
+	}
+
+	var lastInsertId uint64
+	t := time.Now()
+
+	err = queryRow(
+		context.Background(),
+		sqlQuery,
+		m.Name,
+		m.AlphnumName,
+		m.Url,
+		m.MemberHomestayId,
+		t,
+		nil,
+	).Scan(&lastInsertId)
+
+	if err != nil {
+		return HomestayImageModel{}, err
+	}
+
+	m.Id = lastInsertId
+	m.CreatedAt = t
+
+	return m, nil
+}

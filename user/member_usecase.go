@@ -5,6 +5,7 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -292,7 +293,8 @@ type (
 )
 
 func (d *UserDeps) MemberRegister(ctx context.Context, in RegisterIn) (out RegisterOut) {
-	if err := ValidateRegisterIn(in); err != nil {
+	var err error
+	if err = ValidateRegisterIn(in); err != nil {
 		out.Response = resp.NewResponse(http.StatusUnprocessableEntity, "", err)
 		return
 	}
@@ -325,9 +327,36 @@ func (d *UserDeps) MemberRegister(ctx context.Context, in RegisterIn) (out Regis
 	homestayPhotoUploadResCh := make(chan resp.Response)
 	go UploadFile(in.HomestayPhoto.Filename, homestayPhoto, d.Upload, homestayPhotoUrlCh, homestayPhotoUploadResCh)
 
-	_ = <-homestayPhotoUrlCh
+	homestayPhotoUrl := <-homestayPhotoUrlCh
 	if res := <-homestayPhotoUploadResCh; res.Error != nil {
 		out.Response = res
+		return
+	}
+
+	memberHomestay := MemberHomestayModel{
+		Name:         in.HomestayName,
+		Address:      in.HomestayAddress,
+		Latitude:     in.HomestayLatitude,
+		Longitude:    in.HomestayLongitude,
+		ThumbnailUrl: homestayPhotoUrl,
+		MemberId:     saverOut.Res.Id,
+	}
+
+	if memberHomestay, err = d.MemberRepository.SaveMemberHomestay(ctx, memberHomestay); err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "save member homestay"))
+		return
+	}
+
+	re := regexp.MustCompile(`[^a-zA-Z0-9]`)
+	image := HomestayImageModel{
+		Name:        in.HomestayPhoto.Filename,
+		AlphnumName: string(re.ReplaceAll([]byte(in.HomestayPhoto.Filename), []byte(" "))),
+		Url:         homestayPhotoUrl,
+	}
+	image.MemberHomestayId.Scan(memberHomestay.Id)
+
+	if image, err = d.MemberRepository.SaveHomestayPhoto(ctx, image); err != nil {
+		out.Response = resp.NewResponse(http.StatusInternalServerError, "", errors.Wrap(err, "save image"))
 		return
 	}
 
