@@ -1,3 +1,11 @@
+.vscode
+.idea
+.docker_build
+.env
+.env.compose
+
+bin/
+
 # Binaries for programs and plugins
 *.exe
 *.exe~
@@ -16,3 +24,4 @@
 
 # Go workspace file
 go.work
+
