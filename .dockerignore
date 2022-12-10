@@ -1,7 +1,0 @@
-.vscode
-.idea
-.docker_build
-.env
-.env.compose
-
-bin/
