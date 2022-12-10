@@ -204,7 +204,7 @@ func TestMain(m *testing.M) {
 
 	// When you're done, kill and remove the container
 	if err = pool.Purge(postgreResource); err != nil {
-		log.Fatalf("Could not purge mongo resource: %s", err)
+		log.Fatalf("Could not purge postgre resource: %s", err)
 	}
 
 	if err = pool.Purge(redisResource); err != nil {

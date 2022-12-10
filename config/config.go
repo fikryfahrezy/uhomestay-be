@@ -17,7 +17,6 @@ type Config struct {
 	JwtKeyStr       string
 	JwtIssuerUrl    string
 	PostgreUrl      string
-	MongoUri        string
 	RedisUrl        string
 	Env             string
 	JwtAudiences    []string
@@ -81,12 +80,6 @@ func LoadConfig() Config {
 		postgreUrl = "postgres://postgres:postgres@localhost:5432/homestay"
 	}
 	c.PostgreUrl = postgreUrl
-
-	mongoUri := os.Getenv("MONGODB_URI")
-	if mongoUri == "" {
-		mongoUri = "mongodb://mongo:mongo@localhost:27017"
-	}
-	c.MongoUri = mongoUri
 
 	redisUrl := os.Getenv("REDIS_URL")
 	if redisUrl == "" {
