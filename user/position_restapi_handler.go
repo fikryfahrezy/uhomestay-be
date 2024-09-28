@@ -16,15 +16,11 @@ func (d *UserDeps) PostPosition(w http.ResponseWriter, r *http.Request) {
 	var in AddPositionIn
 	err := decoder.Decode(&in)
 	if err != nil {
-		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
 	}
 
 	out := d.AddPosition(r.Context(), in)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
@@ -32,17 +28,11 @@ func (d *UserDeps) GetPositions(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 	limit := r.URL.Query().Get("limit")
 	out := d.QueryPosition(r.Context(), cursor, limit)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *UserDeps) GetPositionLevels(w http.ResponseWriter, r *http.Request) {
 	out := d.QueryPositionLevel(r.Context())
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
@@ -52,25 +42,18 @@ func (d *UserDeps) PutPositions(w http.ResponseWriter, r *http.Request) {
 	var in EditPositionIn
 	err := decoder.Decode(&in)
 	if err != nil {
-		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	out := d.EditPosition(r.Context(), id, in)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *UserDeps) DeletePosition(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	out := d.RemovePosition(r.Context(), id)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
@@ -87,7 +70,6 @@ func (d *UserDeps) PositionForm(w http.ResponseWriter, r *http.Request) {
 
 	t, err := template.ParseFS(d.Tmpl, "tmpl/positionform.html")
 	if err != nil {
-		d.CaptureExeption(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		io.WriteString(w, err.Error())
 		return

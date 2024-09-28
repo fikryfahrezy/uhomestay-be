@@ -4,7 +4,6 @@ import (
 	"context"
 	"embed"
 	"log"
-	"time"
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/article"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/cashflow"
@@ -20,13 +19,10 @@ import (
 
 	"github.com/cloudinary/cloudinary-go"
 	"github.com/cloudinary/cloudinary-go/api/uploader"
-	"github.com/getsentry/sentry-go"
-	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgtype"
 	pgtypeuuid "github.com/jackc/pgtype/ext/gofrs-uuid"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
-	"github.com/logdna/logdna-go/logger"
 )
 
 //go:embed tmpl/*
@@ -64,45 +60,10 @@ func main() {
 		return
 	}
 
-	opt, err := redis.ParseURL(conf.RedisUrl)
-	if err != nil {
-		log.Fatalf("fail to parse redis url: %s", err)
-	}
-	redisClient := redis.NewClient(opt)
-	defer redisClient.Close()
-
-	if err := redisClient.Ping(context.Background()).Err(); err != nil {
-		log.Fatalf("fail to ping redis: %s", err)
-	}
-
 	cld, err := cloudinary.NewFromURL(conf.CloudinaryUrl)
 	if err != nil {
 		log.Fatalf("cloudinary.NewFromURL: %s", err)
 	}
-
-	_, err = logger.NewLogger(logger.Options{App: "U-Homestay"}, conf.LogDnaKey)
-	if err != nil {
-		log.Fatalf("LogDNA.NewLogger: %s", err)
-	}
-
-	sentrySampleRate := 0.7
-	if conf.Env == "dev" {
-		sentrySampleRate = 0
-	}
-
-	err = sentry.Init(sentry.ClientOptions{
-		Dsn:              conf.SentryDsn,
-		Environment:      "all",
-		Release:          "uhomestay@1.0.0",
-		Debug:            true,
-		TracesSampleRate: sentrySampleRate,
-	})
-	if err != nil {
-		log.Fatalf("sentry.Init: %s", err)
-	}
-
-	// Flush buffered events before the program terminates.
-	defer sentry.Flush(2 * time.Second)
 
 	memberRepository := user.NewMemberRepository(posgrePool)
 	positionRepository := user.NewPositionRepository(posgrePool)
@@ -120,7 +81,6 @@ func main() {
 	)
 	articleRepository := article.NewRepository(
 		"imgchc",
-		redisClient,
 		posgrePool,
 	)
 
@@ -136,8 +96,6 @@ func main() {
 		conf.JwtIssuerUrl,
 		conf.Argon2Salt,
 		conf.JwtAudiences,
-		user.CaptureMessage(sentry.CaptureMessage),
-		user.CaptureExeption(sentry.CaptureException),
 		user.FileUpload(uploader.UploadParams{
 			Transformation: "c_crop,g_center/q_auto/f_auto",
 			Tags:           []string{"profile"},
@@ -153,8 +111,6 @@ func main() {
 	)
 
 	documentDeps := document.NewDeps(
-		document.CaptureMessage(sentry.CaptureMessage),
-		document.CaptureExeption(sentry.CaptureException),
 		document.FileUpload(uploader.UploadParams{
 			Tags:         []string{"document"},
 			Folder:       "uhomestay/document",
@@ -164,8 +120,6 @@ func main() {
 	)
 
 	historyDeps := history.NewDeps(
-		history.CaptureMessage(sentry.CaptureMessage),
-		history.CaptureExeption(sentry.CaptureException),
 		historyRepository,
 	)
 
@@ -173,8 +127,6 @@ func main() {
 	articleDeps := article.NewDeps(
 		"uhomestay/blog-images",
 		articleImgFolder,
-		article.CaptureMessage(sentry.CaptureMessage),
-		article.CaptureExeption(sentry.CaptureException),
 		article.FileMove(cld.Upload.Rename),
 		article.FileUpload(uploader.UploadParams{
 			Tags:         []string{"blogs"},
@@ -185,8 +137,6 @@ func main() {
 	)
 
 	cashflowDeps := cashflow.NewDeps(
-		cashflow.CaptureMessage(sentry.CaptureMessage),
-		cashflow.CaptureExeption(sentry.CaptureException),
 		cashflow.FileUpload(uploader.UploadParams{
 			Tags:         []string{"cashflow"},
 			Folder:       "uhomestay/cashflows",
@@ -196,8 +146,6 @@ func main() {
 	)
 
 	duesDeps := dues.NewDeps(
-		dues.CaptureMessage(sentry.CaptureMessage),
-		dues.CaptureExeption(sentry.CaptureException),
 		dues.FileUpload(uploader.UploadParams{
 			Tags:         []string{"dues"},
 			Folder:       "uhomestay/dues",
@@ -210,8 +158,6 @@ func main() {
 	)
 
 	imageDeps := image.NewDeps(
-		image.CaptureMessage(sentry.CaptureMessage),
-		image.CaptureExeption(sentry.CaptureException),
 		image.FileUpload(uploader.UploadParams{
 			Tags:         []string{"image"},
 			Folder:       "uhomestay/images-gallery",
@@ -221,8 +167,6 @@ func main() {
 	)
 
 	homestayDeps := homestay.NewDeps(
-		homestay.CaptureMessage(sentry.CaptureMessage),
-		homestay.CaptureExeption(sentry.CaptureException),
 		homestay.FileUpload(uploader.UploadParams{
 			Tags:         []string{"homestay"},
 			Folder:       "uhomestay/homestay",
@@ -234,8 +178,6 @@ func main() {
 	)
 
 	dashboardDeps := dashboard.NewDeps(
-		dashboard.CaptureMessage(sentry.CaptureMessage),
-		dashboard.CaptureExeption(sentry.CaptureException),
 		historyDeps,
 		imageDeps,
 		homestayDeps,

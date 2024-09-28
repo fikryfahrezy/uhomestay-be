@@ -9,16 +9,12 @@ import (
 type Config struct {
 	JwtKey          []byte
 	CloudinaryUrl   string
-	SentryDsn       string
-	LogDnaKey       string
 	Port            string
 	Argon2Salt      string
 	JwtAudiencesStr string
 	JwtKeyStr       string
 	JwtIssuerUrl    string
 	PostgreUrl      string
-	RedisUrl        string
-	Env             string
 	JwtAudiences    []string
 }
 
@@ -30,18 +26,6 @@ func LoadConfig() Config {
 		log.Fatal("$HOMESTAY_CLOUDINARY_URL must be set")
 	}
 	c.CloudinaryUrl = cd
-
-	sentryDsn := os.Getenv("HOMESTAY_SENTRY_DSN")
-	if sentryDsn == "" {
-		log.Fatal("$HOMESTAY_SENTRY_DSN must be set")
-	}
-	c.SentryDsn = sentryDsn
-
-	logDnaKey := os.Getenv("HOMESTAY_LOGDNA_KEY")
-	if logDnaKey == "" {
-		log.Fatal("$HOMESTAY_LOGDNA_KEY must be set")
-	}
-	c.LogDnaKey = logDnaKey
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -80,18 +64,6 @@ func LoadConfig() Config {
 		postgreUrl = "postgres://postgres:postgres@localhost:5432/homestay"
 	}
 	c.PostgreUrl = postgreUrl
-
-	redisUrl := os.Getenv("REDIS_URL")
-	if redisUrl == "" {
-		redisUrl = "redis://localhost:6379"
-	}
-	c.RedisUrl = redisUrl
-
-	env := os.Getenv("ENVI")
-	if env == "" {
-		env = "dev"
-	}
-	c.Env = env
 
 	return c
 }

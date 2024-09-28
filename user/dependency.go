@@ -7,13 +7,10 @@ import (
 	"path/filepath"
 
 	"github.com/cloudinary/cloudinary-go/api/uploader"
-	"github.com/getsentry/sentry-go"
 )
 
 type (
-	FileUploader      func(filename string, file io.Reader) (string, error)
-	ExceptionCapturer func(exception error)
-	MessageCapturer   func(message string)
+	FileUploader func(filename string, file io.Reader) (string, error)
 )
 
 type UserDeps struct {
@@ -21,8 +18,6 @@ type UserDeps struct {
 	JwtIssuerUrl           string
 	Argon2Salt             string
 	JwtAudiences           []string
-	CaptureMessage         MessageCapturer
-	CaptureExeption        ExceptionCapturer
 	Upload                 FileUploader
 	Tmpl                   embed.FS
 	MemberRepository       *MemberRepository
@@ -37,8 +32,6 @@ func NewDeps(
 	jwtIssuerUrl string,
 	argon2Salt string,
 	jwtAudiences []string,
-	captureMessage MessageCapturer,
-	captureExeption ExceptionCapturer,
 	upload FileUploader,
 	tmpl embed.FS,
 	memberRepository *MemberRepository,
@@ -51,8 +44,6 @@ func NewDeps(
 		JwtKey:                 jwtKey,
 		JwtIssuerUrl:           jwtIssuerUrl,
 		Argon2Salt:             argon2Salt,
-		CaptureMessage:         captureMessage,
-		CaptureExeption:        captureExeption,
 		JwtAudiences:           jwtAudiences,
 		Upload:                 upload,
 		Tmpl:                   tmpl,
@@ -76,17 +67,5 @@ func FileUpload(uploadParams uploader.UploadParams, upload func(ctx context.Cont
 		}
 
 		return resp.SecureURL, nil
-	}
-}
-
-func CaptureExeption(capture func(exception error) *sentry.EventID) ExceptionCapturer {
-	return func(exception error) {
-		capture(exception)
-	}
-}
-
-func CaptureMessage(capture func(message string) *sentry.EventID) MessageCapturer {
-	return func(message string) {
-		capture(message)
 	}
 }

@@ -123,12 +123,6 @@ func (p *RestApiConf) RestApiHandler() {
 	r.Post("/api/v1/login/members", p.DashboardDeps.PostLoginMember)
 	r.Post("/api/v1/login/admins", p.DashboardDeps.PostLoginAdmin)
 
-	if p.Conf.Env == "uat" {
-		r.Patch("/api/v1/get-admin-jwt/{username}", p.DashboardDeps.GetAdminJwt)
-		r.Patch("/api/v1/get-member-jwt/{username}", p.DashboardDeps.GetMemberJwt)
-		r.Patch("/api/v1/get-user-jwt/{username}", p.DashboardDeps.GetUserJwt)
-	}
-
 	r.Get("/api/v1/members", p.DashboardDeps.GetMembers)
 	r.Get("/api/v1/members/{id}", p.DashboardDeps.GetMember)
 	r.With(jwtMidd).Get("/api/v1/profile", p.DashboardDeps.GetProfileMember)

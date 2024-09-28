@@ -5,21 +5,16 @@ import (
 	"io"
 
 	"github.com/cloudinary/cloudinary-go/api/uploader"
-	"github.com/getsentry/sentry-go"
 )
 
 type (
-	FileUploader      func(filename string, file io.Reader) (string, string, error)
-	FileMover         func(from, to string) (string, error)
-	ExceptionCapturer func(exception error)
-	MessageCapturer   func(message string)
+	FileUploader func(filename string, file io.Reader) (string, string, error)
+	FileMover    func(from, to string) (string, error)
 )
 
 type ArticleDeps struct {
 	ImgCldTmpFolder   string
 	ImgClgFolder      string
-	CaptureMessage    MessageCapturer
-	CaptureExeption   ExceptionCapturer
 	MoveFile          FileMover
 	Upload            FileUploader
 	ArticleRepository *ArticleRepository
@@ -28,8 +23,6 @@ type ArticleDeps struct {
 func NewDeps(
 	imgClgFolder string,
 	imgCldTmpFolder string,
-	captureMessage MessageCapturer,
-	captureExeption ExceptionCapturer,
 	moveFile FileMover,
 	upload FileUploader,
 	articleRepository *ArticleRepository,
@@ -37,8 +30,6 @@ func NewDeps(
 	return &ArticleDeps{
 		ImgClgFolder:      imgClgFolder,
 		ImgCldTmpFolder:   imgCldTmpFolder,
-		CaptureMessage:    captureMessage,
-		CaptureExeption:   captureExeption,
 		MoveFile:          moveFile,
 		Upload:            upload,
 		ArticleRepository: articleRepository,
@@ -72,17 +63,5 @@ func FileMove(move func(ctx context.Context, params uploader.RenameParams) (*upl
 		}
 
 		return resp.SecureURL, nil
-	}
-}
-
-func CaptureExeption(capture func(exception error) *sentry.EventID) ExceptionCapturer {
-	return func(exception error) {
-		capture(exception)
-	}
-}
-
-func CaptureMessage(capture func(message string) *sentry.EventID) MessageCapturer {
-	return func(message string) {
-		capture(message)
 	}
 }

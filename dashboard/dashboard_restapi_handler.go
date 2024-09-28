@@ -8,16 +8,10 @@ import (
 
 func (d *DashboardDeps) GetPrivateDashboard(w http.ResponseWriter, r *http.Request) {
 	out := d.GetPrivate(r.Context())
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *DashboardDeps) GetPublicDashboard(w http.ResponseWriter, r *http.Request) {
 	out := d.GetPublic(r.Context())
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }

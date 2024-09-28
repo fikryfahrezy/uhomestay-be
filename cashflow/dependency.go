@@ -5,31 +5,22 @@ import (
 	"io"
 
 	"github.com/cloudinary/cloudinary-go/api/uploader"
-	"github.com/getsentry/sentry-go"
 )
 
 type (
-	FileUploader      func(filename string, file io.Reader) (string, error)
-	ExceptionCapturer func(exception error)
-	MessageCapturer   func(message string)
+	FileUploader func(filename string, file io.Reader) (string, error)
 )
 
 type CashflowDeps struct {
-	CaptureMessage     MessageCapturer
-	CaptureExeption    ExceptionCapturer
 	Upload             FileUploader
 	CashflowRepository *CashflowRepository
 }
 
 func NewDeps(
-	captureMessage MessageCapturer,
-	captureExeption ExceptionCapturer,
 	upload FileUploader,
 	cashflowRepository *CashflowRepository,
 ) *CashflowDeps {
 	return &CashflowDeps{
-		CaptureMessage:     captureMessage,
-		CaptureExeption:    captureExeption,
 		Upload:             upload,
 		CashflowRepository: cashflowRepository,
 	}
@@ -46,17 +37,5 @@ func FileUpload(uploadParams uploader.UploadParams, upload func(ctx context.Cont
 		}
 
 		return resp.SecureURL, nil
-	}
-}
-
-func CaptureExeption(capture func(exception error) *sentry.EventID) ExceptionCapturer {
-	return func(exception error) {
-		capture(exception)
-	}
-}
-
-func CaptureMessage(capture func(message string) *sentry.EventID) MessageCapturer {
-	return func(message string) {
-		capture(message)
 	}
 }

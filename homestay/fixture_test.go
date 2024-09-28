@@ -50,13 +50,9 @@ var (
 	}
 )
 
-var (
-	upload homestay.FileUploader = func(filename string, file io.Reader) (string, error) {
-		return filename, nil
-	}
-	captureException homestay.ExceptionCapturer = func(exception error) {}
-	captureMessage   homestay.MessageCapturer   = func(message string) {}
-)
+var upload homestay.FileUploader = func(filename string, file io.Reader) (string, error) {
+	return filename, nil
+}
 
 func LoadTables(conn *pgxpool.Pool) error {
 	tx, err := conn.Begin(context.Background())
@@ -221,8 +217,6 @@ func TestMain(m *testing.M) {
 	homestayImageRepository = homestay.NewHomestayImageRepository(db)
 	memberHomestayRepository = homestay.NewMemberHomestayRepository(db)
 	homestayDeps = homestay.NewDeps(
-		captureMessage,
-		captureException,
 		upload,
 		homestayImageRepository,
 		memberHomestayRepository,

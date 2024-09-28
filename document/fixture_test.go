@@ -33,13 +33,9 @@ var (
 	}
 )
 
-var (
-	upload document.FileUploader = func(filename string, file io.Reader) (string, error) {
-		return filename, nil
-	}
-	captureException document.ExceptionCapturer = func(exception error) {}
-	captureMessage   document.MessageCapturer   = func(message string) {}
-)
+var upload document.FileUploader = func(filename string, file io.Reader) (string, error) {
+	return filename, nil
+}
 
 func createDocumentChildren(d *document.DocumentRepository, doc document.DocumentModel) (p document.DocumentModel, c document.DocumentModel, err error) {
 	p, err = d.Save(context.Background(), doc)
@@ -169,8 +165,6 @@ func TestMain(m *testing.M) {
 
 	documentRepository = document.NewRepository(db)
 	documentDeps = document.NewDeps(
-		captureMessage,
-		captureException,
 		upload,
 		documentRepository,
 	)

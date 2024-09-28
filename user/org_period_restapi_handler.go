@@ -15,32 +15,22 @@ func (d *UserDeps) PostPeriod(w http.ResponseWriter, r *http.Request) {
 	var in AddPeriodIn
 	err := decoder.Decode(&in)
 	if err != nil {
-		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
 	}
 
 	out := d.AddPeriod(r.Context(), in)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *UserDeps) GetPeriods(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 	out := d.QueryPeriod(r.Context(), cursor)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *UserDeps) GetActivePeriod(w http.ResponseWriter, r *http.Request) {
 	out := d.FindActivePeriod(r.Context())
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
@@ -50,25 +40,18 @@ func (d *UserDeps) PutPeriod(w http.ResponseWriter, r *http.Request) {
 	var in EditPeriodIn
 	err := decoder.Decode(&in)
 	if err != nil {
-		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	out := d.EditPeriod(r.Context(), id, in)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *UserDeps) DeletePeriod(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	out := d.RemovePeriod(r.Context(), id)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
@@ -78,25 +61,18 @@ func (d *UserDeps) PatchPeriodStatus(w http.ResponseWriter, r *http.Request) {
 	var in SwitchPeriodStatusIn
 	err := decoder.Decode(&in)
 	if err != nil {
-		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	out := d.SwitchPeriodStatus(r.Context(), id, in)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *UserDeps) GetPeriodStructure(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	out := d.QueryPeriodStructure(r.Context(), id)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
@@ -106,7 +82,6 @@ func (d *UserDeps) PeriodForm(w http.ResponseWriter, r *http.Request) {
 
 	t, err := template.ParseFS(d.Tmpl, "tmpl/periodform.html")
 	if err != nil {
-		d.CaptureExeption(err)
 		w.WriteHeader(http.StatusInternalServerError)
 		io.WriteString(w, err.Error())
 		return

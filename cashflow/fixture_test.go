@@ -29,13 +29,9 @@ var (
 	}
 )
 
-var (
-	upload cashflow.FileUploader = func(filename string, file io.Reader) (string, error) {
-		return filename, nil
-	}
-	captureException cashflow.ExceptionCapturer = func(exception error) {}
-	captureMessage   cashflow.MessageCapturer   = func(message string) {}
-)
+var upload cashflow.FileUploader = func(filename string, file io.Reader) (string, error) {
+	return filename, nil
+}
 
 func LoadTables(conn *pgxpool.Pool) error {
 	tx, err := conn.Begin(context.Background())
@@ -148,8 +144,6 @@ func TestMain(m *testing.M) {
 
 	cashflowRepository = cashflow.NewRepository(db)
 	cashflowDeps = cashflow.NewDeps(
-		captureMessage,
-		captureException,
 		upload,
 		cashflowRepository,
 	)

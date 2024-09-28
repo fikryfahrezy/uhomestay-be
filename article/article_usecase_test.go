@@ -570,7 +570,7 @@ func TestRemoveArticle(t *testing.T) {
 }
 
 func TestUploadImg(t *testing.T) {
-	err := ClearRedis(redisClient)
+	err := ClearTables(postgrePool)
 	if err != nil {
 		t.Fatal(err)
 	}

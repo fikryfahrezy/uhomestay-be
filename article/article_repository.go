@@ -6,7 +6,6 @@ import (
 
 	arbitary "github.com/PA-D3RPLA/d3if43-htt-uhomestay/arbitrary"
 	"github.com/georgysavva/scany/pgxscan"
-	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgx/v4"
 	"github.com/jackc/pgx/v4/pgxpool"
@@ -14,18 +13,15 @@ import (
 
 type ArticleRepository struct {
 	ImgCacheName string
-	RedisCl      *redis.Client
 	PostgreDb    *pgxpool.Pool
 }
 
 func NewRepository(
 	imgCacheName string,
-	redisCl *redis.Client,
 	postgreDb *pgxpool.Pool,
 ) *ArticleRepository {
 	return &ArticleRepository{
 		ImgCacheName: imgCacheName,
-		RedisCl:      redisCl,
 		PostgreDb:    postgreDb,
 	}
 }
@@ -77,7 +73,6 @@ func (r *ArticleRepository) Save(ctx context.Context, m ArticleModel) (nm Articl
 		t,
 		nil,
 	).Scan(&lastInsertId)
-
 	if err != nil {
 		return ArticleModel{}, err
 	}
@@ -180,7 +175,6 @@ func (r *ArticleRepository) FindUndeletedById(ctx context.Context, id uint64) (m
 		querystr,
 		id,
 	)
-
 	if err != nil {
 		return ArticleModel{}, err
 	}
@@ -258,7 +252,6 @@ func (r *ArticleRepository) DeleteById(ctx context.Context, id uint64) error {
 		t,
 		id,
 	)
-
 	if err != nil {
 		return err
 	}
@@ -267,7 +260,30 @@ func (r *ArticleRepository) DeleteById(ctx context.Context, id uint64) error {
 }
 
 func (r *ArticleRepository) SetImgUrlCache(ctx context.Context, imgId, imgUrl string) (err error) {
-	_, err = r.RedisCl.HSet(ctx, r.ImgCacheName, map[string]interface{}{imgId: imgUrl}).Result()
+	sqlQuery := `
+		INSERT INTO image_caches (
+			name,
+			image_id,
+			image_url
+		)
+		VALUES($1, $2, $3)
+	`
+
+	var exec ArticleExecutor
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		exec = tx.Exec
+	} else {
+		exec = r.PostgreDb.Exec
+	}
+
+	_, err = exec(
+		context.Background(),
+		sqlQuery,
+		r.ImgCacheName,
+		imgId,
+		imgUrl,
+	)
 	if err != nil {
 		return err
 	}
@@ -276,16 +292,46 @@ func (r *ArticleRepository) SetImgUrlCache(ctx context.Context, imgId, imgUrl st
 }
 
 func (r *ArticleRepository) GetImgUrlsCache(ctx context.Context) (res map[string]string, err error) {
-	vals, err := r.RedisCl.HGetAll(ctx, r.ImgCacheName).Result()
-	if err != nil {
-		return nil, err
-	}
+	sqlQuery := `
+		SELECT
+			image_id,
+			image_url
+		FROM image_caches
+		WHERE name = $1
+	`
 
-	return vals, nil
+	rows, _ := r.PostgreDb.Query(
+		context.Background(),
+		sqlQuery,
+		r.ImgCacheName,
+	)
+	defer rows.Close()
+
+	if err := pgxscan.ScanAll(&res, rows); err != nil {
+		return map[string]string{}, err
+	}
+	return res, nil
 }
 
 func (r *ArticleRepository) DelImgUrlCache(ctx context.Context) (err error) {
-	_, err = r.RedisCl.Del(ctx, r.ImgCacheName).Result()
+	sqlQuery := `
+		DELETE image_caches
+		WHERE name = $1
+	`
+
+	var exec ArticleExecutor
+	tx, ok := ctx.Value(arbitary.TrxX{}).(pgx.Tx)
+	if ok {
+		exec = tx.Exec
+	} else {
+		exec = r.PostgreDb.Exec
+	}
+
+	_, err = exec(
+		context.Background(),
+		sqlQuery,
+		r.ImgCacheName,
+	)
 	if err != nil {
 		return err
 	}
@@ -312,7 +358,6 @@ func (r *ArticleRepository) CountArticle(ctx context.Context) (n int64, err erro
 		context.Background(),
 		sqlQuery,
 	).Scan(&n)
-
 	if err != nil {
 		return 0, err
 	}

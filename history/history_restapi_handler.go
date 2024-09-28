@@ -13,7 +13,6 @@ func (d *HistoryDeps) PostHistory(w http.ResponseWriter, r *http.Request) {
 	var in AddHistoryIn
 	err := decoder.Decode(&in)
 	if err != nil {
-		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
 	}

@@ -10,7 +10,6 @@ import (
 	"time"
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/article"
-	"github.com/go-redis/redis/v8"
 	"github.com/jackc/pgx/v4/pgxpool"
 	"github.com/ory/dockertest/v3"
 	"github.com/ory/dockertest/v3/docker"
@@ -18,7 +17,6 @@ import (
 
 var (
 	postgrePool       *pgxpool.Pool
-	redisClient       *redis.Client
 	articleRepository *article.ArticleRepository
 	articleDeps       *article.ArticleDeps
 	fileName          = "images.jpeg"
@@ -46,8 +44,6 @@ var (
 	moveFile article.FileMover = func(from, to string) (string, error) {
 		return "", nil
 	}
-	captureException article.ExceptionCapturer = func(exception error) {}
-	captureMessage   article.MessageCapturer   = func(message string) {}
 )
 
 func LoadTables(conn *pgxpool.Pool) error {
@@ -89,6 +85,7 @@ func ClearTables(conn *pgxpool.Pool) error {
 	// This should be in order of which table truncate first before the other
 	queries := []string{
 		`TRUNCATE articles CASCADE`,
+		`TRUNCATE image_caches CASCADE`,
 	}
 
 	for _, v := range queries {
@@ -101,15 +98,6 @@ func ClearTables(conn *pgxpool.Pool) error {
 	}
 
 	err = tx.Commit(context.Background())
-	if err != nil {
-		return err
-	}
-
-	return nil
-}
-
-func ClearRedis(client *redis.Client) error {
-	_, err := client.FlushDB(context.Background()).Result()
 	if err != nil {
 		return err
 	}
@@ -152,46 +140,14 @@ func TestMain(m *testing.M) {
 	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
 	pool.MaxWait = 120 * time.Second
 
-	redisResource, err := pool.Run("redis", "7.0.0", nil)
-	if err != nil {
-		log.Fatalf("Could not start redis resource: %s", err)
-	}
-
-	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
-	err = pool.Retry(func() error {
-		var err error
-		redisClient = redis.NewClient(&redis.Options{
-			Addr: fmt.Sprintf("localhost:%s", redisResource.GetPort("6379/tcp")),
-		})
-
-		err = redisClient.Ping(context.TODO()).Err()
-		if err != nil {
-			return err
-		}
-
-		dbConfig, err := pgxpool.ParseConfig(databaseUrl)
-		if err != nil {
-			return err
-		}
-
-		postgrePool, err = pgxpool.ConnectConfig(context.Background(), dbConfig)
-		if err != nil {
-			return err
-		}
-
-		return postgrePool.Ping(context.Background())
-	})
-
 	if err != nil {
 		log.Fatalf("Could not connect to docker: %s", err)
 	}
 
-	articleRepository = article.NewRepository("imgchc", redisClient, postgrePool)
+	articleRepository = article.NewRepository("imgchc", postgrePool)
 	articleDeps = article.NewDeps(
 		imgFolder,
 		imgTmpFolder,
-		captureMessage,
-		captureException,
 		moveFile,
 		upload,
 		articleRepository,
@@ -205,14 +161,6 @@ func TestMain(m *testing.M) {
 	// When you're done, kill and remove the container
 	if err = pool.Purge(postgreResource); err != nil {
 		log.Fatalf("Could not purge postgre resource: %s", err)
-	}
-
-	if err = pool.Purge(redisResource); err != nil {
-		log.Fatalf("Could not purge redis resource: %s", err)
-	}
-
-	if err = redisClient.Close(); err != nil {
-		panic(err)
 	}
 
 	os.Exit(code)

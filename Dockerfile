@@ -25,6 +25,7 @@ COPY --from=builder /main ./main
 COPY ./docs ./docs
 COPY ./tmpl ./tmpl
 
-EXPOSE 8080
+ARG PORT=3000
+EXPOSE ${PORT}
 
 ENTRYPOINT ["/app/main"]

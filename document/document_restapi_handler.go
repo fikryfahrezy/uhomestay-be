@@ -15,30 +15,22 @@ func (d *DocumentDeps) PostDirDocument(w http.ResponseWriter, r *http.Request) {
 	var in AddDirDocumentIn
 	err := decoder.Decode(&in)
 	if err != nil {
-		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
 	}
 
 	out := d.AddDirDocument(r.Context(), in)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *DocumentDeps) PostFileDocument(w http.ResponseWriter, r *http.Request) {
 	var in AddFileDocumentIn
 	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.IntToNulIntHookFunc, httpdecode.MultipartToFileHookFunc, httpdecode.BoolToNullBoolHookFunc); err != nil {
-		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
 	}
 
 	out := d.AddFileDocument(r.Context(), in)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
@@ -48,41 +40,30 @@ func (d *DocumentDeps) PutDirDocument(w http.ResponseWriter, r *http.Request) {
 	var in EditDirDocumentIn
 	err := decoder.Decode(&in)
 	if err != nil {
-		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	out := d.EditDirDocument(r.Context(), id, in)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *DocumentDeps) PutFileDocument(w http.ResponseWriter, r *http.Request) {
 	var in EditFileDocumentIn
 	if err := httpdecode.Multipart(r, &in, 10*1024, httpdecode.MultipartToFileHookFunc, httpdecode.BoolToNullBoolHookFunc); err != nil {
-		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
 	}
 
 	id := chi.URLParam(r, "id")
 	out := d.EditFileDocument(r.Context(), id, in)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *DocumentDeps) DeleteDocument(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	out := d.RemoveDocument(r.Context(), id)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
@@ -91,9 +72,6 @@ func (d *DocumentDeps) GetDocuments(w http.ResponseWriter, r *http.Request) {
 	cursor := r.URL.Query().Get("cursor")
 	limit := r.URL.Query().Get("limit")
 	out := d.QueryDocument(r.Context(), q, cursor, limit)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
@@ -102,8 +80,5 @@ func (d *DocumentDeps) GetDocumentChildren(w http.ResponseWriter, r *http.Reques
 	id := chi.URLParam(r, "id")
 	cursor := r.URL.Query().Get("cursor")
 	out := d.FindDocumentChildren(r.Context(), id, q, cursor)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }

@@ -28,13 +28,9 @@ var (
 	}
 )
 
-var (
-	upload image.FileUploader = func(filename string, file io.Reader) (string, error) {
-		return filename, nil
-	}
-	captureException image.ExceptionCapturer = func(exception error) {}
-	captureMessage   image.MessageCapturer   = func(message string) {}
-)
+var upload image.FileUploader = func(filename string, file io.Reader) (string, error) {
+	return filename, nil
+}
 
 func LoadTables(conn *pgxpool.Pool) error {
 	tx, err := conn.Begin(context.Background())
@@ -147,8 +143,6 @@ func TestMain(m *testing.M) {
 
 	imageRepository = image.NewRepository(db)
 	imageDeps = image.NewDeps(
-		captureMessage,
-		captureException,
 		upload,
 		imageRepository,
 	)

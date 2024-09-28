@@ -14,23 +14,16 @@ func (d *UserDeps) PostGoal(w http.ResponseWriter, r *http.Request) {
 	var in AddGoalIn
 	err := decoder.Decode(&in)
 	if err != nil {
-		d.CaptureExeption(err)
 		resp.NewResponse(http.StatusInternalServerError, "", err).HttpJSON(w, nil)
 		return
 	}
 
 	out := d.AddGoal(r.Context(), in)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
 
 func (d *UserDeps) GetOrgPeriodGoal(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 	out := d.FindOrgPeriodGoal(r.Context(), id)
-	if out.Error != nil {
-		d.CaptureExeption(out.Error)
-	}
 	out.HttpJSON(w, resp.NewHttpBody(out.Res))
 }
