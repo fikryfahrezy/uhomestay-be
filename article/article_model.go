@@ -17,3 +17,9 @@ type ArticleModel struct {
 	UpdatedAt    time.Time
 	DeletedAt    sql.NullTime
 }
+
+type ImageCacheModel struct {
+	Name     string
+	ImageId  string
+	ImageUrl string
+}

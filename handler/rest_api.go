@@ -2,6 +2,7 @@ package handler
 
 import (
 	"fmt"
+	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -10,7 +11,6 @@ import (
 
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/config"
 	"github.com/PA-D3RPLA/d3if43-htt-uhomestay/dashboard"
-	sentryhttp "github.com/getsentry/sentry-go/http"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/go-chi/cors"
@@ -47,9 +47,6 @@ func NewRestApi(
 }
 
 func (p *RestApiConf) RestApiHandler() {
-	sentryHandler := sentryhttp.New(sentryhttp.Options{
-		Repanic: true,
-	})
 	jwtMidd := jwt.NewMiddleware(p.Conf.JwtKey, p.Conf.JwtIssuerUrl, p.Conf.JwtAudiences, &jwt.JwtPrivateClaim{})
 	adminJwtMidd := jwt.NewMiddleware(p.Conf.JwtKey, p.Conf.JwtIssuerUrl, p.Conf.JwtAudiences, &jwt.JwtPrivateAdminClaim{})
 	trxMidd := mw.NewTrxMiddleware(p.PosgrePool)
@@ -80,15 +77,6 @@ func (p *RestApiConf) RestApiHandler() {
 	r := chi.NewRouter()
 	r.Use(middleware.Logger)
 	r.Use(middleware.Recoverer)
-
-	// Add pkg or example for go-chi
-	// Ref:https://github.com/getsentry/sentry-go/issues/143
-	// Important: Chi has a middleware stack and thus it is important to put the
-	// Sentry handler on the appropriate place. If using middleware.Recoverer,
-	// the Sentry middleware must come afterwards (and configure it with
-	// Repanic: true).
-	r.Use(sentryHandler.Handle)
-
 	r.Use(rateLMidd)
 	r.Use(corsMidd)
 
@@ -112,7 +100,7 @@ func (p *RestApiConf) RestApiHandler() {
 		httpSwagger.URL("/docs/swagger.yaml"), // The url pointing to API definition
 	))
 
-	r.Get("/registerform", sentryHandler.HandleFunc(p.DashboardDeps.RegisterForm))
+	r.Get("/registerform", p.DashboardDeps.RegisterForm)
 	r.Get("/positionform", p.DashboardDeps.PositionForm)
 	r.Get("/periodform", p.DashboardDeps.PeriodForm)
 	r.Post("/positions", p.DashboardDeps.PostPosition)
@@ -204,7 +192,10 @@ func (p *RestApiConf) RestApiHandler() {
 	filesDir := http.Dir(filepath.Join(workDir, "docs"))
 	ChiFileServer(r, "/docs", filesDir)
 
-	http.ListenAndServe(fmt.Sprintf(":%s", p.Conf.Port), r)
+	err := http.ListenAndServe(fmt.Sprintf(":%s", p.Conf.Port), r)
+	if err != nil {
+		log.Fatalf("fail to start server: %s", err)
+	}
 }
 
 // Ref:

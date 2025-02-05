@@ -139,6 +139,21 @@ func TestMain(m *testing.M) {
 
 	// exponential backoff-retry, because the application in the container might not be ready to accept connections yet
 	pool.MaxWait = 120 * time.Second
+	if err = pool.Retry(func() error {
+		dbConfig, err := pgxpool.ParseConfig(databaseUrl)
+		if err != nil {
+			return err
+		}
+
+		postgrePool, err = pgxpool.ConnectConfig(context.Background(), dbConfig)
+		if err != nil {
+			return err
+		}
+
+		return postgrePool.Ping(context.Background())
+	}); err != nil {
+		log.Fatalf("Could not connect to docker: %s", err)
+	}
 
 	if err != nil {
 		log.Fatalf("Could not connect to docker: %s", err)

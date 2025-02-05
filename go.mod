@@ -8,7 +8,6 @@ require (
 	github.com/cloudinary/cloudinary-go v1.6.0
 	github.com/fikryfahrezy/crypt v0.0.0-20220201035145-b39cdb80da75
 	github.com/georgysavva/scany v0.3.0
-	github.com/getsentry/sentry-go v0.12.0
 	github.com/go-chi/chi/v5 v5.0.7
 	github.com/go-chi/cors v1.2.0
 	github.com/go-chi/httprate v0.5.3

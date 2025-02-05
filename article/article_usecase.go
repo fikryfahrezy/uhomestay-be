@@ -27,10 +27,15 @@ type ArticleIn struct {
 }
 
 func (d *ArticleDeps) ArticleModelBuilder(ctx context.Context, in ArticleIn) (bm ArticleModel, err error) {
-	urls, err := d.ArticleRepository.GetImgUrlsCache(ctx)
+	iucs, err := d.ArticleRepository.GetImgUrlsCache(ctx)
 	if err != nil {
 		err = errors.Wrap(err, "get img urls cache")
 		return ArticleModel{}, err
+	}
+
+	urls := make(map[string]string)
+	for _, iuc := range iucs {
+		urls[iuc.ImageId] = iuc.ImageUrl
 	}
 
 	nurls := make(map[string]string)

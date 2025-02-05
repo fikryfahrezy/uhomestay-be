@@ -291,9 +291,10 @@ func (r *ArticleRepository) SetImgUrlCache(ctx context.Context, imgId, imgUrl st
 	return nil
 }
 
-func (r *ArticleRepository) GetImgUrlsCache(ctx context.Context) (res map[string]string, err error) {
+func (r *ArticleRepository) GetImgUrlsCache(ctx context.Context) ([]ImageCacheModel, error) {
 	sqlQuery := `
 		SELECT
+			name,
 			image_id,
 			image_url
 		FROM image_caches
@@ -307,15 +308,21 @@ func (r *ArticleRepository) GetImgUrlsCache(ctx context.Context) (res map[string
 	)
 	defer rows.Close()
 
-	if err := pgxscan.ScanAll(&res, rows); err != nil {
-		return map[string]string{}, err
+	var mps []*ImageCacheModel
+	if err := pgxscan.ScanAll(&mps, rows); err != nil {
+		return []ImageCacheModel{}, err
 	}
-	return res, nil
+	ms := make([]ImageCacheModel, len(mps))
+	for i, m := range mps {
+		ms[i] = *m
+	}
+
+	return ms, nil
 }
 
 func (r *ArticleRepository) DelImgUrlCache(ctx context.Context) (err error) {
 	sqlQuery := `
-		DELETE image_caches
+		DELETE FROM image_caches
 		WHERE name = $1
 	`
 
